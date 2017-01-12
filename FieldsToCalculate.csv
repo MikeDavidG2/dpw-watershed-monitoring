@@ -1,9 +1,20 @@
 Instructions for the user,,,,,
-SelectField Where,"<not used in script, only to help readability>",FieldToCalc,"<not used in script, only to help readability>",Calculation (You must use '!' if you want to calculate a FIELD),User Notes
+SelectField Where,"<not used in script, only to help readability>",FieldToCalc,"<not used in script, only to help readability>","Calculation (Below must start or end with a '!' if you want to calculate a FIELD, otherwise it will be calculated as a STRING)",User Notes
 Project = 'Bacteria TMDL Outfalls',Then calculate field...,SiteType,...so that it equals STRING...,MS4,All 'Bacteria TMDL Outfalls' projects should have [SiteType] equal to 'MS4'
 Project = 'Bacteria TMDL Outfalls',Then calculate field...,EventType,...so that it equals STRING...,Field Screening,All 'Bacteria TMDL Outfalls' projects should have [EventType] equal to 'Field Screening'
+OBJECTID IS NOT NULL,Then calculate field...,QC_Sample,,"!QC_Sample!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 FieldStaff = 'Other',,FieldStaff,...so that it equals FIELD...,!FieldStaff_other!,If [FieldStaff] = 'Other' then we should grab [FieldStaff_other] value and put it into the [FieldStaff] field.
-FieldStaff IS NOT NULL,,FieldStaff,,"!FieldStaff!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,,FieldStaff,,"!FieldStaff!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,,FlowStatus,,"!FlowStatus!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+Weather = 'Clear_Sunny',,Weather,,Clear/Sunny,Change the 'Clear_Sunny' status to be consistent with the Sharing Templetes 'Clear/Sunny' status
+OBJECTID IS NOT NULL,,Weather,,"!Weather!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,,LastRain,,"!LastRain!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,,Deposit,,"!Deposit!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,,Biology,,"!Biology!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,,Color,,"!Color!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,,Clarity,,"!Clarity!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,,Floatables,,"!Floatables!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+,,,,,
 StationID_manually_entered IS NOT NULL,,StationID,...so that it equals FIELD...,!StationID_manually_entered!,If the StationID had to be manually entered then we should make [StationID] = [StationID_manually_entered]
 PondedLength_ft IS NOT NULL,,EstPondedVol_ft_3,,!FlowPondedWidth_ft!*!FlowPondedDepth_ft!*!PondedLength_ft!,If there is a value for [PondedLength_ft] then we should be able to get a volume of the ponded area by multiplying the W x D x L
 leaf_float_flow_velocity IS NOT NULL,,FlowVelocity_ft_sec,,!leaf_float_flow_velocity!,We want to calculate the [FlowVelocity_ft]_sec field so that it equals either the [leaf_float_flow_velocity] or the [flow_meter_flow_velocity].  Whichever method was used.
