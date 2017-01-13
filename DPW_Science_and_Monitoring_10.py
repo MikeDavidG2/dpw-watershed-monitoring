@@ -72,7 +72,7 @@ def main():
     map_fields_csv         = control_CSVs + '\\MapFields.csv'
 
     # Token and AGOL variables
-    cfgFile     = r"U:\grue\Scripts\Testing_or_Developing\configFiles\accounts.txt"
+    cfgFile     = r"U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\accounts.txt"
     gtURL       = "https://www.arcgis.com/sharing/rest/generateToken"
     AGOfields   = '*'
 
