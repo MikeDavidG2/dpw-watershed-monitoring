@@ -1,3 +1,6 @@
+#My Files to Ignore
+accounts.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
