@@ -11,17 +11,21 @@ OBJECTID IS NOT NULL,,Weather,,"!Weather!.replace(""_"", "" "")",Replace the und
 OBJECTID IS NOT NULL,,LastRain,,"!LastRain!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 OBJECTID IS NOT NULL,,Deposit,,"!Deposit!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 OBJECTID IS NOT NULL,,Biology,,"!Biology!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,,Odor,,"!Odor!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 OBJECTID IS NOT NULL,,Color,,"!Color!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 OBJECTID IS NOT NULL,,Clarity,,"!Clarity!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 OBJECTID IS NOT NULL,,Floatables,,"!Floatables!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 ,,,,,
 StationID_manually_entered IS NOT NULL,,StationID,...so that it equals FIELD...,!StationID_manually_entered!,If the StationID had to be manually entered then we should make [StationID] = [StationID_manually_entered]
 PondedLength_ft IS NOT NULL,,EstPondedVol_ft_3,,!FlowPondedWidth_ft!*!FlowPondedDepth_ft!*!PondedLength_ft!,If there is a value for [PondedLength_ft] then we should be able to get a volume of the ponded area by multiplying the W x D x L
+VelocityCalcBy IS NOT NULL,,VelocityCalcBy,,"!VelocityCalcBy!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 leaf_float_flow_velocity IS NOT NULL,,FlowVelocity_ft_sec,,!leaf_float_flow_velocity!,We want to calculate the [FlowVelocity_ft]_sec field so that it equals either the [leaf_float_flow_velocity] or the [flow_meter_flow_velocity].  Whichever method was used.
 flow_meter_flow_velocity IS NOT NULL,,FlowVelocity_ft_sec,,!flow_meter_flow_velocity!,We want to calculate the [FlowVelocity_ft]_sec field so that it equals either the [leaf_float_flow_velocity] or the [flow_meter_flow_velocity].  Whichever method was used.
 leaf_float_flow_rate IS NOT NULL,,EstFlowRate,,!leaf_float_flow_rate!,We want to calculate the [EstFlowRate] field so that it equals either the [leaf_float_flow_rate] or the [flow_meter_flow_rate].  Whichever method was used.
 flow_meter_flow_rate IS NOT NULL,,EstFlowRate,,!flow_meter_flow_rate!,We want to calculate the [EstFlowRate] field so that it equals either the [leaf_float_flow_rate] or the [flow_meter_flow_rate].  Whichever method was used.
 EstFlowRate IS NOT NULL,,EstFlowRateUnits,,cfs,If there is a value for [EstFlowRate] calculate [EstFlowRateUnits] so that it equals 'cfs'
+OverlandFlowEvid IS NOT NULL,,OverlandFlowEvid,,"!OverlandFlowEvid!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+StdComments IS NOT NULL,,StdComments,,"!StdComments!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 PicA_Taken = 'yes',,NumPicsTaken,,1,
 PicB_Taken = 'yes',,NumPicsTaken,,2,
 PicC_Taken = 'yes',,NumPicsTaken,,3,
