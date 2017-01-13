@@ -1,34 +1,36 @@
 Instructions for the user,,,,,
-SelectField Where,"<not used in script, only to help readability>",FieldToCalc,"<not used in script, only to help readability>","Calculation (Below must start or end with a '!' if you want to calculate a FIELD, otherwise it will be calculated as a STRING)",User Notes
+SelectField Where,"<not used in script, only for readability>",FieldToCalc,"<not used in script, only for readability>","Calculation (Below must start or end with a '!' if you want to calculate a FIELD, otherwise it will be calculated as a STRING)",User Notes
+Project IS NOT NULL,Then calculate field...,Project,...so that it performs this...,"!Project!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 Project = 'Bacteria TMDL Outfalls',Then calculate field...,SiteType,...so that it equals STRING...,MS4,All 'Bacteria TMDL Outfalls' projects should have [SiteType] equal to 'MS4'
 Project = 'Bacteria TMDL Outfalls',Then calculate field...,EventType,...so that it equals STRING...,Field Screening,All 'Bacteria TMDL Outfalls' projects should have [EventType] equal to 'Field Screening'
-OBJECTID IS NOT NULL,Then calculate field...,QC_Sample,,"!QC_Sample!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-FieldStaff = 'Other',,FieldStaff,...so that it equals FIELD...,!FieldStaff_other!,If [FieldStaff] = 'Other' then we should grab [FieldStaff_other] value and put it into the [FieldStaff] field.
-OBJECTID IS NOT NULL,,FieldStaff,,"!FieldStaff!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,,FlowStatus,,"!FlowStatus!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-Weather = 'Clear_Sunny',,Weather,,Clear/Sunny,Change the 'Clear_Sunny' status to be consistent with the Sharing Templetes 'Clear/Sunny' status
-OBJECTID IS NOT NULL,,Weather,,"!Weather!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,,LastRain,,"!LastRain!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,,Deposit,,"!Deposit!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,,Biology,,"!Biology!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,,Odor,,"!Odor!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,,Color,,"!Color!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,,Clarity,,"!Clarity!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,,Floatables,,"!Floatables!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-StationID_manually_entered IS NOT NULL,,StationID,...so that it equals FIELD...,!StationID_manually_entered!,If the StationID had to be manually entered then we should make [StationID] = [StationID_manually_entered]
-PondedLength_ft IS NOT NULL,,EstPondedVol_ft_3,,!FlowPondedWidth_ft!*!FlowPondedDepth_ft!*!PondedLength_ft!,If there is a value for [PondedLength_ft] then we should be able to get a volume of the ponded area by multiplying the W x D x L
-VelocityCalcBy IS NOT NULL,,VelocityCalcBy,,"!VelocityCalcBy!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-leaf_float_flow_velocity IS NOT NULL,,FlowVelocity_ft_sec,,!leaf_float_flow_velocity!,We want to calculate the [FlowVelocity_ft]_sec field so that it equals either the [leaf_float_flow_velocity] or the [flow_meter_flow_velocity].  Whichever method was used.
-flow_meter_flow_velocity IS NOT NULL,,FlowVelocity_ft_sec,,!flow_meter_flow_velocity!,We want to calculate the [FlowVelocity_ft]_sec field so that it equals either the [leaf_float_flow_velocity] or the [flow_meter_flow_velocity].  Whichever method was used.
-leaf_float_flow_rate IS NOT NULL,,EstFlowRate,,!leaf_float_flow_rate!,We want to calculate the [EstFlowRate] field so that it equals either the [leaf_float_flow_rate] or the [flow_meter_flow_rate].  Whichever method was used.
-flow_meter_flow_rate IS NOT NULL,,EstFlowRate,,!flow_meter_flow_rate!,We want to calculate the [EstFlowRate] field so that it equals either the [leaf_float_flow_rate] or the [flow_meter_flow_rate].  Whichever method was used.
-EstFlowRate IS NOT NULL,,EstFlowRateUnits,,cfs,If there is a value for [EstFlowRate] calculate [EstFlowRateUnits] so that it equals 'cfs'
-OverlandFlowEvid IS NOT NULL,,OverlandFlowEvid,,"!OverlandFlowEvid!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-StdComments IS NOT NULL,,StdComments,,"!StdComments!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-PicA_Taken = 'yes',,NumPicsTaken,,1,
-PicB_Taken = 'yes',,NumPicsTaken,,2,
-PicC_Taken = 'yes',,NumPicsTaken,,3,
-PicD_Taken = 'yes',,NumPicsTaken,,4,
-PicE_Taken = 'yes',,NumPicsTaken,,5,
-PicF_Taken = 'yes',,NumPicsTaken,,6,
-PicG_Taken = 'yes',,NumPicsTaken,,7,
+StationID_manually_entered IS NOT NULL,Then calculate field...,StationID,...so that it equals FIELD...,!StationID_manually_entered!,If the StationID had to be manually entered then we should make [StationID] = [StationID_manually_entered]
+OBJECTID IS NOT NULL,Then calculate field...,QC_Sample,...so that it performs this...,"!QC_Sample!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+FieldStaff = 'Other',Then calculate field...,FieldStaff,...so that it equals FIELD...,!FieldStaff_other!,If [FieldStaff] = 'Other' then we should grab [FieldStaff_other] value and put it into the [FieldStaff] field.
+OBJECTID IS NOT NULL,Then calculate field...,FieldStaff,...so that it performs this...,"!FieldStaff!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,Then calculate field...,FlowStatus,...so that it performs this...,"!FlowStatus!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+Weather = 'Clear_Sunny',Then calculate field...,Weather,...so that it equals STRING...,Clear/Sunny,Change the 'Clear_Sunny' status to be consistent with the Sharing Templetes 'Clear/Sunny' status
+OBJECTID IS NOT NULL,Then calculate field...,Weather,...so that it performs this...,"!Weather!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,Then calculate field...,LastRain,...so that it performs this...,"!LastRain!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,Then calculate field...,Deposit,...so that it performs this...,"!Deposit!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,Then calculate field...,Biology,...so that it performs this...,"!Biology!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,Then calculate field...,Odor,...so that it performs this...,"!Odor!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,Then calculate field...,Color,...so that it performs this...,"!Color!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,Then calculate field...,Clarity,...so that it performs this...,"!Clarity!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+OBJECTID IS NOT NULL,Then calculate field...,Floatables,...so that it performs this...,"!Floatables!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+PondedLength_ft IS NOT NULL,Then calculate field...,EstPondedVol_ft_3,...so that it equals CALC...,!FlowPondedWidth_ft!*!FlowPondedDepth_ft!*!PondedLength_ft!,If there is a value for [PondedLength_ft] then we should be able to get a volume of the ponded area by multiplying the W x D x L
+VelocityCalcBy IS NOT NULL,Then calculate field...,VelocityCalcBy,...so that it performs this...,"!VelocityCalcBy!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+leaf_float_flow_velocity IS NOT NULL,Then calculate field...,FlowVelocity_ft_sec,...so that it equals FIELD...,!leaf_float_flow_velocity!,We want to calculate the [FlowVelocity_ft]_sec field so that it equals either the [leaf_float_flow_velocity] or the [flow_meter_flow_velocity].  Whichever method was used.
+flow_meter_flow_velocity IS NOT NULL,Then calculate field...,FlowVelocity_ft_sec,...so that it equals FIELD...,!flow_meter_flow_velocity!,We want to calculate the [FlowVelocity_ft]_sec field so that it equals either the [leaf_float_flow_velocity] or the [flow_meter_flow_velocity].  Whichever method was used.
+leaf_float_flow_rate IS NOT NULL,Then calculate field...,EstFlowRate,...so that it equals FIELD...,!leaf_float_flow_rate!,We want to calculate the [EstFlowRate] field so that it equals either the [leaf_float_flow_rate] or the [flow_meter_flow_rate].  Whichever method was used.
+flow_meter_flow_rate IS NOT NULL,Then calculate field...,EstFlowRate,...so that it equals FIELD...,!flow_meter_flow_rate!,We want to calculate the [EstFlowRate] field so that it equals either the [leaf_float_flow_rate] or the [flow_meter_flow_rate].  Whichever method was used.
+EstFlowRate IS NOT NULL,Then calculate field...,EstFlowRateUnits,...so that it equals STRING...,cfs,If there is a value for [EstFlowRate] calculate [EstFlowRateUnits] so that it equals 'cfs'
+OverlandFlowEvid IS NOT NULL,Then calculate field...,OverlandFlowEvid,...so that it performs this...,"!OverlandFlowEvid!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+StdComments IS NOT NULL,Then calculate field...,StdComments,...so that it performs this...,"!StdComments!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+StdComments IS NOT NULL,Then calculate field...,StdComments,...so that it performs this...,"!StdComments!.replace("","", "".  "")",Replace the underscore with a space to make the field look 'neater'.
+PicA_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,1,Calculate the number of pictures taken
+PicB_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,2,Calculate the number of pictures taken
+PicC_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,3,Calculate the number of pictures taken
+PicD_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,4,Calculate the number of pictures taken
+PicE_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,5,Calculate the number of pictures taken
+PicF_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,6,Calculate the number of pictures taken
+PicG_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,7,Calculate the number of pictures taken
