@@ -15,7 +15,6 @@ OBJECTID IS NOT NULL,,Odor,,"!Odor!.replace(""_"", "" "")",Replace the underscor
 OBJECTID IS NOT NULL,,Color,,"!Color!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 OBJECTID IS NOT NULL,,Clarity,,"!Clarity!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 OBJECTID IS NOT NULL,,Floatables,,"!Floatables!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-,,,,,
 StationID_manually_entered IS NOT NULL,,StationID,...so that it equals FIELD...,!StationID_manually_entered!,If the StationID had to be manually entered then we should make [StationID] = [StationID_manually_entered]
 PondedLength_ft IS NOT NULL,,EstPondedVol_ft_3,,!FlowPondedWidth_ft!*!FlowPondedDepth_ft!*!PondedLength_ft!,If there is a value for [PondedLength_ft] then we should be able to get a volume of the ponded area by multiplying the W x D x L
 VelocityCalcBy IS NOT NULL,,VelocityCalcBy,,"!VelocityCalcBy!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
