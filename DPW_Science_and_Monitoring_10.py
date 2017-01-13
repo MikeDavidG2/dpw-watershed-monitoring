@@ -64,7 +64,7 @@ def main():
     run_Email_Results      = False
 
     # Control CSV files
-    control_CSVs           = r'U:\grue\Scripts\Testing_or_Developing\TestingReadingFromExcel\Control_CSVs'
+    control_CSVs           = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring'
     last_data_retrival_csv = control_CSVs + '\\LastDataRetrival.csv'
     add_fields_csv         = control_CSVs + '\\FieldsToAdd.csv'
     calc_fields_csv        = control_CSVs + '\\FieldsToCalculate.csv'
