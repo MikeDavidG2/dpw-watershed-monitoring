@@ -64,7 +64,7 @@ def main():
     run_Email_Results      = False
 
     # Control CSV files
-    control_CSVs           = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring'
+    control_CSVs           = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Master'
     last_data_retrival_csv = control_CSVs + '\\LastDataRetrival.csv'
     add_fields_csv         = control_CSVs + '\\FieldsToAdd.csv'
     calc_fields_csv        = control_CSVs + '\\FieldsToCalculate.csv'
@@ -72,7 +72,7 @@ def main():
     map_fields_csv         = control_CSVs + '\\MapFields.csv'
 
     # Token and AGOL variables
-    cfgFile     = r"U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\accounts.txt"
+    cfgFile     = r"U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Master\accounts.txt"
     gtURL       = "https://www.arcgis.com/sharing/rest/generateToken"
     AGOfields   = '*'
 
@@ -80,11 +80,12 @@ def main():
     ### Below is the service for the Test Photos service
     ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_e0c08b861bae4df895e6567c6199412f/FeatureServer'
     ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_24373c124c564417a03275b88b098b32/FeatureServer'
-    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_114e8ccf829743ceade2988eb7f06bc2/FeatureServer'
+    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_114e8ccf829743ceade2988eb7f06bc2/FeatureServer'
+    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_823cc8797c2f4122833b5f20471ec0fb/FeatureServer'
     queryURL    =  serviceURL + '/0/query'
     gaURL       =  serviceURL + '/CreateReplica'
 
-    # Working locations and names
+    # Working database locations and names
     wkgFolder   = r"U:\grue\Scripts\Testing_or_Developing\data"
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
     origFC      = "DPW_Data_orig"
@@ -92,7 +93,7 @@ def main():
         # There is no wkgPath variable yet since we will append the date and
         # time to it in a function below
 
-    # Production locations and names
+    # Production database locations and names
     prodFolder  = wkgFolder
     prodGDB     = "DPW_Science_and_Monitoring_prod.gdb"
     prodFC      = 'DPW_Data_prod'
