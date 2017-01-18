@@ -4,6 +4,7 @@ Project IS NOT NULL,Then calculate field...,Project,...so that it performs this.
 Project = 'Bacteria TMDL Outfalls',Then calculate field...,SiteType,...so that it equals STRING...,MS4,All 'Bacteria TMDL Outfalls' projects should have [SiteType] equal to 'MS4'
 Project = 'Bacteria TMDL Outfalls',Then calculate field...,EventType,...so that it equals STRING...,Field Screening,All 'Bacteria TMDL Outfalls' projects should have [EventType] equal to 'Field Screening'
 StationID_manually_entered IS NOT NULL,Then calculate field...,StationID,...so that it equals FIELD...,!StationID_manually_entered!,If the StationID had to be manually entered then we should make [StationID] = [StationID_manually_entered]
+CreationDate IS NOT NULL,Then calculate field...,CreationDateString,...so that it equals FIELD...,!CreationDate!,
 OBJECTID IS NOT NULL,Then calculate field...,QC_Sample,...so that it performs this...,"!QC_Sample!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 FieldStaff = 'Other',Then calculate field...,FieldStaff,...so that it equals FIELD...,!FieldStaff_other!,If [FieldStaff] = 'Other' then we should grab [FieldStaff_other] value and put it into the [FieldStaff] field.
 OBJECTID IS NOT NULL,Then calculate field...,FieldStaff,...so that it performs this...,"!FieldStaff!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.

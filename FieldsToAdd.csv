@@ -7,3 +7,4 @@ FlowVelocity_ft_sec,Double,,
 EstFlowRate,Double,,
 EstFlowRateUnits,String,3,
 NumPicsTaken,Short,,
+CreationDateString,String,30,This is added so we can get a String version of the 'CreationDate' field (Which is a Date field). 
