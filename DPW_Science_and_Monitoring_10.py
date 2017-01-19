@@ -779,6 +779,8 @@ def __Calculate_Fields(wkg_data, calc_fields_csv):
             # Test to see if the field is one of the two special TIME FIELDS
             # that need a special calculation that is not available in the CSV
             if (field == 'SampleDate' or field == 'SampleTime'):
+                print ('      From selected features, calculating field: %s, so that it equals SUBSET of CreationDateString\n'
+                    % (field, f_expression))
 
                 # Create an Update Cursor to loop through values
                 with arcpy.da.UpdateCursor(wkg_data, ['CreationDateString', 'SampleDate', 'SampleTime']) as cursor:
@@ -801,9 +803,9 @@ def __Calculate_Fields(wkg_data, calc_fields_csv):
                         # Update the rows with the correct formatting
                         # row[1] is 'SampleDate' and row[2] is 'SampleTime'
                         # as defined when creating the UpdateCursor above
-                        print 'Sample Date: ' + sample_date[0]
+                        ##print 'Sample Date: ' + sample_date[0]
                         row[1] = sample_date[0]
-                        print 'Survey Time: ' + sample_time[0]
+                        ##print 'Survey Time: ' + sample_time[0]
                         row[2] = sample_time[0]
 
                         # Update the cursor with the updated list
@@ -968,7 +970,8 @@ def Get_Field_Mappings(orig_table, prod_table, map_fields_csv):
         del fm
         counter += 1
 
-    print '  Field Mappings:\n  %s  \n\nSuccessfully Got Field Mappings\n' % fms
+    ##print '  Field Mappings:\n  %s' % fms
+    print '\n\nSuccessfully Got Field Mappings\n'
     return fms
 
 #-------------------------------------------------------------------------------
