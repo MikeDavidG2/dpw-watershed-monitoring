@@ -8,7 +8,7 @@ CreationDate IS NOT NULL,Then calculate field...,CreationDateString,...so that i
 CreationDateString IS NOT NULL,Then calculate field...,SampleDate,...so that it is a SUBEST OF CreationDateString,***SampleDate field calculated in script***,This calculation is too complicated to be entered in this spreadsheet.  See the FUNCTION 'Calculate_Fields' in the script.
 CreationDateString IS NOT NULL,Then calculate field...,SampleTime,...so that it is a SUBEST OF CreationDateString,***SampleTime field calculated in script***,This calculation is too complicated to be entered in this spreadsheet.  See the FUNCTION 'Calculate_Fields' in the script.
 OBJECTID IS NOT NULL,Then calculate field...,QC_Sample,...so that it performs this...,"!QC_Sample!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-FieldStaff = 'Other',Then calculate field...,FieldStaff,...so that it equals FIELD...,!FieldStaff_other!,If [FieldStaff] = 'Other' then we should grab [FieldStaff_other] value and put it into the [FieldStaff] field.
+FieldStaff = 'Other',Then calculate field...,FieldStaff,...so that it equals FIELD...,!field_staff_other!,If [FieldStaff] = 'Other' then we should grab [FieldStaff_other] value and put it into the [FieldStaff] field.
 OBJECTID IS NOT NULL,Then calculate field...,FieldStaff,...so that it performs this...,"!FieldStaff!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 OBJECTID IS NOT NULL,Then calculate field...,FlowStatus,...so that it performs this...,"!FlowStatus!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 Weather = 'Clear_Sunny',Then calculate field...,Weather,...so that it equals STRING...,Clear/Sunny,Change the 'Clear_Sunny' status to be consistent with the Sharing Templetes 'Clear/Sunny' status
@@ -29,7 +29,7 @@ flow_meter_flow_rate IS NOT NULL,Then calculate field...,EstFlowRate,...so that 
 EstFlowRate IS NOT NULL,Then calculate field...,EstFlowRateUnits,...so that it equals STRING...,cfs,If there is a value for [EstFlowRate] calculate [EstFlowRateUnits] so that it equals 'cfs'
 OverlandFlowEvid IS NOT NULL,Then calculate field...,OverlandFlowEvid,...so that it performs this...,"!OverlandFlowEvid!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 StdComments IS NOT NULL,Then calculate field...,StdComments,...so that it performs this...,"!StdComments!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-StdComments IS NOT NULL,Then calculate field...,StdComments,...so that it performs this...,"!StdComments!.replace("","", "".  "")",Replace the underscore with a space to make the field look 'neater'.
+StdComments IS NOT NULL,Then calculate field...,StdComments,...so that it performs this...,"!StdComments!.replace("","", "", "")",Replace the comma with a comman and a space to make the field look 'neater'.
 PicA_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,1,Calculate the number of pictures taken
 PicB_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,2,Calculate the number of pictures taken
 PicC_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,3,Calculate the number of pictures taken
