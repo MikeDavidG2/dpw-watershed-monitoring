@@ -4,7 +4,7 @@ SiteType,String,10,
 EventType,String,20,
 CreationDateString,String,30,This is added so we can get a String version of the 'CreationDate' field (Which is a Date field). 
 SampleDate,String,30,
-SurveyTime,String,30,
+SampleTime,String,30,
 EstPondedVol_ft_3,Double,,No need for a length for a numerical field
 FlowVelocity_ft_sec,Double,,
 EstFlowRate,Double,,
