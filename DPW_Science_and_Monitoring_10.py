@@ -764,7 +764,7 @@ def __Calculate_Fields(wkg_data, calc_fields_csv):
         arcpy.SelectLayerByAttribute_management(in_layer_or_view, selection_type, my_where_clause)
 
         #-----------------------------------------------------------------------
-        #              If features selected, perform the calculation
+        #         If features selected, perform on of the following calculations
 
         countOfSelected = arcpy.GetCount_management(in_layer_or_view)
         count = int(countOfSelected.getOutput(0))
@@ -775,9 +775,44 @@ def __Calculate_Fields(wkg_data, calc_fields_csv):
             field      = calc_fields[f_counter]
             calc       = calcs[f_counter]
 
+            #-------------------------------------------------------------------
+            # Test to see if the field is one of the two special TIME FIELDS
+            # that need a special calculation that is not available in the CSV
+            if (field == 'SampleDate' or field == 'SampleTime'):
+
+                # Create an Update Cursor to loop through values
+                with arcpy.da.UpdateCursor(wkg_data, ['CreationDateString', 'SampleDate', 'SampleTime']) as cursor:
+
+                    for row in cursor:
+
+                        # Turn the string obtained from the field into a datetime object
+                        UTC_dt_obj = datetime.datetime.strptime(row[0], '%m/%d/%Y %I:%M:%S %p')
+
+                        # Subtract 8 hours from the UTC (Universal Time Coordinated)
+                        # to get PCT
+                        PCT_offset = -8
+                        t_delta = datetime.timedelta(hours = PCT_offset)
+                        PCT_dt_obj = UTC_dt_obj + t_delta
+
+                        # Set the format for the date and time
+                        sample_date = [PCT_dt_obj.strftime('%m/%d/%Y')]
+                        sample_time = [PCT_dt_obj.strftime('%H:%M')]
+
+                        # Update the rows with the correct formatting
+                        # row[1] is 'SampleDate' and row[2] is 'SampleTime'
+                        # as defined when creating the UpdateCursor above
+                        print 'Sample Date: ' + sample_date[0]
+                        row[1] = sample_date[0]
+                        print 'Survey Time: ' + sample_time[0]
+                        row[2] = sample_time[0]
+
+                        # Update the cursor with the updated list
+                        cursor.updateRow(row)
+
+            #-------------------------------------------------------------------
             # Test if the user wants to calculate the field being equal to
             # ANOTHER FIELD by seeing if the calculation starts or ends with an '!'
-            if (calc.startswith('!') or calc.endswith('!')):
+            elif (calc.startswith('!') or calc.endswith('!')):
                 f_expression = calc
 
                 try:
@@ -791,6 +826,7 @@ def __Calculate_Fields(wkg_data, calc_fields_csv):
                     print '*** WARNING! Field: %s was not able to be calculated.***' % field
                     print str(e)
 
+            #-------------------------------------------------------------------
             # If calc does not start or end with a '!', it is probably because the
             # user wanted to calculate the field being equal to a STRING
             else:
