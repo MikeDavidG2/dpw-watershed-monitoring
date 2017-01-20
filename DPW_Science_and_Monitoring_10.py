@@ -779,8 +779,7 @@ def __Calculate_Fields(wkg_data, calc_fields_csv):
             # Test to see if the field is one of the two special TIME FIELDS
             # that need a special calculation that is not available in the CSV
             if (field == 'SampleDate' or field == 'SampleTime'):
-                print ('      From selected features, calculating field: %s, so that it equals SUBSET of CreationDateString\n'
-                    % (field, f_expression))
+                print ('      From selected features, calculating field: %s, so that it equals SUBSET of CreationDateString\n' % (field))
 
                 # Create an Update Cursor to loop through values
                 with arcpy.da.UpdateCursor(wkg_data, ['CreationDateString', 'SampleDate', 'SampleTime']) as cursor:
@@ -1022,6 +1021,11 @@ def Error_Handler(func_w_err, e):
     #                                Help comments
     # TODO: have the help comments be a part of a list so that I can print out a list of help comments.
     help_comment = ''
+
+    # Help comments for any function
+    if (e_str == 'not all arguments converted during string formatting'):
+        help_comment = 'There may be a problem with a print statement.  Is it formatted correctly?'
+
 
     # Help comments for 'Get_Token' function
 
