@@ -778,37 +778,41 @@ def __Calculate_Fields(wkg_data, calc_fields_csv):
             #-------------------------------------------------------------------
             # Test to see if the field is one of the two special TIME FIELDS
             # that need a special calculation that is not available in the CSV
-            if (field == 'SampleDate' or field == 'SampleTime'):
+            if (field == 'SurveyDate' or field == 'SurveyTime'):
                 print ('      From selected features, calculating field: %s, so that it equals SUBSET of CreationDateString\n' % (field))
 
                 # Create an Update Cursor to loop through values
-                with arcpy.da.UpdateCursor(wkg_data, ['CreationDateString', 'SampleDate', 'SampleTime']) as cursor:
+                with arcpy.da.UpdateCursor(wkg_data, ['CreationDateString', 'SurveyDate', 'SurveyTime']) as cursor:
 
                     for row in cursor:
+                        try:
+                            # Turn the string obtained from the field into a datetime object
+                            UTC_dt_obj = datetime.datetime.strptime(row[0], '%m/%d/%Y %I:%M:%S %p')
 
-                        # Turn the string obtained from the field into a datetime object
-                        UTC_dt_obj = datetime.datetime.strptime(row[0], '%m/%d/%Y %I:%M:%S %p')
+                            # Subtract 8 hours from the UTC (Universal Time Coordinated)
+                            # to get PCT
+                            PCT_offset = -8
+                            t_delta = datetime.timedelta(hours = PCT_offset)
+                            PCT_dt_obj = UTC_dt_obj + t_delta
 
-                        # Subtract 8 hours from the UTC (Universal Time Coordinated)
-                        # to get PCT
-                        PCT_offset = -8
-                        t_delta = datetime.timedelta(hours = PCT_offset)
-                        PCT_dt_obj = UTC_dt_obj + t_delta
+                            # Set the format for the date and time
+                            survey_date = [PCT_dt_obj.strftime('%m/%d/%Y')]
+                            survey_time = [PCT_dt_obj.strftime('%H:%M')]
 
-                        # Set the format for the date and time
-                        sample_date = [PCT_dt_obj.strftime('%m/%d/%Y')]
-                        sample_time = [PCT_dt_obj.strftime('%H:%M')]
+                            # Update the rows with the correct formatting
+                            # row[1] is 'SampleDate' and row[2] is 'SampleTime'
+                            # as defined when creating the UpdateCursor above
+                            ##print 'Survey Date: ' + survey_date[0]
+                            row[1] = survey_date[0]
+                            ##print 'Survey Time: ' + survey_time[0]
+                            row[2] = survey_time[0]
 
-                        # Update the rows with the correct formatting
-                        # row[1] is 'SampleDate' and row[2] is 'SampleTime'
-                        # as defined when creating the UpdateCursor above
-                        ##print 'Sample Date: ' + sample_date[0]
-                        row[1] = sample_date[0]
-                        ##print 'Survey Time: ' + sample_time[0]
-                        row[2] = sample_time[0]
+                            # Update the cursor with the updated list
+                            cursor.updateRow(row)
 
-                        # Update the cursor with the updated list
-                        cursor.updateRow(row)
+                        except Exception as e:
+                            print '*** WARNING! Field: %s was not able to be calculated.***' % field
+                            print str(e)
 
             #-------------------------------------------------------------------
             # Test if the user wants to calculate the field being equal to
