@@ -3,10 +3,10 @@ field_name,field_type,field_length,User Notes
 SiteType,String,10,
 EventType,String,20,
 CreationDateString,String,30,This is added so we can get a String version of the 'CreationDate' field (Which is a Date field). 
-SampleDate,String,30,
-SampleTime,String,30,
-EstPondedVol_ft_3,Double,,No need for a length for a numerical field
-FlowVelocity_ft_sec,Double,,
-EstFlowRate,Double,,
+SurveyDate,String,30,
+SurveyTime,String,30,
+EstPondedVol_ft_3,Double,8,"No need for a length for a numerical field, added one for consistency sake."
+FlowVelocity_ft_sec,Double,8,
+EstFlowRate,Double,8,
 EstFlowRateUnits,String,3,
-NumPicsTaken,Short,,
+NumPicsTaken,Short,8,
