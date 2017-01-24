@@ -9,11 +9,11 @@
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 # TODO: setup emailing service
-# TODO: setup processing data
 # TODO: figure out how to run the get attachments function on a different schedule than the get data function.
 #       Actually I could use the Get_DateAndTime function to return a day and I
 #       could then have an if/else statement to activate the get attachments
 #       function if the day == 01 (or something like that)
+
 # Import modules
 
 import arcpy
@@ -55,15 +55,15 @@ def main():
     run_Get_DateAndTime    = True
     run_Get_Last_Data_Ret  = True
     run_Get_Token          = True
-    run_Get_Attachments    = False
-    run_Get_Data           = True
+    run_Get_Attachments    = True
+    run_Get_Data           = False
     run_Set_Last_Data_Ret  = False
-    run_Copy_Orig_Data     = True
-    run_Add_Fields         = True
-    run_Calculate_Fields   = True
+    run_Copy_Orig_Data     = False
+    run_Add_Fields         = False
+    run_Calculate_Fields   = False
     run_Delete_Fields      = False
-    run_Get_Field_Mappings = True
-    run_Append_Data        = True
+    run_Get_Field_Mappings = False
+    run_Append_Data        = False
     run_Email_Results      = False
 
     # Control CSV files
@@ -414,9 +414,15 @@ def Get_Attachments(AGOfields_, token_, gaURL_, wkgFolder_, origFC_, dt_to_appen
 
     #---------------------------------------------------------------------------
     #                       Save the attachments
-    # Make the gaFolder (to hold attachments).
-    gaFolder = wkgFolder_ + '\\TMDL_Attach_%s' % dt_to_append
-    os.makedirs(gaFolder)
+    gaFolder = wkgFolder_ + '\\Sci_Monitoring_pics'
+    ## Uncomment below if you want to create a new folder each time the attachments are pulled
+    ##gaFolder = wkgFolder_ + '\\Sci_Monitoring_pics__%s' % dt_to_append
+
+    # Make the gaFolder (to hold attachments) if it doesn't exist.
+    if os.path.exists(gaFolder):
+        pass
+    else:
+        os.makedirs(gaFolder)
 
     # Open the JSON file
     with open (jsonFilePath) as data_file:
