@@ -56,14 +56,14 @@ def main():
     run_Get_Last_Data_Ret  = True
     run_Get_Token          = True
     run_Get_Attachments    = True
-    run_Get_Data           = False
+    run_Get_Data           = True
     run_Set_Last_Data_Ret  = False
-    run_Copy_Orig_Data     = False
-    run_Add_Fields         = False
-    run_Calculate_Fields   = False
+    run_Copy_Orig_Data     = True
+    run_Add_Fields         = True
+    run_Calculate_Fields   = True
     run_Delete_Fields      = False
-    run_Get_Field_Mappings = False
-    run_Append_Data        = False
+    run_Get_Field_Mappings = True
+    run_Append_Data        = True
     run_Email_Results      = False
 
     # Control CSV files
@@ -87,7 +87,8 @@ def main():
     gaURL       =  serviceURL + '/CreateReplica'
 
     # Working database locations and names
-    wkgFolder   = r"U:\grue\Scripts\Testing_or_Developing\data"
+    ##wkgFolder   = r"U:\grue\Scripts\Testing_or_Developing\data"
+    wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Master\Data'
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
     origFC      = "DPW_Data_orig"
     wkgFC       = 'DPW_Data_wkg'
@@ -101,7 +102,7 @@ def main():
     prodPath    = prodFolder + '\\' + prodGDB + '\\' + prodFC
 
     # Misc variables
-    fileLog = r'U:\grue\Scripts\Testing_or_Developing\Logs\DPW_Science_and_Monitoring.log'
+    fileLog = wkgFolder + r'\Logs\DPW_Science_and_Monitoring.log'
     errorSTATUS = 0
     #---------------------------------------------------------------------------
     # Set up the logger
@@ -467,6 +468,7 @@ def Get_Attachments(AGOfields_, token_, gaURL_, wkgFolder_, origFC_, dt_to_appen
             # The path does exist, so go through the dupList until a 'new' path is found
             i += 1
             attachPath = gaFolder + '\\' + attachName + '_' + dupList[i] + '.jpg'
+
             # Test the new path to see if it exists.  If it doesn't exist, break out
             # of the while loop to save the image to that new path
             if not os.path.exists(attachPath):
