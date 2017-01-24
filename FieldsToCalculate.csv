@@ -1,5 +1,5 @@
 Instructions for the user,,,,,
-SelectField Where,"<not used in script, only for readability>",FieldToCalc,"<not used in script, only for readability>","Calculation (Below must start or end with a '!' if you want to calculate a FIELD, otherwise it will be calculated as a STRING)",User Notes
+SelectField Where,<Column not used in script>,FieldToCalc,<Column not used in script>,"Calculation (Below must start or end with a '!' if you want to calculate a FIELD, otherwise it will be calculated as a STRING)",User Notes
 Project IS NOT NULL,Then calculate field...,Project,...so that it performs this...,"!Project!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 Project = 'Bacteria TMDL Outfalls',Then calculate field...,SiteType,...so that it equals STRING...,MS4,All 'Bacteria TMDL Outfalls' projects should have [SiteType] equal to 'MS4'
 Project = 'Bacteria TMDL Outfalls',Then calculate field...,EventType,...so that it equals STRING...,Field Screening,All 'Bacteria TMDL Outfalls' projects should have [EventType] equal to 'Field Screening'
@@ -7,21 +7,26 @@ StationID_manually_entered IS NOT NULL,Then calculate field...,StationID,...so t
 CreationDate IS NOT NULL,Then calculate field...,CreationDateString,...so that it equals FIELD...,!CreationDate!,Calculate the [CreationDate] field from a 'Date' type to a new 'String' type so we can calculate [SampleDate] and [SampleTime]
 CreationDateString IS NOT NULL,Then calculate field...,SurveyDate,...so that it is a SUBEST OF CreationDateString,***SurveyDate field calculated in script***,This calculation is too complicated to be entered in this spreadsheet.  See the FUNCTION 'Calculate_Fields' in the script.
 CreationDateString IS NOT NULL,Then calculate field...,SurveyTime,...so that it is a SUBEST OF CreationDateString,***SurveyTime field calculated in script***,This calculation is too complicated to be entered in this spreadsheet.  See the FUNCTION 'Calculate_Fields' in the script.
-OBJECTID IS NOT NULL,Then calculate field...,QC_Sample,...so that it performs this...,"!QC_Sample!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+QC_Sample IS NOT NULL,Then calculate field...,QC_Sample,...so that it performs this...,"!QC_Sample!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 FieldStaff = 'Other',Then calculate field...,FieldStaff,...so that it equals FIELD...,!field_staff_other!,If [FieldStaff] = 'Other' then we should grab [FieldStaff_other] value and put it into the [FieldStaff] field.
-OBJECTID IS NOT NULL,Then calculate field...,FieldStaff,...so that it performs this...,"!FieldStaff!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,Then calculate field...,FlowStatus,...so that it performs this...,"!FlowStatus!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+FieldStaff IS NOT NULL,Then calculate field...,FieldStaff,...so that it performs this...,"!FieldStaff!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+FieldStaff IS NOT NULL,Then calculate field...,FieldStaff,...so that it performs this...,"!FieldStaff!.replace("","", "", "")",Replace the comma with a comman and a space to make the field look 'neater'.
+FlowStatus IS NOT NULL,Then calculate field...,FlowStatus,...so that it performs this...,"!FlowStatus!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 Weather = 'Clear_Sunny',Then calculate field...,Weather,...so that it equals STRING...,Clear/Sunny,Change the 'Clear_Sunny' status to be consistent with the Sharing Templetes 'Clear/Sunny' status
-OBJECTID IS NOT NULL,Then calculate field...,Weather,...so that it performs this...,"!Weather!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,Then calculate field...,LastRain,...so that it performs this...,"!LastRain!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,Then calculate field...,Deposit,...so that it performs this...,"!Deposit!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,Then calculate field...,Biology,...so that it performs this...,"!Biology!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,Then calculate field...,Odor,...so that it performs this...,"!Odor!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,Then calculate field...,Color,...so that it performs this...,"!Color!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,Then calculate field...,Clarity,...so that it performs this...,"!Clarity!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
-OBJECTID IS NOT NULL,Then calculate field...,Floatables,...so that it performs this...,"!Floatables!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+Weather IS NOT NULL,Then calculate field...,Weather,...so that it performs this...,"!Weather!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+LastRain IS NOT NULL,Then calculate field...,LastRain,...so that it performs this...,"!LastRain!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+Deposit IS NOT NULL,Then calculate field...,Deposit,...so that it performs this...,"!Deposit!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+Deposit IS NOT NULL,Then calculate field...,Deposit,...so that it performs this...,"!Deposit!.replace("","", "", "")",Replace the comma with a comman and a space to make the field look 'neater'.
+Biology IS NOT NULL,Then calculate field...,Biology,...so that it performs this...,"!Biology!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+Biology IS NOT NULL,Then calculate field...,Biology,...so that it performs this...,"!Biology!.replace("","", "", "")",Replace the comma with a comman and a space to make the field look 'neater'.
+Odor IS NOT NULL,Then calculate field...,Odor,...so that it performs this...,"!Odor!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+,Then calculate field...,Odor,...so that it performs this...,"!Odor!.replace("","", "", "")",Replace the comma with a comman and a space to make the field look 'neater'.
+Color IS NOT NULL,Then calculate field...,Color,...so that it performs this...,"!Color!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+Clarity IS NOT NULL,Then calculate field...,Clarity,...so that it performs this...,"!Clarity!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+Floatables IS NOT NULL,Then calculate field...,Floatables,...so that it performs this...,"!Floatables!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+,Then calculate field...,Floatables,...so that it performs this...,"!Floatables!.replace("","", "", "")",Replace the comma with a comman and a space to make the field look 'neater'.
 PondedLength_ft IS NOT NULL,Then calculate field...,EstPondedVol_ft_3,...so that it equals CALC...,!FlowPondedWidth_ft!*!FlowPondedDepth_ft!*!PondedLength_ft!,If there is a value for [PondedLength_ft] then we should be able to get a volume of the ponded area by multiplying the W x D x L
-VelocityCalcBy IS NOT NULL,Then calculate field...,VelocityCalcBy,...so that it performs this...,"!VelocityCalcBy!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
+FlowRateCalcBy IS NOT NULL,Then calculate field...,FlowRateCalcBy,...so that it performs this...,"!FlowRateCalcBy!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 leaf_float_flow_velocity IS NOT NULL,Then calculate field...,FlowVelocity_ft_sec,...so that it equals FIELD...,!leaf_float_flow_velocity!,We want to calculate the [FlowVelocity_ft]_sec field so that it equals either the [leaf_float_flow_velocity] or the [flow_meter_flow_velocity].  Whichever method was used.
 flow_meter_flow_velocity IS NOT NULL,Then calculate field...,FlowVelocity_ft_sec,...so that it equals FIELD...,!flow_meter_flow_velocity!,We want to calculate the [FlowVelocity_ft]_sec field so that it equals either the [leaf_float_flow_velocity] or the [flow_meter_flow_velocity].  Whichever method was used.
 leaf_float_flow_rate IS NOT NULL,Then calculate field...,EstFlowRate,...so that it equals FIELD...,!leaf_float_flow_rate!,"We want to calculate the [EstFlowRate] field so that it equals either the [leaf_float_flow_rate] the [flow_meter_flow_rate], or the [bottle_fill_flow_rate].  Whichever method was used."
@@ -31,6 +36,7 @@ EstFlowRate IS NOT NULL,Then calculate field...,EstFlowRateUnits,...so that it e
 OverlandFlowEvid IS NOT NULL,Then calculate field...,OverlandFlowEvid,...so that it performs this...,"!OverlandFlowEvid!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 StdComments IS NOT NULL,Then calculate field...,StdComments,...so that it performs this...,"!StdComments!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 StdComments IS NOT NULL,Then calculate field...,StdComments,...so that it performs this...,"!StdComments!.replace("","", "", "")",Replace the comma with a comman and a space to make the field look 'neater'.
+PicA_Taken = 'No',Then calculate field...,NumPicsTaken,...so that it equals NUM...,0,If PicA_Taken = 'No' then there were no pictures taken.
 PicA_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,1,Calculate the number of pictures taken
 PicB_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,2,Calculate the number of pictures taken
 PicC_Taken = 'Yes',Then calculate field...,NumPicsTaken,...so that it equals NUM...,3,Calculate the number of pictures taken
