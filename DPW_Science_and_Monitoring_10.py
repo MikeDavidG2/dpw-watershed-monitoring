@@ -604,7 +604,6 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Copy_Orig_Data
 
-
 # TODO: rename this function Copy_Orig_Data and have it simply copy the original data to working data.  Remove the sub functions and have them full functions on their own
 
 def Process_Data(wkgFolder_, wkgGDB_, wkgFC_, origPath_, dt_to_append,
