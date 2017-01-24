@@ -79,12 +79,6 @@ def main():
     # Service URL that ends with .../FeatureServer
     ### Below is the service for the Test Photos service
     ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_e0c08b861bae4df895e6567c6199412f/FeatureServer'
-    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_24373c124c564417a03275b88b098b32/FeatureServer'
-    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_114e8ccf829743ceade2988eb7f06bc2/FeatureServer'
-    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_823cc8797c2f4122833b5f20471ec0fb/FeatureServer'
-    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_d6a5f0b58cc44d97af3d09961282ffc2/FeatureServer'
-    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_3648350fb9484c0db7a19e854e5133d6/FeatureServer'
-    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_266dbda53dd2401c8090e25b25eae10c/FeatureServer'
     serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_266dbda53dd2401c8090e25b25eae10c/FeatureServer'
     queryURL    =  serviceURL + '/0/query'
     gaURL       =  serviceURL + '/CreateReplica'
@@ -94,8 +88,8 @@ def main():
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
     origFC      = "DPW_Data_orig"
     wkgFC       = 'DPW_Data_wkg'
-        # There is no wkgPath variable yet since we will append the date and
-        # time to it in a function below
+      # There is no wkgPath variable yet since we will append the date and
+      # time to it in a function below
 
     # Production database locations and names
     prodFolder  = wkgFolder
@@ -608,10 +602,8 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#                           FUNCTION:  Process Data
+#                           FUNCTION:  Copy_Orig_Data
 
-# TODO: find a way to delete accidental multiple sent surveys.  This happens if
-#    the monitor hits 'Continue this survey' while they are editing the survey.
 
 # TODO: rename this function Copy_Orig_Data and have it simply copy the original data to working data.  Remove the sub functions and have them full functions on their own
 
