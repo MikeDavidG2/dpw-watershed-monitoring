@@ -58,7 +58,10 @@ def main():
     run_Get_Attachments    = False
     run_Get_Data           = True
     run_Set_Last_Data_Ret  = False
-    run_Process_Data       = True
+    run_Copy_Orig_Data     = True
+    run_Add_Fields         = True
+    run_Calculate_Fields   = True
+    run_Delete_Fields      = False
     run_Get_Field_Mappings = True
     run_Append_Data        = True
     run_Email_Results      = False
@@ -175,15 +178,42 @@ def main():
         except Exception as e:
             errorSTATUS = Error_Handler('Set_Last_Data_Ret', e)
     #---------------------------------------------------------------------------
-    # PROCESS the data
-    if (errorSTATUS == 0 and run_Process_Data):
+    # COPY the original data to a working table
+    if (errorSTATUS == 0 and run_Copy_Orig_Data):
         try:
-            wkgPath = Process_Data(wkgFolder, wkgGDB, wkgFC, origPath,
+            wkgPath = Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath,
                                   dt_to_append, add_fields_csv, calc_fields_csv,
                                   delete_fields_csv)
 
         except Exception as e:
-            errorSTATUS = Error_Handler('Process_Data', e)
+            errorSTATUS = Error_Handler('Copy_Orig_Data', e)
+
+    #---------------------------------------------------------------------------
+    # ADD FIELDS to the working table
+    if (errorSTATUS == 0 and run_Add_Fields):
+        try:
+            Add_Fields(wkgPath, add_fields_csv)
+
+        except Exception as e:
+            errorSTATUS = Error_Handler('Add_Fields', e)
+
+    #---------------------------------------------------------------------------
+    # CALCULATE FIELDS in the working table
+    if (errorSTATUS == 0 and run_Calculate_Fields):
+        try:
+            Calculate_Fields(wkgPath, calc_fields_csv)
+
+        except Exception as e:
+            errorSTATUS = Error_Handler('Calculate_Fields', e)
+
+    #---------------------------------------------------------------------------
+    # DELETE FIELDS from the working table
+    if (errorSTATUS == 0 and run_Delete_Fields):
+        try:
+            Delete_Fields(wkgPath, delete_fields_csv)
+
+        except Exception as e:
+            errorSTATUS = Error_Handler('Delete_Fields', e)
 
     #---------------------------------------------------------------------------
     # GET FIELD MAPPINGS
@@ -606,10 +636,10 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
 
 # TODO: rename this function Copy_Orig_Data and have it simply copy the original data to working data.  Remove the sub functions and have them full functions on their own
 
-def Process_Data(wkgFolder_, wkgGDB_, wkgFC_, origPath_, dt_to_append,
+def Copy_Orig_Data(wkgFolder_, wkgGDB_, wkgFC_, origPath_, dt_to_append,
                  add_fields_csv, calc_fields_csv, delete_fields_csv):
-    print 'Processing Data...'
-    logging.info('Processing Data...')
+    print 'Copying original data...'
+    logging.info('Copying original data...')
 
     #---------------------------------------------------------------------------
     # Copy the orig FC to a working TABLE to run processing on.
@@ -624,31 +654,20 @@ def Process_Data(wkgFolder_, wkgGDB_, wkgFC_, origPath_, dt_to_append,
     arcpy.CopyRows_management(in_features, out_feature_class)
 
     #---------------------------------------------------------------------------
-    # Below are sub functions that the Process_Data function calls
-    # Add Fields
-    __Add_Fields(wkgPath, add_fields_csv)
-
-    # Calculate fields
-    __Calculate_Fields(wkgPath, calc_fields_csv)
-
-    # Delete fields (may not need to use this function)
-    ##__Delete_Fields(wkgPath, delete_fields_csv)
-
-    #---------------------------------------------------------------------------
     # TODO: Create an Lat and Long column and calculate the geometry of the point
     #    if the [site_location_correct] field is 'no'. Then calculate [site_lat]
     #    and [site_long] based off of those calculated fields.
         #---------------------------------------------------------------------------
 
-    print 'Successfully processed data.\n'
-    logging.debug('Successfully processed data.\n')
+    print 'Successfully copied original data.\n'
+    logging.debug('Successfully copied original data.\n')
 
     return wkgPath
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                        SUB-FUNCTION: ADD FIELDS
 #TODO: make these full fledged functions
-def __Add_Fields(wkg_data, add_fields_csv):
+def Add_Fields(wkg_data, add_fields_csv):
     print '  ------------------------------------------------------------------'
     print '  Adding fields to:\n    %s' % wkg_data
     with open (add_fields_csv) as csv_file:
@@ -711,7 +730,7 @@ def __Add_Fields(wkg_data, add_fields_csv):
 #-------------------------------------------------------------------------------
 #                     SUB-FUNCTION: CALCULATE FIELDS
 
-def __Calculate_Fields(wkg_data, calc_fields_csv):
+def Calculate_Fields(wkg_data, calc_fields_csv):
     print '  ------------------------------------------------------------------'
     print '  Calculating fields in:\n  %s' % wkg_data
 
@@ -859,7 +878,7 @@ def __Calculate_Fields(wkg_data, calc_fields_csv):
 #-------------------------------------------------------------------------------
 #                          SUB-FUNCTION DELETE FIELDS
 
-def __Delete_Fields(wkg_data, delete_fields_csv):
+def Delete_Fields(wkg_data, delete_fields_csv):
     print '-------------------------------------------------------------------'
     print '  Deleting fields in:\n    %s' % wkg_data
 
