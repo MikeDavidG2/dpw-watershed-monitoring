@@ -83,7 +83,9 @@ def main():
     ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_114e8ccf829743ceade2988eb7f06bc2/FeatureServer'
     ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_823cc8797c2f4122833b5f20471ec0fb/FeatureServer'
     ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_d6a5f0b58cc44d97af3d09961282ffc2/FeatureServer'
-    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_3648350fb9484c0db7a19e854e5133d6/FeatureServer'
+    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_3648350fb9484c0db7a19e854e5133d6/FeatureServer'
+    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_266dbda53dd2401c8090e25b25eae10c/FeatureServer'
+    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_266dbda53dd2401c8090e25b25eae10c/FeatureServer'
     queryURL    =  serviceURL + '/0/query'
     gaURL       =  serviceURL + '/CreateReplica'
 
@@ -1002,7 +1004,8 @@ def Append_Data(wkgPath_, prodPath_, field_mappings_):
     logging.debug('Successfully appended data.\n')
 
 #-------------------------------------------------------------------------------
-#                                   Email results
+#-------------------------------------------------------------------------------
+#                          FUNCTION:   Email results
 def Email_Results():
     print '\nEmailing Results...'
     logging.info('Emailing Results...')
@@ -1014,7 +1017,8 @@ def Email_Results():
     logging.debug('Successfully emailed results.\n')
 
 #-------------------------------------------------------------------------------
-#                                     Error Handler
+#-------------------------------------------------------------------------------
+#                         FUNCTION:  Error Handler
 def Error_Handler(func_w_err, e):
 
     e_str = str(e)
@@ -1034,7 +1038,6 @@ def Error_Handler(func_w_err, e):
 
 
     # Help comments for 'Get_Token' function
-
     if (func_w_err == 'Get_Token'):
         if (e_str.startswith('No section:')):
             help_comment = '    The section in brakets in "cfgFile" variable may not be in the file, or the file cannot be found.  Check both!'
@@ -1051,7 +1054,7 @@ def Error_Handler(func_w_err, e):
         if e_str == 'RecordSetObject: Cannot load a table into a FeatureSet':
             help_comment =  '    Error may be the result of a bad query format.  Try the query "where = \'1=1\'" to see if that query works.\n    Or the dates you are using to select does not have any data to download.'
         if e_str == 'RecordSetObject: Cannot open table for Load':
-            help_comment = '     Error may be the result of the Feature Service URL not being correctly set.  OR the \'Enable Sync\' option may not be enabled on the AGOL feature layer.'
+            help_comment = '     Error may be the result of the Feature Service URL not being correctly set.  OR the \'Enable Sync\' option may not be enabled on the AGOL feature layer.  OR the Feature layer may not be shared.'
 
     # Help comments for 'Append_Data' function
     if(func_w_err == 'Append_Data'):
