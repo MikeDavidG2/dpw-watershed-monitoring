@@ -81,7 +81,9 @@ def main():
     ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_e0c08b861bae4df895e6567c6199412f/FeatureServer'
     ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_24373c124c564417a03275b88b098b32/FeatureServer'
     ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_114e8ccf829743ceade2988eb7f06bc2/FeatureServer'
-    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_823cc8797c2f4122833b5f20471ec0fb/FeatureServer'
+    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_823cc8797c2f4122833b5f20471ec0fb/FeatureServer'
+    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_d6a5f0b58cc44d97af3d09961282ffc2/FeatureServer'
+    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_3648350fb9484c0db7a19e854e5133d6/FeatureServer'
     queryURL    =  serviceURL + '/0/query'
     gaURL       =  serviceURL + '/CreateReplica'
 
@@ -1049,7 +1051,7 @@ def Error_Handler(func_w_err, e):
         if e_str == 'RecordSetObject: Cannot load a table into a FeatureSet':
             help_comment =  '    Error may be the result of a bad query format.  Try the query "where = \'1=1\'" to see if that query works.\n    Or the dates you are using to select does not have any data to download.'
         if e_str == 'RecordSetObject: Cannot open table for Load':
-            help_comment = '     Error may be the result of the Feature Service URL not being correctly set.'
+            help_comment = '     Error may be the result of the Feature Service URL not being correctly set.  OR the \'Enable Sync\' option may not be enabled on the AGOL feature layer.'
 
     # Help comments for 'Append_Data' function
     if(func_w_err == 'Append_Data'):
