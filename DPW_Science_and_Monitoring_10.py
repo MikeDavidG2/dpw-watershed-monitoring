@@ -88,7 +88,7 @@ def main():
 
     # Working database locations and names
     ##wkgFolder   = r"U:\grue\Scripts\Testing_or_Developing\data"
-    wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Master\Data'
+    wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Data'
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
     origFC      = "DPW_Data_orig"
     wkgFC       = 'DPW_Data_wkg'
