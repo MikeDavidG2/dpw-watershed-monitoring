@@ -419,9 +419,7 @@ def Get_Attachments(AGOfields_, token_, gaURL_, wkgFolder_, origFC_, dt_to_appen
     ##gaFolder = wkgFolder_ + '\\Sci_Monitoring_pics__%s' % dt_to_append
 
     # Make the gaFolder (to hold attachments) if it doesn't exist.
-    if os.path.exists(gaFolder):
-        pass
-    else:
+    if not os.path.exists(gaFolder):
         os.makedirs(gaFolder)
 
     # Open the JSON file
