@@ -54,16 +54,16 @@ def main():
     run_Set_Logger         = True
     run_Get_DateAndTime    = True
     run_Get_Last_Data_Ret  = True
-    run_Get_Token          = True
-    run_Get_Attachments    = True
-    run_Get_Data           = True
+    run_Get_Token          = False
+    run_Get_Attachments    = False
+    run_Get_Data           = False
     run_Set_Last_Data_Ret  = False
-    run_Copy_Orig_Data     = True
-    run_Add_Fields         = True
-    run_Calculate_Fields   = True
+    run_Copy_Orig_Data     = False
+    run_Add_Fields         = False
+    run_Calculate_Fields   = False
     run_Delete_Fields      = False
-    run_Get_Field_Mappings = True
-    run_Append_Data        = True
+    run_Get_Field_Mappings = False
+    run_Append_Data        = False
     run_Email_Results      = False
 
     # Control CSV files
@@ -273,17 +273,34 @@ def main():
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #                                 DEFINE FUNCTIONS
 #-------------------------------------------------------------------------------
-#                        FUNCTION:    Get Start Date and Time
-# Get the current date and time so that it can be used in multiple places
-# where a unique name is desired
-# TODO: Make this function get the official 'start' of the script so that any datetime requirement for the rest of the script uses this 'now()' function.
+#                 FUNCTION:    Get Start Date and Time
+
 def Get_DateAndTime():
+    """
+    Get the current date and time so that it can be used in multiple places in
+    the rest of the script where a unique name is desired.
+    It is also used to get the start_time variable which is written to the
+    LastDataRetrival.csv so a record is kept for when the data was last
+    retrieved from AGOL.
+
+    Var:
+        start_time (dt object)
+        date (str): in the format YYYY_MM_DD - No '0' padding
+        time (str): in the format HH_MM_SS   - No '0' padding
+
+    Returns:
+        dt_to_append: date and time merged into one string
+        start_time
+    """
+
     print 'Getting Date and Time (dt)...'
     logging.info('Getting Date and Time...')
 
     start_time = datetime.datetime.now()
+
     date = '%s_%s_%s' % (start_time.year, start_time.month, start_time.day)
     time = '%s_%s_%s' % (start_time.hour, start_time.minute, start_time.second)
+
     dt_to_append = '%s__%s' % (date, time)
 
     print 'Successfully got Date and Time\n'
@@ -292,15 +309,26 @@ def Get_DateAndTime():
     return dt_to_append, start_time
 
 #-------------------------------------------------------------------------------
-#                       FUNCTION:    Get_Last_Data_Retrival Date
+#              FUNCTION:    Get_Last_Data_Retrival Date
 
 def Get_Last_Data_Retrival(last_ret_csv):
-    """The purpose of this function is to use a control CSV to read in the date
-    that the AGOL data was last retrieved from.  The string is turned into a
-    datetime obj that is returned back to main.  This is so we can use the
-    datetime in our queries to limit the data that we pull down from AGOL in the
-    'Get_Attachments()' and the 'Get_Data()' functions.
     """
+    Reads the csv at the last_ret_csv path to get when the script was last run.
+    We want to know this so that we can use it in the query to ask AGOL
+    to return features that have been created between the last time the
+    script was run and the start_time obtained in the FUNCTION Get_DateAndTime()
+
+    Args:
+        last_ret_csv:
+            the path to the CSV with the date and time the script was last run
+    Var:
+        dt_last_ret_data:
+            a datetime object obtained from the string date and time located in
+            the 3rd row, 1st column in the CSV
+    Returns:
+        dt_last_ret_data
+    """
+
     print 'Getting last data retrival...'
     logging.info('Getting last data retrival...')
 
@@ -308,11 +336,11 @@ def Get_Last_Data_Retrival(last_ret_csv):
     with open (last_ret_csv) as csv_file:
         readCSV = csv.reader(csv_file, delimiter = ',')
 
-        # Grab the data that is in the 2nd row, 1st column in the CSV
+        # Grab the data that is in the 3rd row, 1st column in the CSV
         # and store it as a string in last_ret_str
         row_num = 0
         for row in readCSV:
-            if row_num > 1:
+            if row_num == 2:
                 last_ret_str = row[0]
             row_num += 1
 
