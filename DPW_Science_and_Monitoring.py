@@ -313,18 +313,22 @@ def Get_DateAndTime():
 
 def Get_Last_Data_Retrival(last_ret_csv):
     """
-    Reads the csv at the last_ret_csv path to get when the script was last run.
+    Reads the CSV at the last_ret_csv path to get when the script was last run.
     We want to know this so that we can use it in the query to ask AGOL
     to return features that have been created between the last time the
     script was run and the start_time obtained in the FUNCTION Get_DateAndTime()
 
     Args:
-        last_ret_csv:
-            the path to the CSV with the date and time the script was last run
+        last_ret_csv (str):
+            the path to the CSV that stores the date and time the script was
+            last run
+
     Var:
-        dt_last_ret_data:
-            a datetime object obtained from the string date and time located in
-            the 3rd row, 1st column in the CSV
+        last_ret_str (str):
+            the date and time string read from the CSV's 3rd row, 1st column
+        dt_last_ret_data (dt obj):
+            a datetime object converted from last_ret_str
+
     Returns:
         dt_last_ret_data
     """
@@ -358,31 +362,57 @@ def Get_Last_Data_Retrival(last_ret_csv):
 
 #-------------------------------------------------------------------------------
 #                       FUNCTION:    Get AGOL token
-# We first need to get a token from AGOL that will allow use to access the data
-def Get_Token(cfgFile_, gtURL_):
+
+def Get_Token(cfgFile, gtURL):
+    """
+    Gets a token from AGOL that allows access to the AGOL data.
+
+    Args:
+        cfgFile (str):
+            Path to the .txt file that holds the user name and password of the
+            account used to access the data.  This account must be in a group
+            that has access to the online database.
+        gtURL: URL where ArcGIS generates tokens.
+
+    Var:
+        token (str):
+            a string 'password' from ArcGIS that will allow us to to access the
+            online database.
+
+    Returns:
+        token
+    """
 
     print "Getting Token..."
     logging.info("Getting Token...")
 
+    # Get the user name and password from the cfgFile
     configRMA = ConfigParser.ConfigParser()
-    configRMA.read(cfgFile_)
+    configRMA.read(cfgFile)
     usr = configRMA.get("AGOL","usr")
     pwd = configRMA.get("AGOL","pwd")
 
-    ##print '  Getting values'
+    # Create a dictionary of the user name, password, and 2 other keys
     gtValues = {'username' : usr, 'password' : pwd, 'referer' : 'http://www.arcgis.com', 'f' : 'json' }
+
+    # Encode the dictionary so they are in URL format
     gtData = urllib.urlencode(gtValues)
-    ##print '  Getting Request'
-    gtRequest = urllib2.Request(gtURL_,gtData)
-    ##print '  Getting response'
+
+    # Create a request object with the URL adn the URL formatted dictionary
+    gtRequest = urllib2.Request(gtURL,gtData)
+
+    # Store the response to the request
     gtResponse = urllib2.urlopen(gtRequest)
-    ##print '  Getting Json'
+
+    # Store the response as a json object
     gtJson = json.load(gtResponse)
+
+    # Store the token from the json object
     token = gtJson['token']
+    ##print token
 
     print "Successfully retrieved token.\n"
     logging.debug("Successfully retrieved token.\n")
-    ##print token
 
     return token
 
