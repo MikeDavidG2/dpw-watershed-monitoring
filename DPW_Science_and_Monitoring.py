@@ -55,14 +55,14 @@ def main():
     run_Get_DateAndTime    = True
     run_Get_Last_Data_Ret  = True
     run_Get_Token          = True
-    run_Get_Attachments    = True
-    run_Get_Data           = False
+    run_Get_Attachments    = False
+    run_Get_Data           = True
     run_Set_Last_Data_Ret  = False
-    run_Copy_Orig_Data     = False
-    run_Add_Fields         = False
-    run_Calculate_Fields   = False
+    run_Copy_Orig_Data     = True
+    run_Add_Fields         = True
+    run_Calculate_Fields   = True
     run_Delete_Fields      = False
-    run_Get_Field_Mappings = False
+    run_Get_Field_Mappings = True
     run_Append_Data        = False
     run_Email_Results      = False
 
@@ -424,6 +424,7 @@ def Get_Token(cfgFile, gtURL):
 # get the URL of the actual images.  The JSON file is then used to get the
 # StationID and SampleEventID of the related feature so they can be used to name
 # the downloaded attachment.
+
 #TODO: get this function to use the dt_last_ret_data to only get attachments from the recent samples
 def Get_Attachments(token, gaURL, wkgFolder, dt_to_append):
     """
@@ -641,6 +642,7 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     #   BETWEEN the 28th and 30th. You will get the data collected on the 28th AND 29th
 
     # TODO: May have to play with the 'days' variable below to make sure the data is retrieved properly
+    # TODO: See if the time stamp plus one day is really the 8 hr time difference.
     plus_one_day = datetime.timedelta(days=1)
     now = datetime.datetime.now()
     tomorrow = now + plus_one_day
