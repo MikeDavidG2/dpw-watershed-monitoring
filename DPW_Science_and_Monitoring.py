@@ -54,8 +54,8 @@ def main():
     run_Set_Logger         = True
     run_Get_DateAndTime    = True
     run_Get_Last_Data_Ret  = True
-    run_Get_Token          = False
-    run_Get_Attachments    = False
+    run_Get_Token          = True
+    run_Get_Attachments    = True
     run_Get_Data           = False
     run_Set_Last_Data_Ret  = False
     run_Copy_Orig_Data     = False
@@ -87,7 +87,6 @@ def main():
     gaURL       =  serviceURL + '/CreateReplica'
 
     # Working database locations and names
-    ##wkgFolder   = r"U:\grue\Scripts\Testing_or_Developing\data"
     wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Data'
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
     origFC      = "DPW_Data_orig"
@@ -154,7 +153,7 @@ def main():
     # Get the attachments from the online database and store it locally
     if (errorSTATUS == 0 and run_Get_Attachments):
         try:
-            Get_Attachments(AGOfields, token, gaURL, wkgFolder, origFC, dt_to_append)
+            Get_Attachments(token, gaURL, wkgFolder, dt_to_append)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Get_Attachments', e)
@@ -283,13 +282,14 @@ def Get_DateAndTime():
     LastDataRetrival.csv so a record is kept for when the data was last
     retrieved from AGOL.
 
-    Var:
+    Vars:
         start_time (dt object)
         date (str): in the format YYYY_MM_DD - No '0' padding
         time (str): in the format HH_MM_SS   - No '0' padding
+        dt_to_append (str) : date and time merged into one string
 
     Returns:
-        dt_to_append: date and time merged into one string
+        dt_to_append
         start_time
     """
 
@@ -323,7 +323,7 @@ def Get_Last_Data_Retrival(last_ret_csv):
             the path to the CSV that stores the date and time the script was
             last run
 
-    Var:
+    Vars:
         last_ret_str (str):
             the date and time string read from the CSV's 3rd row, 1st column
         dt_last_ret_data (dt obj):
@@ -374,7 +374,7 @@ def Get_Token(cfgFile, gtURL):
             that has access to the online database.
         gtURL: URL where ArcGIS generates tokens.
 
-    Var:
+    Vars:
         token (str):
             a string 'password' from ArcGIS that will allow us to to access the
             online database.
@@ -419,20 +419,68 @@ def Get_Token(cfgFile, gtURL):
 #-------------------------------------------------------------------------------
 #                         FUNCTION:   Get Attachments
 # Attachments (images) are obtained by hitting the REST endpoint of the feature
-# service (gaURL_) and returning a URL that downloads a JSON file (which is a
+# service (gaURL) and returning a URL that downloads a JSON file (which is a
 # replica of the database).  The script then uses that downloaded JSON file to
 # get the URL of the actual images.  The JSON file is then used to get the
-# StationID and SampleEventID of the related feature so thye can be used to name
+# StationID and SampleEventID of the related feature so they can be used to name
 # the downloaded attachment.
 #TODO: get this function to use the dt_last_ret_data to only get attachments from the recent samples
-def Get_Attachments(AGOfields_, token_, gaURL_, wkgFolder_, origFC_, dt_to_append):
+def Get_Attachments(token, gaURL, wkgFolder, dt_to_append):
+    """
+    Gets the attachments (images) that are related to the database features and
+    stores them as .jpg in a local file inside the wkgFolder.
+
+    Args:
+        token (str):
+            The string token obtained in FUNCTION Get_Token().
+        gaURL (str):
+            The variable set in FUNCTION main() where we can request to create a
+            replica FGDB in json format.
+        wkgFolder (str):
+            The variable set in FUNCTION main() which is a path to our working
+            folder.
+        dt_to_append (str):
+            The date and time string returned by FUNCTION Get_DateAndTime().
+
+    Vars:
+        replicaUrl (str):
+            URL of the replica FGDB in json format.
+        JsonFileName (str):
+            Name of the temporary json file.
+        gaFolder (str):
+            A folder in the wkgFolder that holds the attachments.
+        gaRelId (str):
+            The parentGlobalId of the attachment.  This = the origId for the
+            related feature.
+        origId (str):
+            The GlobalId of the feature.  This = the parentGlobalId of the
+            related attachment.
+        origName1 (str):
+            The StationID of the related feature to the attachment.
+        origName2 (str):
+            The SampleEventID of the related feature to the attachment.
+        attachName (str):
+            The string concatenation of origName1 and origName2 to be used to
+            name the attachment.
+        dupList (list of str):
+            List of letters ('A', 'B', etc.) used to append to the end of an
+            image to prevent multiple images with the same StationID and
+            SampleEventID overwriting each other.
+        attachmentUrl:
+            The URL of each specific attachment.  Need a token to actually
+            access and download the image at this URL.
+
+    Returns:
+        <none>
+    """
+
     print 'Getting Attachments...'
     logging.info('Getting Attachments...')
 
     #---------------------------------------------------------------------------
     #                       Get the attachments url (ga)
-    ##print '  gaURL_ = '+ gaURL_
-    # Set the values
+    ##print '  gaURL = '+ gaURL
+    # Set the values in a dictionary
     gaValues = {
     'f' : 'json',
     'replicaName' : 'Bacteria_TMDL_Replica',
@@ -441,41 +489,43 @@ def Get_Attachments(AGOfields_, token_, gaURL_, wkgFolder_, origFC_, dt_to_appen
     'transportType' : 'esriTransportTypeUrl',
     'returnAttachments' : 'true',
     'returnAttachmentDatabyURL' : 'false',
-    'token' : token_
+    'token' : token
     }
-    # Get the URL
+
+    # Get the Replica URL
     gaData = urllib.urlencode(gaValues)
-    gaRequest = urllib2.Request(gaURL_, gaData)
+    gaRequest = urllib2.Request(gaURL, gaData)
     gaResponse = urllib2.urlopen(gaRequest)
     gaJson = json.load(gaResponse)
     replicaUrl = gaJson['URL']
     ##print '  Replica URL: %s' % str(replicaUrl)
 
     # Set the token into the URL so it can be accessed
-    replicaUrl_token = replicaUrl + '?&token=' + token_ + '&f=json'
+    replicaUrl_token = replicaUrl + '?&token=' + token + '&f=json'
     ##print '  Replica URL Token: %s' % str(replicaUrl_token)
 
     #---------------------------------------------------------------------------
     #                         Save the JSON file
     # Access the URL and save the file to the current working directory named
     # 'myLayer.json'.  This will be a temporary file and will be deleted
-    # NOTE: the file is saved to the 'current working directory' + 'locToSaveJsonFile'
-    locToSaveJsonFile = 'myLayer_%s.json' % dt_to_append
+
+    JsonFileName = 'myLayer_%s.json' % dt_to_append
 
     # Save the file
-    urllib.urlretrieve(replicaUrl_token, locToSaveJsonFile)
+    # NOTE: the file is saved to the 'current working directory' + 'JsonFileName'
+    urllib.urlretrieve(replicaUrl_token, JsonFileName)
 
     # Allow the script to access the saved JSON file
     cwd = os.getcwd()  # Get the current working directory
-    jsonFilePath = cwd + '\\' + locToSaveJsonFile # Path to the downloaded json file
+    jsonFilePath = cwd + '\\' + JsonFileName # Path to the downloaded json file
     ##print '  JSON file saved to: ' + jsonFilePath
     logging.debug('  JSON file saved to: ' + jsonFilePath)
 
     #---------------------------------------------------------------------------
     #                       Save the attachments
-    gaFolder = wkgFolder_ + '\\Sci_Monitoring_pics'
+    gaFolder = wkgFolder + '\\Sci_Monitoring_pics'
     ## Uncomment below if you want to create a new folder each time the attachments are pulled
-    ##gaFolder = wkgFolder_ + '\\Sci_Monitoring_pics__%s' % dt_to_append
+    ##gaFolder = wkgFolder + '\\Sci_Monitoring_pics__%s' % dt_to_append
 
     # Make the gaFolder (to hold attachments) if it doesn't exist.
     if not os.path.exists(gaFolder):
@@ -486,8 +536,8 @@ def Get_Attachments(AGOfields_, token_, gaURL_, wkgFolder_, origFC_, dt_to_appen
         data = json.load(data_file)
 
     # Save the attachments
-    # Loop through each 'attachment' and get its parentGlobalId so we can name it
-    #  based on its corresponding feature
+    # Loop through each 'attachment' and get its parentGlobalId so we can name
+    #  it based on its corresponding feature
     ##print '  Saving attachments:'
     logging.debug('  Saving attachments:')
 
@@ -511,12 +561,12 @@ def Get_Attachments(AGOfields_, token_, gaURL_, wkgFolder_, origFC_, dt_to_appen
 
         attachName = '%s__%s' % (origName1, origName2)
         ##print '  attachName = ' + attachName
-        # 'i' and 'dupList' are to prevent the possibility that there could be
+        # 'i' and 'dupList' are used in the event that there are
         #  multiple photos with the same StationID and SampleEventID.  If they
         #  do have the same attributes as an already saved attachment, the letter
         #  suffix at the end of the attachment name will increment to the next
         #  letter.  Ex: if there are two SDR-100__9876, the first will always be
-        #  named 'SDR-1007__9876_A.jpg', while the second will be 'SDR-1007__9876_B'
+        #  named 'SDR-1007__9876_A.jpg', the second will be 'SDR-1007__9876_B'
         i = 0
         dupList = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M']
         attachPath = gaFolder + '\\' + attachName + '_' + dupList[i] + '.jpg'
@@ -533,16 +583,16 @@ def Get_Attachments(AGOfields_, token_, gaURL_, wkgFolder_, origFC_, dt_to_appen
                 break
 
 
-        # Get the URL and data for the attachment
-        gaUrl = attachment['url']
-        gaValues = {'token' : token_ }
+        # Get the token to download the attachment
+        gaValues = {'token' : token }
         gaData = urllib.urlencode(gaValues)
 
         # Get the attachment and save as attachPath
-        ##print '    %s' % attachName
-        logging.debug('    %s' % attachName)
+        ##print '    Saving %s' % attachName
+        logging.debug('    Saving %s' % attachName)
 
-        urllib.urlretrieve(url=gaUrl, filename=attachPath,data=gaData)
+        attachmentUrl = attachment['url']
+        urllib.urlretrieve(url=attachmentUrl, filename=attachPath,data=gaData)
 
     print '  Attachments saved to: %s' % gaFolder
     logging.info('  Attachments saved to: %s' % gaFolder)
@@ -566,7 +616,7 @@ def Get_Attachments(AGOfields_, token_, gaURL_, wkgFolder_, origFC_, dt_to_appen
 ###     example code see the second (geonet) URL listed above
 #############################################################################################################
 
-def Get_Data(AGOfields_, token_, queryURL_, wkgFolder_, wkgGDB_, origFC_, dt_to_append, dt_last_ret_data_):
+def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_append, dt_last_ret_data_):
     """ The Get_Data function takes the token we obtained from 'Get_Token'
     function, establishs a connection to the data, creates a FGDB (if needed),
     creates a unique FC to store the data, and then copies the data from AGOL
@@ -608,7 +658,7 @@ def Get_Data(AGOfields_, token_, queryURL_, wkgFolder_, wkgGDB_, origFC_, dt_to_
 
     # If you suspect the where clause is causing the problems, uncomment the below 'where = "1=1"' clause
     ##where = "1=1"
-    query = "?where={}&outFields={}&returnGeometry=true&f=json&token={}".format(where_encoded,AGOfields_,token_)
+    query = "?where={}&outFields={}&returnGeometry=true&f=json&token={}".format(where_encoded,AGOfields_,token)
     fsURL = queryURL_ + query
 
     #Get connected to the feature service
@@ -618,21 +668,21 @@ def Get_Data(AGOfields_, token_, queryURL_, wkgFolder_, wkgGDB_, origFC_, dt_to_
 
     #---------------------------------------------------------------------------
     #Create working FGDB if it does not already exist.  Leave alone if it does...
-    ##Create_FGDB(wkgFolder_, wkgGDB_)
-    FGDB_path = wkgFolder_ + '\\' + wkgGDB_
+    ##Create_FGDB(wkgFolder, wkgGDB_)
+    FGDB_path = wkgFolder + '\\' + wkgGDB_
     if os.path.exists(FGDB_path):
         ##print '  %s \n    already exists. No need to create it.' % FGDB_path
         pass
     else:
-        print '  Creating FGDB: %s at: %s' % (wkgGDB_, wkgFolder_)
-        logging.info('  Creating FGDB: %s at: %s' % (wkgGDB_, wkgFolder_))
+        print '  Creating FGDB: %s at: %s' % (wkgGDB_, wkgFolder)
+        logging.info('  Creating FGDB: %s at: %s' % (wkgGDB_, wkgFolder))
         # Process
-        arcpy.CreateFileGDB_management(wkgFolder_,wkgGDB_)
+        arcpy.CreateFileGDB_management(wkgFolder,wkgGDB_)
 
     #---------------------------------------------------------------------------
     #Copy the features to the FGDB.
-    origFC_ = '%s_%s' % (origFC_,dt_to_append)
-    origPath_ = wkgFolder_ + "\\" + wkgGDB_ + '\\' + origFC_
+    origFC = '%s_%s' % (origFC,dt_to_append)
+    origPath_ = wkgFolder + "\\" + wkgGDB_ + '\\' + origFC
     print '  Copying features to: %s' % origPath_
     logging.info('  Copying features to: %s' % origPath_)
 
@@ -700,7 +750,7 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
 
 # TODO: rename this function Copy_Orig_Data and have it simply copy the original data to working data.  Remove the sub functions and have them full functions on their own
 
-def Copy_Orig_Data(wkgFolder_, wkgGDB_, wkgFC_, origPath_, dt_to_append,
+def Copy_Orig_Data(wkgFolder, wkgGDB_, wkgFC_, origPath_, dt_to_append,
                  add_fields_csv, calc_fields_csv, delete_fields_csv):
     print 'Copying original data...'
     logging.info('Copying original data...')
@@ -708,7 +758,7 @@ def Copy_Orig_Data(wkgFolder_, wkgGDB_, wkgFC_, origPath_, dt_to_append,
     #---------------------------------------------------------------------------
     # Copy the orig FC to a working TABLE to run processing on.
     in_features = origPath_
-    wkgPath = out_feature_class = r'%s\%s\%s_%s' % (wkgFolder_, wkgGDB_, wkgFC_, dt_to_append)
+    wkgPath = out_feature_class = r'%s\%s\%s_%s' % (wkgFolder, wkgGDB_, wkgFC_, dt_to_append)
 
     print '  Copying Data...'
     print '    From: ' + in_features
