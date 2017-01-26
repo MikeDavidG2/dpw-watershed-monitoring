@@ -502,13 +502,13 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     arcpy.CopyFeatures_management(fs,origPath_)
 
     #---------------------------------------------------------------------------
-    # Get a list of all the Sample Event ID's that were downloaded this run
+    # Get a list of STRINGS of all the Sample Event ID's that were downloaded this run
     SmpEvntIDs_dl = []
 
     with arcpy.da.SearchCursor(origPath_, ['SampleEventID']) as cursor:
 
         for row in cursor:
-            SampleEventID = row[0]
+            SampleEventID = str(row[0])
 
             SmpEvntIDs_dl.append(SampleEventID)
 
@@ -645,7 +645,7 @@ def Get_Attachments(token, gaURL, wkgFolder, SmpEvntIDs_dl, dt_to_append):
     # Save the attachments
     # Loop through each 'attachment' and get its parentGlobalId so we can name
     #  it based on its corresponding feature
-    ##print '  Saving attachments:'
+    print '  Saving attachments:'
     logging.debug('  Saving attachments:')
 
     for attachment in data['layers'][0]['attachments']:
@@ -655,54 +655,65 @@ def Get_Attachments(token, gaURL, wkgFolder, SmpEvntIDs_dl, dt_to_append):
         ##print 'gaRelId:'
         ##print gaRelId
 
-        # Now loop through all of the 'features' and stop once the corresponding
+        # Now loop through all of the 'features' and break once the corresponding
         #  GlobalId's match so we can save based on the 'StationID'
         #  and 'SampleEventID'
         for feature in data['layers'][0]['features']:
             origId = feature['attributes']['globalid']
             ##print '  origId' + origId
-            origName1 = feature['attributes']['StationID']
-            origName2 = str(feature['attributes']['SampleEventID'])
+            StationID = feature['attributes']['StationID']
+            SampleEventID = str(feature['attributes']['SampleEventID'])
             if origId == gaRelId:
                 break
 
-        attachName = '%s__%s' % (origName1, origName2)
-        ##print '  attachName = ' + attachName
-        # 'i' and 'dupList' are used in the event that there are
-        #  multiple photos with the same StationID and SampleEventID.  If they
-        #  do have the same attributes as an already saved attachment, the letter
-        #  suffix at the end of the attachment name will increment to the next
-        #  letter.  Ex: if there are two SDR-100__9876, the first will always be
-        #  named 'SDR-1007__9876_A.jpg', the second will be 'SDR-1007__9876_B'
-        i = 0
-        dupList = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-        attachPath = gaFolder + '\\' + attachName + '_' + dupList[i] + '.jpg'
-
-        # Test to see if the attachPath currently exists
-        while os.path.exists(attachPath):
-            # The path does exist, so go through the dupList until a 'new' path is found
-            i += 1
+        # Test to see if the StationID is one of the features downloaded in
+        # FUNCTION Get_Data. Download if so, pass if not
+        if SampleEventID in SmpEvntIDs_dl:
+            attachName = '%s__%s' % (StationID, SampleEventID)
+            ##print '  attachName = ' + attachName
+            # 'i' and 'dupList' are used in the event that there are
+            #  multiple photos with the same StationID and SampleEventID.  If they
+            #  do have the same attributes as an already saved attachment, the letter
+            #  suffix at the end of the attachment name will increment to the next
+            #  letter.  Ex: if there are two SDR-100__9876, the first will always be
+            #  named 'SDR-1007__9876_A.jpg', the second will be 'SDR-1007__9876_B'
+            i = 0
+            dupList = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
             attachPath = gaFolder + '\\' + attachName + '_' + dupList[i] + '.jpg'
 
-            # Test the new path to see if it exists.  If it doesn't exist, break out
-            # of the while loop to save the image to that new path
-            if not os.path.exists(attachPath):
-                break
+            # Test to see if the attachPath currently exists
+            while os.path.exists(attachPath):
+                # The path does exist, so go through the dupList until a 'new' path is found
+                i += 1
+                attachPath = gaFolder + '\\' + attachName + '_' + dupList[i] + '.jpg'
 
-        if (dupList[i] != 'H'):
-            # Get the token to download the attachment
-            gaValues = {'token' : token }
-            gaData = urllib.urlencode(gaValues)
+                # Test the new path to see if it exists.  If it doesn't exist, break out
+                # of the while loop to save the image to that new path
+                if not os.path.exists(attachPath):
+                    break
 
-            # Get the attachment and save as attachPath
-            ##print '    Saving %s' % attachName
-            logging.debug('    Saving %s' % attachName)
+            # Only download the attachment if the picture is from A - G
+            # 'H' is a catch if there are more than 7 photos with the same Station ID
+            # and Sample Event ID, shouldn't be more than 7 so an 'H' pic is passed.
+            if (dupList[i] != 'H'):
+                # Get the token to download the attachment
+                gaValues = {'token' : token }
+                gaData = urllib.urlencode(gaValues)
 
-            attachmentUrl = attachment['url']
-            urllib.urlretrieve(url=attachmentUrl, filename=attachPath,data=gaData)
+                # Get the attachment and save as attachPath
+                print '    Saving %s' % attachName
+                logging.debug('    Saving %s' % attachName)
 
+                attachmentUrl = attachment['url']
+                urllib.urlretrieve(url=attachmentUrl, filename=attachPath,data=gaData)
+
+            else:
+                print '  WARNING.  There were more than 7 pictures with the same Station ID and Sample Event ID. Picture not saved.'
+
+        # The SampleEventID was not downloaded in FUNCTION Get_Data so pass
         else:
-            print '  WARNING.  There were more than 7 pictures with the same Station ID and Sample Event ID. Picture not saved.'
+            ##print '  SampleEventID: %s wasn\'t downloaded this run, not downloading related attachment' % SampleEventID
+            pass
 
     print '  Attachments saved to: %s' % gaFolder
     logging.info('  Attachments saved to: %s' % gaFolder)
@@ -1186,6 +1197,13 @@ def Error_Handler(func_w_err, e):
         if (e_str.startswith('No section:')):
             help_comment = '    The section in brakets in "cfgFile" variable may not be in the file, or the file cannot be found.  Check both!'
 
+    # Help comments for 'Get_Data' function
+    if (func_w_err == 'Get_Data'):
+        if e_str == 'RecordSetObject: Cannot load a table into a FeatureSet':
+            help_comment =  '    Error may be the result of a bad query format.  Try the query "where = \'1=1\'" to see if that query works.\n      Or the dates you are using to select does not have any data to download.'
+        if e_str == 'RecordSetObject: Cannot open table for Load':
+            help_comment = '     Error may be the result of the Feature Service URL not being correctly set.  OR the \'Enable Sync\' option may not be enabled on the AGOL feature layer.  OR the Feature layer may not be shared.'
+
     # Help comments for 'Get_Attachments' function
     if (func_w_err == 'Get_Attachments'):
         if e_str == "'*'":
@@ -1193,12 +1211,6 @@ def Error_Handler(func_w_err, e):
         if e_str == "'URL'":
             help_comment = '    This error may be the result of the feature layer may not be shared.\n    Or user in the "cfgFile" may not have permission to access the URL.  Try logging onto AGOL with that user account to see if that user has access to the database.\n    Or the problem may be that the feature layer setting doesn\'t have Sync enabled.\n    Or the URL is incorrect somehow.'
 
-    # Help comments for 'Get_Data' function
-    if (func_w_err == 'Get_Data'):
-        if e_str == 'RecordSetObject: Cannot load a table into a FeatureSet':
-            help_comment =  '    Error may be the result of a bad query format.  Try the query "where = \'1=1\'" to see if that query works.\n    Or the dates you are using to select does not have any data to download.'
-        if e_str == 'RecordSetObject: Cannot open table for Load':
-            help_comment = '     Error may be the result of the Feature Service URL not being correctly set.  OR the \'Enable Sync\' option may not be enabled on the AGOL feature layer.  OR the Feature layer may not be shared.'
 
     # Help comments for 'Append_Data' function
     if(func_w_err == 'Append_Data'):
