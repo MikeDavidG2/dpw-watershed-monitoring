@@ -55,15 +55,15 @@ def main():
     run_Get_DateAndTime    = True
     run_Get_Last_Data_Ret  = True
     run_Get_Token          = True
-    run_Get_Attachments    = False
     run_Get_Data           = True
-    run_Set_Last_Data_Ret  = False
-    run_Copy_Orig_Data     = True
-    run_Add_Fields         = True
-    run_Calculate_Fields   = True
-    run_Delete_Fields      = False
-    run_Get_Field_Mappings = True
-    run_Append_Data        = False
+    run_Get_Attachments    = True  # Requires 'run_Get_Data = True'
+    run_Set_Last_Data_Ret  = False # Should be 'False' if testing
+    run_Copy_Orig_Data     = False # Requires 'run_Get_Data = True'
+    run_Add_Fields         = False # Requires 'run_Copy_Orig_Data = True'
+    run_Calculate_Fields   = False # Requires 'run_Copy_Orig_Data = True'
+    run_Delete_Fields      = False # Requires 'run_Copy_Orig_Data = True'
+    run_Get_Field_Mappings = False # Requires 'run_Copy_Orig_Data = True'
+    run_Append_Data        = False # Requires 'run_Copy_Orig_Data = True'
     run_Email_Results      = False
 
     # Control CSV files
@@ -148,25 +148,25 @@ def main():
 
         except Exception as e:
             errorSTATUS = Error_Handler('Get_Token', e)
-
-    #---------------------------------------------------------------------------
-    # Get the attachments from the online database and store it locally
-    if (errorSTATUS == 0 and run_Get_Attachments):
-        try:
-            Get_Attachments(token, gaURL, wkgFolder, dt_to_append)
-
-        except Exception as e:
-            errorSTATUS = Error_Handler('Get_Attachments', e)
-
     #---------------------------------------------------------------------------
     # GET DATA from AGOL and store in: wkgFolder\wkgGDB\origFC_dt_to_append
     if (errorSTATUS == 0 and run_Get_Data):
         try:
-            origPath = Get_Data(AGOfields, token, queryURL, wkgFolder, wkgGDB,
-                                origFC, dt_to_append, dt_last_ret_data)
+            origPath, SmpEvntIDs_dl = Get_Data(AGOfields, token, queryURL,
+                                                wkgFolder, wkgGDB, origFC,
+                                                dt_to_append, dt_last_ret_data)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Get_Data', e)
+
+    #---------------------------------------------------------------------------
+    # Get the ATTACHMENTS from the online database and store it locally
+    if (errorSTATUS == 0 and run_Get_Attachments):
+        try:
+            Get_Attachments(token, gaURL, wkgFolder, SmpEvntIDs_dl, dt_to_append)
+
+        except Exception as e:
+            errorSTATUS = Error_Handler('Get_Attachments', e)
 
     #---------------------------------------------------------------------------
     # SET THE LAST TIME the data was retrieved from AGOL to the start_time
@@ -417,6 +417,111 @@ def Get_Token(cfgFile, gtURL):
     return token
 
 #-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                          FUNCTION:    Get AGOL Data
+#############################################################################################################
+### http://blogs.esri.com/esri/arcgis/2013/10/10/quick-tips-consuming-feature-services-with-geoprocessing/
+### https://geonet.esri.com/thread/118781
+### WARNING: Script currently only pulls up to the first 10,000 (1,000?) records - more records will require
+###     a loop for iteration - see, e.g., "Max Records" section at the first (blogs) URL listed above or for
+###     example code see the second (geonet) URL listed above
+#############################################################################################################
+
+def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_append, dt_last_ret_data_):
+    """ The Get_Data function takes the token we obtained from 'Get_Token'
+    function, establishs a connection to the data, creates a FGDB (if needed),
+    creates a unique FC to store the data, and then copies the data from AGOL
+    to the unique FC"""
+
+    print "Getting data..."
+    logging.info("Getting data...")
+
+    #---------------------------------------------------------------------------
+    #Set the feature service URL (fsURL = the query URL + the query)
+
+    # TODO: work with the below clause to find errors that can be sent to the error handler to explain that the dates are resulting in no data to download
+    # We want to set the 'where' clause to get records where the [CreationDate]
+    # field is between the date the data was last retrieved and tomorrow.
+    # This is so we will make sure to grab the most recent data (data that is
+    # collected on the day the script is run).
+    # The BETWEEN means that data collected on the first date will be retrieved,
+    # while the data collected on the second date will not be retrieved
+    # For ex: If data is collected on the 28th, and 29th and the where clause is:
+    #   BETWEEN the 28th and 29th. You will get the data collected on the 28th only
+    #   BETWEEN the 29th and 30th. You will get the data collected on the 29th only
+    #   BETWEEN the 28th and 30th. You will get the data collected on the 28th AND 29th
+
+    # TODO: May have to play with the 'days' variable below to make sure the data is retrieved properly
+    # TODO: See if the time stamp plus one day is really the 8 hr time difference.
+    plus_one_day = datetime.timedelta(days=1)
+    now = datetime.datetime.now()
+    tomorrow = now + plus_one_day
+    ##print '  tomorrow: ' + str(tomorrow)
+
+    # Use the dt_last_ret_data variable and tomorrow variable to set the 'where'
+    # clause
+    where = "CreationDate BETWEEN '{dt.year}-{dt.month}-{dt.day}' and '{tom.year}-{tom.month}-{tom.day}'".format(dt = dt_last_ret_data_, tom = tomorrow)
+    print '  Getting data where: {}'.format(where)
+    logging.debug('  Getting data where: {}'.format(where))
+
+    # Encode the where statement so it is readable by URL protocol (ie %27 = ' in URL
+    # visit http://meyerweb.com/eric/tools/dencoder to test URL encoding
+    where_encoded = urllib.quote(where)
+
+    # If you suspect the where clause is causing the problems, uncomment the below 'where = "1=1"' clause
+    ##where = "1=1"
+    query = "?where={}&outFields={}&returnGeometry=true&f=json&token={}".format(where_encoded,AGOfields_,token)
+    fsURL = queryURL_ + query
+
+    #Get connected to the feature service
+    ##print '  Feature Service: %s' % str(fsURL)
+    fs = arcpy.FeatureSet()
+    fs.load(fsURL)
+
+    #---------------------------------------------------------------------------
+    #Create working FGDB if it does not already exist.  Leave alone if it does...
+    ##Create_FGDB(wkgFolder, wkgGDB_)
+    FGDB_path = wkgFolder + '\\' + wkgGDB_
+    if os.path.exists(FGDB_path):
+        ##print '  %s \n    already exists. No need to create it.' % FGDB_path
+        pass
+    else:
+        print '  Creating FGDB: %s at: %s' % (wkgGDB_, wkgFolder)
+        logging.info('  Creating FGDB: %s at: %s' % (wkgGDB_, wkgFolder))
+        # Process
+        arcpy.CreateFileGDB_management(wkgFolder,wkgGDB_)
+
+    #---------------------------------------------------------------------------
+    #Copy the features to the FGDB.
+    origFC = '%s_%s' % (origFC,dt_to_append)
+    origPath_ = wkgFolder + "\\" + wkgGDB_ + '\\' + origFC
+    print '  Copying features to: %s' % origPath_
+    logging.info('  Copying features to: %s' % origPath_)
+
+    # Process
+    arcpy.CopyFeatures_management(fs,origPath_)
+
+    #---------------------------------------------------------------------------
+    # Get a list of all the Sample Event ID's that were downloaded this run
+    SmpEvntIDs_dl = []
+
+    with arcpy.da.SearchCursor(origPath_, ['SampleEventID']) as cursor:
+
+        for row in cursor:
+            SampleEventID = row[0]
+
+            SmpEvntIDs_dl.append(SampleEventID)
+
+    ##print SmpEvntIDs_dl
+
+    #---------------------------------------------------------------------------
+    print "Successfully retrieved data.\n"
+    logging.debug("Successfully retrieved data.\n")
+
+    return origPath_, SmpEvntIDs_dl
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 #                         FUNCTION:   Get Attachments
 # Attachments (images) are obtained by hitting the REST endpoint of the feature
 # service (gaURL) and returning a URL that downloads a JSON file (which is a
@@ -426,7 +531,8 @@ def Get_Token(cfgFile, gtURL):
 # the downloaded attachment.
 
 #TODO: get this function to use the dt_last_ret_data to only get attachments from the recent samples
-def Get_Attachments(token, gaURL, wkgFolder, dt_to_append):
+#TODO: find a way to rotate the images clockwise 90-degrees
+def Get_Attachments(token, gaURL, wkgFolder, SmpEvntIDs_dl, dt_to_append):
     """
     Gets the attachments (images) that are related to the database features and
     stores them as .jpg in a local file inside the wkgFolder.
@@ -569,7 +675,7 @@ def Get_Attachments(token, gaURL, wkgFolder, dt_to_append):
         #  letter.  Ex: if there are two SDR-100__9876, the first will always be
         #  named 'SDR-1007__9876_A.jpg', the second will be 'SDR-1007__9876_B'
         i = 0
-        dupList = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M']
+        dupList = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
         attachPath = gaFolder + '\\' + attachName + '_' + dupList[i] + '.jpg'
 
         # Test to see if the attachPath currently exists
@@ -583,17 +689,20 @@ def Get_Attachments(token, gaURL, wkgFolder, dt_to_append):
             if not os.path.exists(attachPath):
                 break
 
+        if (dupList[i] != 'H'):
+            # Get the token to download the attachment
+            gaValues = {'token' : token }
+            gaData = urllib.urlencode(gaValues)
 
-        # Get the token to download the attachment
-        gaValues = {'token' : token }
-        gaData = urllib.urlencode(gaValues)
+            # Get the attachment and save as attachPath
+            ##print '    Saving %s' % attachName
+            logging.debug('    Saving %s' % attachName)
 
-        # Get the attachment and save as attachPath
-        ##print '    Saving %s' % attachName
-        logging.debug('    Saving %s' % attachName)
+            attachmentUrl = attachment['url']
+            urllib.urlretrieve(url=attachmentUrl, filename=attachPath,data=gaData)
 
-        attachmentUrl = attachment['url']
-        urllib.urlretrieve(url=attachmentUrl, filename=attachPath,data=gaData)
+        else:
+            print '  WARNING.  There were more than 7 pictures with the same Station ID and Sample Event ID. Picture not saved.'
 
     print '  Attachments saved to: %s' % gaFolder
     logging.info('  Attachments saved to: %s' % gaFolder)
@@ -605,97 +714,6 @@ def Get_Attachments(token, gaURL, wkgFolder, dt_to_append):
 
     print 'Successfully got attachments.\n'
     logging.debug('Successfully got attachments.\n')
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#                          FUNCTION:    Get AGOL Data
-#############################################################################################################
-### http://blogs.esri.com/esri/arcgis/2013/10/10/quick-tips-consuming-feature-services-with-geoprocessing/
-### https://geonet.esri.com/thread/118781
-### WARNING: Script currently only pulls up to the first 10,000 (1,000?) records - more records will require
-###     a loop for iteration - see, e.g., "Max Records" section at the first (blogs) URL listed above or for
-###     example code see the second (geonet) URL listed above
-#############################################################################################################
-
-def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_append, dt_last_ret_data_):
-    """ The Get_Data function takes the token we obtained from 'Get_Token'
-    function, establishs a connection to the data, creates a FGDB (if needed),
-    creates a unique FC to store the data, and then copies the data from AGOL
-    to the unique FC"""
-
-    print "Getting data..."
-    logging.info("Getting data...")
-
-    #---------------------------------------------------------------------------
-    #Set the feature service URL (fsURL = the query URL + the query)
-
-    # TODO: work with the below clause to find errors that can be sent to the error handler to explain that the dates are resulting in no data to download
-    # We want to set the 'where' clause to get records where the [CreationDate]
-    # field is between the date the data was last retrieved and tomorrow.
-    # This is so we will make sure to grab the most recent data (data that is
-    # collected on the day the script is run).
-    # The BETWEEN means that data collected on the first date will be retrieved,
-    # while the data collected on the second date will not be retrieved
-    # For ex: If data is collected on the 28th, and 29th and the where clause is:
-    #   BETWEEN the 28th and 29th. You will get the data collected on the 28th only
-    #   BETWEEN the 29th and 30th. You will get the data collected on the 29th only
-    #   BETWEEN the 28th and 30th. You will get the data collected on the 28th AND 29th
-
-    # TODO: May have to play with the 'days' variable below to make sure the data is retrieved properly
-    # TODO: See if the time stamp plus one day is really the 8 hr time difference.
-    plus_one_day = datetime.timedelta(days=1)
-    now = datetime.datetime.now()
-    tomorrow = now + plus_one_day
-    ##print '  tomorrow: ' + str(tomorrow)
-
-    # Use the dt_last_ret_data variable and tomorrow variable to set the 'where'
-    # clause
-    where = "CreationDate BETWEEN '{dt.year}-{dt.month}-{dt.day}' and '{tom.year}-{tom.month}-{tom.day}'".format(dt = dt_last_ret_data_, tom = tomorrow)
-    print '  Getting data where: {}'.format(where)
-    logging.debug('  Getting data where: {}'.format(where))
-
-    # Encode the where statement so it is readable by URL protocol (ie %27 = ' in URL
-    # visit http://meyerweb.com/eric/tools/dencoder to test URL encoding
-    where_encoded = urllib.quote(where)
-
-    # If you suspect the where clause is causing the problems, uncomment the below 'where = "1=1"' clause
-    ##where = "1=1"
-    query = "?where={}&outFields={}&returnGeometry=true&f=json&token={}".format(where_encoded,AGOfields_,token)
-    fsURL = queryURL_ + query
-
-    #Get connected to the feature service
-    ##print '  Feature Service: %s' % str(fsURL)
-    fs = arcpy.FeatureSet()
-    fs.load(fsURL)
-
-    #---------------------------------------------------------------------------
-    #Create working FGDB if it does not already exist.  Leave alone if it does...
-    ##Create_FGDB(wkgFolder, wkgGDB_)
-    FGDB_path = wkgFolder + '\\' + wkgGDB_
-    if os.path.exists(FGDB_path):
-        ##print '  %s \n    already exists. No need to create it.' % FGDB_path
-        pass
-    else:
-        print '  Creating FGDB: %s at: %s' % (wkgGDB_, wkgFolder)
-        logging.info('  Creating FGDB: %s at: %s' % (wkgGDB_, wkgFolder))
-        # Process
-        arcpy.CreateFileGDB_management(wkgFolder,wkgGDB_)
-
-    #---------------------------------------------------------------------------
-    #Copy the features to the FGDB.
-    origFC = '%s_%s' % (origFC,dt_to_append)
-    origPath_ = wkgFolder + "\\" + wkgGDB_ + '\\' + origFC
-    print '  Copying features to: %s' % origPath_
-    logging.info('  Copying features to: %s' % origPath_)
-
-    # Process
-    arcpy.CopyFeatures_management(fs,origPath_)
-
-    #---------------------------------------------------------------------------
-    print "Successfully retrieved data.\n"
-    logging.debug("Successfully retrieved data.\n")
-
-    return origPath_
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
