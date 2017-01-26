@@ -439,20 +439,22 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     #---------------------------------------------------------------------------
     #Set the feature service URL (fsURL = the query URL + the query)
 
-    # TODO: work with the below clause to find errors that can be sent to the error handler to explain that the dates are resulting in no data to download
     # We want to set the 'where' clause to get records where the [CreationDate]
-    # field is between the date the data was last retrieved and tomorrow.
+    # field is BETWEEN the date the data was last retrieved and tomorrow.
     # This is so we will make sure to grab the most recent data (data that is
     # collected on the day the script is run).
-    # The BETWEEN means that data collected on the first date will be retrieved,
-    # while the data collected on the second date will not be retrieved
+
+    # BETWEEN means that data collected on the first date will be retrieved,
+    # while the data collected on the second date will not be retrieved. This
+    # is why we want to collect data between a previous date and TOMORROW.
+    # if we query for TOMORROW, we know that we will get all of todays data
+    # if the script is run before midnight.
+
     # For ex: If data is collected on the 28th, and 29th and the where clause is:
     #   BETWEEN the 28th and 29th. You will get the data collected on the 28th only
     #   BETWEEN the 29th and 30th. You will get the data collected on the 29th only
     #   BETWEEN the 28th and 30th. You will get the data collected on the 28th AND 29th
 
-    # TODO: May have to play with the 'days' variable below to make sure the data is retrieved properly
-    # TODO: See if the time stamp plus one day is really the 8 hr time difference.
     plus_one_day = datetime.timedelta(days=1)
     now = datetime.datetime.now()
     tomorrow = now + plus_one_day
@@ -530,7 +532,6 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
 # StationID and SampleEventID of the related feature so they can be used to name
 # the downloaded attachment.
 
-#TODO: get this function to use the dt_last_ret_data to only get attachments from the recent samples
 #TODO: find a way to rotate the images clockwise 90-degrees
 def Get_Attachments(token, gaURL, wkgFolder, SmpEvntIDs_dl, dt_to_append):
     """
@@ -779,8 +780,6 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Copy_Orig_Data
 
-# TODO: rename this function Copy_Orig_Data and have it simply copy the original data to working data.  Remove the sub functions and have them full functions on their own
-
 def Copy_Orig_Data(wkgFolder, wkgGDB_, wkgFC_, origPath_, dt_to_append,
                  add_fields_csv, calc_fields_csv, delete_fields_csv):
     print 'Copying original data...'
@@ -811,7 +810,7 @@ def Copy_Orig_Data(wkgFolder, wkgGDB_, wkgFC_, origPath_, dt_to_append,
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                        SUB-FUNCTION: ADD FIELDS
-#TODO: make these full fledged functions
+
 def Add_Fields(wkg_data, add_fields_csv):
     print '  ------------------------------------------------------------------'
     print '  Adding fields to:\n    %s' % wkg_data
@@ -846,7 +845,6 @@ def Add_Fields(wkg_data, add_fields_csv):
         print ('    Creating field: %s, with a type of: %s, and a length of: %s'
         % (f_names[f_counter], f_types[f_counter], f_lengths[f_counter])) ##, f_aliases[f_counter]))
 
-        # TODO: Add the arcpy command to create a field here
         in_table          = wkg_data
         field_name        = f_names[f_counter]
         field_type        = f_types[f_counter]
@@ -1062,12 +1060,6 @@ def Delete_Fields(wkg_data, delete_fields_csv):
 
     else:
         print '  WARNING.  NO fields were deleted.'
-
-    # TODO: Delete the following fields:
-    #    location_calculation.  This is only used for the survey.
-    #    <list other fields to delete here.  These should only be deleted after all
-    #    other processing has been completed.
-    #    This function may not be needed since we are appending the working database to the prod database.
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
