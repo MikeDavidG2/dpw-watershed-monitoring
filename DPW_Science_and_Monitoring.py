@@ -56,12 +56,13 @@ def main():
     run_Get_Last_Data_Ret  = True
     run_Get_Token          = True
     run_Get_Data           = True
-    run_Get_Attachments    = True  # Requires 'run_Get_Data = True'
+    run_Get_Attachments    = False  # Requires 'run_Get_Data = True'
     run_Set_Last_Data_Ret  = False # Should be 'False' if testing
-    run_Copy_Orig_Data     = False # Requires 'run_Get_Data = True'
+    run_Copy_Orig_Data     = True # Requires 'run_Get_Data = True'
     run_Add_Fields         = False # Requires 'run_Copy_Orig_Data = True'
     run_Calculate_Fields   = False # Requires 'run_Copy_Orig_Data = True'
     run_Delete_Fields      = False # Requires 'run_Copy_Orig_Data = True'
+    run_New_Loc_LocDesc    = True
     run_Get_Field_Mappings = False # Requires 'run_Copy_Orig_Data = True'
     run_Append_Data        = False # Requires 'run_Copy_Orig_Data = True'
     run_Email_Results      = False
@@ -214,6 +215,15 @@ def main():
 
         except Exception as e:
             errorSTATUS = Error_Handler('Delete_Fields', e)
+
+    #---------------------------------------------------------------------------
+    # NEW LOCATIONS and LOCATION DESCRIPTIONS
+    if (errorSTATUS == 0 and run_New_Loc_LocDesc):
+        try:
+            New_Loc_LocDesc(wkgPath)
+
+        except Exception as e:
+            errorSTATUS = Error_Handler('New_Loc_LocDesc', e)
 
     #---------------------------------------------------------------------------
     # GET FIELD MAPPINGS
@@ -1060,6 +1070,19 @@ def Delete_Fields(wkg_data, delete_fields_csv):
 
     else:
         print '  WARNING.  NO fields were deleted.'
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                           FUNCTION: New Loc and Loc Desc
+def New_Loc_LocDesc():
+    print 'Getting new Location Descriptions Setting new Locations'
+
+    #---------------------------------------------------------------------------
+    # Get new Location Descriptions
+    with arcpy.da.UpdateCursor(wkg_data, ['site_loc_desc_cor', 'StationID', 'site_loc_desc_new']) as cursor:
+
+        for row in cursor:
+            print 'Station ID %s Location was correct? %s.  New Location Description suggestion: %s' % (row[1], row[0], row[2])
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
