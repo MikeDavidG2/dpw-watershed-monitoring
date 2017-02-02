@@ -1074,15 +1074,19 @@ def Delete_Fields(wkg_data, delete_fields_csv):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                           FUNCTION: New Loc and Loc Desc
-def New_Loc_LocDesc():
-    print 'Getting new Location Descriptions Setting new Locations'
+def New_Loc_LocDesc(wkg_data):
+    print 'Getting new Location Descriptions Setting new Locations in:\n{}'.format(wkg_data)
 
     #---------------------------------------------------------------------------
-    # Get new Location Descriptions
-    with arcpy.da.UpdateCursor(wkg_data, ['site_loc_desc_cor', 'StationID', 'site_loc_desc_new']) as cursor:
+    # Get new Location Descriptions.
+
+    cursor_fields = ['SampleEventID', 'Creator', 'StationID', 'site_loc_desc_new']
+    where = "site_loc_desc_cor = 'No'"
+    with arcpy.da.UpdateCursor(wkg_data, cursor_fields, where) as cursor:
 
         for row in cursor:
-            print 'Station ID %s Location was correct? %s.  New Location Description suggestion: %s' % (row[1], row[0], row[2])
+            ##print row[0]
+            print ('For SampleEventID: {}, Monitor: {} said the Location Description for StationID: {} was innacurate.  Suggested change: {}'.format(row[0], row[1], row[2], row[3]))
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
