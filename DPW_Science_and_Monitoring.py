@@ -51,14 +51,14 @@ def main():
     #                               Set Variables
 
     # Variables to control which Functions are run
-    run_Set_Logger         = True
-    run_Get_DateAndTime    = True
-    run_Get_Last_Data_Ret  = True
-    run_Get_Token          = True
-    run_Get_Data           = True
+    run_Set_Logger         = False
+    run_Get_DateAndTime    = False
+    run_Get_Last_Data_Ret  = False
+    run_Get_Token          = False
+    run_Get_Data           = False
     run_Get_Attachments    = False  # Requires 'run_Get_Data = True'
     run_Set_Last_Data_Ret  = False # Should be 'False' if testing
-    run_Copy_Orig_Data     = True # Requires 'run_Get_Data = True'
+    run_Copy_Orig_Data     = False # Requires 'run_Get_Data = True'
     run_Add_Fields         = False # Requires 'run_Copy_Orig_Data = True'
     run_Calculate_Fields   = False # Requires 'run_Copy_Orig_Data = True'
     run_Delete_Fields      = False # Requires 'run_Copy_Orig_Data = True'
@@ -218,6 +218,9 @@ def main():
 
     #---------------------------------------------------------------------------
     # NEW LOCATIONS and LOCATION DESCRIPTIONS
+
+    # TODO: delete the below line when done testing this function
+    wkgPath = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Data\DPW_Science_and_Monitoring_wkg.gdb\DPW_Data_wkg_2017_2_1__16_7_29'
     if (errorSTATUS == 0 and run_New_Loc_LocDesc):
         try:
             New_Loc_LocDesc(wkgPath)
@@ -819,11 +822,11 @@ def Copy_Orig_Data(wkgFolder, wkgGDB_, wkgFC_, origPath_, dt_to_append,
     return wkgPath
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#                        SUB-FUNCTION: ADD FIELDS
+#                        FUNCTION: ADD FIELDS
 
 def Add_Fields(wkg_data, add_fields_csv):
-    print '  ------------------------------------------------------------------'
-    print '  Adding fields to:\n    %s' % wkg_data
+    print '------------------------------------------------------------------'
+    print 'Adding fields to:\n    %s' % wkg_data
     with open (add_fields_csv) as csv_file:
         readCSV = csv.reader(csv_file, delimiter = ',')
 
@@ -877,15 +880,15 @@ def Add_Fields(wkg_data, add_fields_csv):
             print str(e)
         f_counter += 1
 
-    print '  Successfully added fields.\n'
+    print 'Successfully added fields.\n'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#                     SUB-FUNCTION: CALCULATE FIELDS
+#                     FUNCTION: CALCULATE FIELDS
 
 def Calculate_Fields(wkg_data, calc_fields_csv):
-    print '  ------------------------------------------------------------------'
-    print '  Calculating fields in:\n  %s' % wkg_data
+    print '------------------------------------------------------------------'
+    print 'Calculating fields in:\n  %s' % wkg_data
 
     # Make a table view so we can perform selections
     arcpy.MakeTableView_management(wkg_data, 'wkg_data_view')
@@ -1025,15 +1028,15 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
 
         f_counter += 1
 
-    print '  Successfully calculated fields.\n'
+    print 'Successfully calculated fields.\n'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#                          SUB-FUNCTION DELETE FIELDS
+#                          FUNCTION DELETE FIELDS
 
 def Delete_Fields(wkg_data, delete_fields_csv):
     print '-------------------------------------------------------------------'
-    print '  Deleting fields in:\n    %s' % wkg_data
+    print 'Deleting fields in:\n    %s' % wkg_data
 
     #---------------------------------------------------------------------------
     #                     Get values from the CSV file
@@ -1066,27 +1069,42 @@ def Delete_Fields(wkg_data, delete_fields_csv):
 
             f_counter += 1
 
-        print '  Successfully deleted fields.\n'
+        print 'Successfully deleted fields.\n'
 
     else:
-        print '  WARNING.  NO fields were deleted.'
+        print 'WARNING.  NO fields were deleted.'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#                           FUNCTION: New Loc and Loc Desc
+#                    FUNCTION: New Loc and Loc Desc
 def New_Loc_LocDesc(wkg_data):
-    print 'Getting new Location Descriptions Setting new Locations in:\n{}'.format(wkg_data)
+
+    print 'Getting new Location Descriptions at:\n  {}'.format(wkg_data)
 
     #---------------------------------------------------------------------------
     # Get new Location Descriptions.
 
     cursor_fields = ['SampleEventID', 'Creator', 'StationID', 'site_loc_desc_new']
     where = "site_loc_desc_cor = 'No'"
-    with arcpy.da.UpdateCursor(wkg_data, cursor_fields, where) as cursor:
+    with arcpy.da.SearchCursor(wkg_data, cursor_fields, where) as cursor:
+        New_LocDescs = ['The following are New Location Description suggested changes (Please edit associated feature class appropriately):']
 
         for row in cursor:
-            ##print row[0]
-            print ('For SampleEventID: {}, Monitor: {} said the Location Description for StationID: {} was innacurate.  Suggested change: {}'.format(row[0], row[1], row[2], row[3]))
+            New_LocDesc = ('  For SampleEventID: "{}", Monitor: "{}" said the Location Description for StationID: "{}" was innacurate.  Suggested change: "{}"'.format(row[0], row[1], row[2], row[3]))
+            New_LocDescs.append(New_LocDesc)
+
+    # If there is only the original New_LocDescs string, then there were no new
+    # suggested changes to make
+    if (len(New_LocDescs) == 1):
+        New_LocDescs = ['There were no New Location Description suggested changes.']
+
+    for desc in New_LocDescs:
+        print desc
+
+
+
+
+
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
