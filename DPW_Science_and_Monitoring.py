@@ -96,10 +96,12 @@ def main():
       # time to it in a function below
 
     # Production database locations and names
-    prodFolder  = wkgFolder
-    prodGDB     = "DPW_Science_and_Monitoring_prod.gdb"
-    prodFC      = 'DPW_Data_prod'
-    prodPath    = prodFolder + '\\' + prodGDB + '\\' + prodFC
+    prodFolder    = wkgFolder
+    prodGDB       = "DPW_Science_and_Monitoring_prod.gdb"
+    prodFldData   = 'Field_Data'
+    prodSitesData = 'Sites_Data'
+    prodPath_FldData      = prodFolder + '\\' + prodGDB + '\\' + prodFldData
+    prodPath_SitesData    = prodFolder + '\\' + prodGDB + '\\' + prodSitesData
 
     # Misc variables
     fileLog = wkgFolder + r'\Logs\DPW_Science_and_Monitoring.log'
@@ -220,10 +222,10 @@ def main():
     # NEW LOCATIONS and LOCATION DESCRIPTIONS
 
     # TODO: delete the below line when done testing this function
-    wkgPath = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Data\DPW_Science_and_Monitoring_wkg.gdb\DPW_Data_wkg_2017_2_1__16_7_29'
+    wkgPath = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Data\DPW_Science_and_Monitoring_wkg.gdb\DPW_Data_wkg_2017_2_3__14_55_12'
     if (errorSTATUS == 0 and run_New_Loc_LocDesc):
         try:
-            New_Loc_LocDesc(wkgPath)
+            New_Loc_LocDesc(wkgPath, prodPath_SitesData)
 
         except Exception as e:
             errorSTATUS = Error_Handler('New_Loc_LocDesc', e)
@@ -232,7 +234,7 @@ def main():
     # GET FIELD MAPPINGS
     if (errorSTATUS == 0 and run_Get_Field_Mappings):
         try:
-            field_mappings = Get_Field_Mappings(wkgPath, prodPath, map_fields_csv)
+            field_mappings = Get_Field_Mappings(wkgPath, prodPath_FldData, map_fields_csv)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Get_Field_Mappings', e)
@@ -241,7 +243,7 @@ def main():
     # APPEND the data
     if (errorSTATUS == 0 and run_Append_Data):
         try:
-            Append_Data(wkgPath, prodPath, field_mappings)
+            Append_Data(wkgPath, prodPath_FldData, field_mappings)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Append_Data', e)
@@ -808,7 +810,7 @@ def Copy_Orig_Data(wkgFolder, wkgGDB_, wkgFC_, origPath_, dt_to_append,
     print '    To:   ' + out_feature_class
 
     # Process
-    arcpy.CopyRows_management(in_features, out_feature_class)
+    arcpy.CopyFeatures_management(in_features, out_feature_class)
 
     #---------------------------------------------------------------------------
     # TODO: Create an Lat and Long column and calculate the geometry of the point
@@ -1077,9 +1079,9 @@ def Delete_Fields(wkg_data, delete_fields_csv):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                    FUNCTION: New Loc and Loc Desc
-def New_Loc_LocDesc(wkg_data):
+def New_Loc_LocDesc(wkg_data, sites_data):
 
-    print 'Getting new Location Descriptions at:\n  {}'.format(wkg_data)
+    print 'Getting new Location Descriptions at:\n  {}\n'.format(wkg_data)
 
     #---------------------------------------------------------------------------
     # Get new Location Descriptions.
@@ -1087,10 +1089,10 @@ def New_Loc_LocDesc(wkg_data):
     cursor_fields = ['SampleEventID', 'Creator', 'StationID', 'site_loc_desc_new']
     where = "site_loc_desc_cor = 'No'"
     with arcpy.da.SearchCursor(wkg_data, cursor_fields, where) as cursor:
-        New_LocDescs = ['The following are New Location Description suggested changes (Please edit associated feature class appropriately):']
+        New_LocDescs = ['  The following are New Location Description suggested changes (Please edit associated feature class appropriately):']
 
         for row in cursor:
-            New_LocDesc = ('  For SampleEventID: "{}", Monitor: "{}" said the Location Description for StationID: "{}" was innacurate.  Suggested change: "{}"'.format(row[0], row[1], row[2], row[3]))
+            New_LocDesc = ('    For SampleEventID: "{}", Monitor: "{}" said the Location Description for StationID: "{}" was innacurate.  Suggested change: "{}"'.format(row[0], row[1], row[2], row[3]))
             New_LocDescs.append(New_LocDesc)
 
     # If there is only the original New_LocDescs string, then there were no new
@@ -1104,7 +1106,7 @@ def New_Loc_LocDesc(wkg_data):
 
 
 
-
+    print 'Successfully got new Location Descriptions and set New Locations.\n'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
