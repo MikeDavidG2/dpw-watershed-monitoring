@@ -1084,12 +1084,15 @@ def New_Loc_LocDesc(wkg_data, sites_data):
     print 'Getting new Location Descriptions at:\n  {}\n'.format(wkg_data)
 
     #---------------------------------------------------------------------------
-    # Get new Location Descriptions.
+    #                      Get new Location Descriptions.
 
+    # Create list and add the first item
+    New_LocDescs = ['  The following are New Location Description suggested changes (Please edit associated feature class appropriately):']
+
+    # Create a Search cursor and add data to lists
     cursor_fields = ['SampleEventID', 'Creator', 'StationID', 'site_loc_desc_new']
     where = "site_loc_desc_cor = 'No'"
     with arcpy.da.SearchCursor(wkg_data, cursor_fields, where) as cursor:
-        New_LocDescs = ['  The following are New Location Description suggested changes (Please edit associated feature class appropriately):']
 
         for row in cursor:
             New_LocDesc = ('    For SampleEventID: "{}", Monitor: "{}" said the Location Description for StationID: "{}" was innacurate.  Suggested change: "{}"'.format(row[0], row[1], row[2], row[3]))
@@ -1102,11 +1105,72 @@ def New_Loc_LocDesc(wkg_data, sites_data):
 
     for desc in New_LocDescs:
         print desc
+    #---------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
+    #                           Set new Locations
+
+    # Create lists
+    New_Locs = ['  The following are the sites that were relocated in the field (The changes will be made to the Sites_Data now):']
+    StationIDs, ShapeXs, ShapeYs, SampEvntIDs, Creators = ([] for i in range(5))
+
+    # Create Search cursor and add data to lists
+    cursor_fields = ['StationID', 'Shape@X', 'Shape@Y', 'SampleEventID', 'Creator']
+    where = "site_loc_map_cor = 'No'"
+    with arcpy.da.SearchCursor(wkg_data, cursor_fields, where) as cursor:
+
+        for row in cursor:
+            StationID    = row[0]
+            ShapeX       = row[1]
+            ShapeY       = row[2]
+            SampleEvntID = row[3]
+            Creator      = row[4]
+
+            StationIDs.append(StationID)
+            ShapeXs.append(ShapeX)
+            ShapeYs.append(ShapeY)
+            SampEvntIDs.append(SampleEvntID)
+            Creators.append(Creator)
+
+            print 'StationID: "{}" has an X of: "{}" and a Y of: "{}"'.format(StationID, ShapeX, ShapeY)
+
+            New_Loc = ('    For SampleEventID: "{}", Monitor: "{}" said the Location Description for StationID: "{}" was innacurate.  Site has been moved.'.format(SampleEvntID, Creator, StationID))
+            New_Locs.append(New_Loc)
 
 
 
 
-    print 'Successfully got new Location Descriptions and set New Locations.\n'
+    #---------------------------------------------------------------------------
+    # Create an Update cursor to update the Shape column in the Sites_Data
+    # TODO: may have to change this cursor so that the function works
+    # check out: http://stackoverflow.com/questions/18133191/update-cursor-command-for-arcgis-updating-coordinates-but-coordinate-location-i
+    # for an example of what might work...
+
+    list_counter = 0
+    cursor_fields = ['StationID', 'Shape@X', 'Shape@Y']
+    with arcpy.da.UpdateCursor(sites_data, cursor_fields):
+        for row in cursor:
+            if row[0] == StationIDs[list_counter]:
+                print 'Updating StationID: {}'.format(StationIDs[list_counter])
+                row[1] = ShapeXs[list_counter]
+                row[2] = ShapeYs[list_counter]
+                ##cursor.updateRow(row)
+                i += 1
+
+    # If there is only the original New_Locs string, then there were no new
+    # locations to move
+    if(len(New_Locs) == 1):
+        New_Locs = ['  There were no relocated sites.']
+
+    for Loc in New_Locs:
+        ##print Loc
+        pass
+
+
+
+
+    print '\nSuccessfully got new Location Descriptions and set New Locations.\n'
+
+    return New_LocDescs
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
