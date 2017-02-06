@@ -13,6 +13,7 @@
 #       Actually I could use the Get_DateAndTime function to return a day and I
 #       could then have an if/else statement to activate the get attachments
 #       function if the day == 01 (or something like that)
+# TODO: May need a 'Date Survey Filled Out' field to distinguis it from the 'Date Survey Submitted' field...
 
 # Import modules
 
@@ -56,15 +57,16 @@ def main():
     run_Get_Last_Data_Ret  = True
     run_Get_Token          = True
     run_Get_Data           = True
-    run_Get_Attachments    = False  # Requires 'run_Get_Data = True'
+    run_Get_Attachments    = False # Requires 'run_Get_Data = True'
     run_Set_Last_Data_Ret  = False # Should be 'False' if testing
-    run_Copy_Orig_Data     = True # Requires 'run_Get_Data = True'
-    run_Add_Fields         = True # Requires 'run_Copy_Orig_Data = True'
-    run_Calculate_Fields   = True # Requires 'run_Copy_Orig_Data = True'
+    run_Copy_Orig_Data     = True  # Requires 'run_Get_Data = True'
+    run_Add_Fields         = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Calculate_Fields   = True  # Requires 'run_Copy_Orig_Data = True'
     run_Delete_Fields      = False # Requires 'run_Copy_Orig_Data = True'
     run_New_Loc_LocDesc    = True
-    run_Get_Field_Mappings = True # Requires 'run_Copy_Orig_Data = True'
-    run_Append_Data        = False # Requires 'run_Copy_Orig_Data = True'
+    run_FC_To_Table        = True
+    run_Get_Field_Mappings = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Append_Data        = True  # Requires 'run_Copy_Orig_Data = True'
     run_Email_Results      = True
 
     # Control CSV files
@@ -185,8 +187,7 @@ def main():
     if (errorSTATUS == 0 and run_Copy_Orig_Data):
         try:
             wkgPath = Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath,
-                                  dt_to_append, add_fields_csv, calc_fields_csv,
-                                  delete_fields_csv)
+                                     dt_to_append)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Copy_Orig_Data', e)
@@ -220,13 +221,17 @@ def main():
 
     #---------------------------------------------------------------------------
     # NEW LOCATIONS and LOCATION DESCRIPTIONS
-
-    # TODO: delete the below lines when done testing this function
-    ##wkgPath = r'U:\grue\Scripts\Testing_or_Developing\TestMovePoint\movePoint.gdb\Moved_Points'
-    ##prodPath_SitesData = r'U:\grue\Scripts\Testing_or_Developing\TestMovePoint\movePoint.gdb\Sites_Data'
     if (errorSTATUS == 0 and run_New_Loc_LocDesc):
         try:
             New_Loc_LocDesc(wkgPath, prodPath_SitesData)
+
+        except Exception as e:
+            errorSTATUS = Error_Handler('New_Loc_LocDesc', e)
+    #---------------------------------------------------------------------------
+    # EXPORT FC to TABLE
+    if (errorSTATUS == 0 and run_FC_To_Table):
+        try:
+            exported_table = FC_To_Table(wkgFolder, wkgGDB, dt_to_append, wkgPath)
 
         except Exception as e:
             errorSTATUS = Error_Handler('New_Loc_LocDesc', e)
@@ -235,7 +240,7 @@ def main():
     # GET FIELD MAPPINGS
     if (errorSTATUS == 0 and run_Get_Field_Mappings):
         try:
-            field_mappings = Get_Field_Mappings(wkgPath, prodPath_FldData, map_fields_csv)
+            field_mappings = Get_Field_Mappings(exported_table, prodPath_FldData, map_fields_csv)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Get_Field_Mappings', e)
@@ -244,7 +249,7 @@ def main():
     # APPEND the data
     if (errorSTATUS == 0 and run_Append_Data):
         try:
-            Append_Data(wkgPath, prodPath_FldData, field_mappings)
+            Append_Data(exported_table, prodPath_FldData, field_mappings)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Append_Data', e)
@@ -796,8 +801,7 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Copy_Orig_Data
 
-def Copy_Orig_Data(wkgFolder, wkgGDB_, wkgFC_, origPath_, dt_to_append,
-                 add_fields_csv, calc_fields_csv, delete_fields_csv):
+def Copy_Orig_Data(wkgFolder, wkgGDB_, wkgFC_, origPath_, dt_to_append):
     print 'Copying original data...'
     logging.info('Copying original data...')
 
@@ -812,12 +816,6 @@ def Copy_Orig_Data(wkgFolder, wkgGDB_, wkgFC_, origPath_, dt_to_append,
 
     # Process
     arcpy.CopyFeatures_management(in_features, out_feature_class)
-
-    #---------------------------------------------------------------------------
-    # TODO: Create an Lat and Long column and calculate the geometry of the point
-    #    if the [site_location_correct] field is 'no'. Then calculate [site_lat]
-    #    and [site_long] based off of those calculated fields.
-        #---------------------------------------------------------------------------
 
     print 'Successfully copied original data.\n'
     logging.debug('Successfully copied original data.\n')
@@ -1188,6 +1186,27 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
+#                           FUNCTION: FC to Table
+def FC_To_Table(wkgFolder, wkgGDB, dt_to_append, wkgPath):
+    """
+    """
+    print 'Exporting FC to Table'
+    in_features = wkgPath
+    out_table = '{}\\{}\\DPW_Data_to_append_{}'.format(wkgFolder, wkgGDB, dt_to_append)
+
+    print '  Exporting...'
+    print '    From: {}'.format(in_features)
+    print '    To: {}'.format(out_table)
+
+    # Process
+    arcpy.CopyRows_management(in_features, out_table)
+
+    print 'Successfully exported FC to table'
+
+    return out_table
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 #                           FUNCTION: GET FIELD MAPPINGS
 def Get_Field_Mappings(orig_table, prod_table, map_fields_csv):
     print 'Getting Field Mappings...'
@@ -1257,21 +1276,20 @@ def Get_Field_Mappings(orig_table, prod_table, map_fields_csv):
 #-------------------------------------------------------------------------------
 #                        FUNCTION:  APPEND DATA
 # TODO: Get this working
-def Append_Data(wkgPath_, prodPath_, field_mappings_):
+def Append_Data(orig_table, target_table, field_mapping):
+
+
 
     print 'Appending Data...'
-    print '  From: ' + wkgPath_
-    print '  To:   ' + prodPath_
-    logging.info('Appending data...\n     From: %s\n     To:   %s' % (wkgPath_, prodPath_))
+    print '  From: ' + orig_table
+    print '  To:   ' + target_table
+    logging.info('Appending data...\n     From: %s\n     To:   %s' % (orig_table, target_table))
 
     # Append working data to production data
-    inputs = wkgPath_
-    target = prodPath_
     schema_type = 'NO_TEST'
-    field_mapping = field_mappings_
 
     # Process
-    arcpy.Append_management(inputs, target, schema_type, field_mapping)
+    arcpy.Append_management(orig_table, target_table, schema_type, field_mapping)
 
     print 'Successfully appended data.\n'
     logging.debug('Successfully appended data.\n')
