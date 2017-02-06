@@ -67,6 +67,7 @@ def main():
     run_FC_To_Table        = True
     run_Get_Field_Mappings = True  # Requires 'run_Copy_Orig_Data = True'
     run_Append_Data        = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Export_To_Excel    = True
     run_Email_Results      = True
 
     # Control CSV files
@@ -102,8 +103,9 @@ def main():
     prodGDB       = "DPW_Science_and_Monitoring_prod.gdb"
     prodFldData   = 'Field_Data'
     prodSitesData = 'Sites_Data'
-    prodPath_FldData      = prodFolder + '\\' + prodGDB + '\\' + prodFldData
-    prodPath_SitesData    = prodFolder + '\\' + prodGDB + '\\' + prodSitesData
+    prodPath_FldData       = prodFolder + '\\' + prodGDB + '\\' + prodFldData
+    prodPath_SitesData     = prodFolder + '\\' + prodGDB + '\\' + prodSitesData
+    prodPath_FldDataExcel  = prodFolder + '\\DPW_Field_Data'
 
     # Misc variables
     fileLog = wkgFolder + r'\Logs\DPW_Science_and_Monitoring.log'
@@ -220,7 +222,7 @@ def main():
             errorSTATUS = Error_Handler('Delete_Fields', e)
 
     #---------------------------------------------------------------------------
-    # NEW LOCATIONS and LOCATION DESCRIPTIONS
+    # Get NEW LOCATION DESCRIPTIONS and set NEW LOCATIONS
     if (errorSTATUS == 0 and run_New_Loc_LocDesc):
         try:
             New_Loc_LocDesc(wkgPath, prodPath_SitesData)
@@ -234,7 +236,7 @@ def main():
             exported_table = FC_To_Table(wkgFolder, wkgGDB, dt_to_append, wkgPath)
 
         except Exception as e:
-            errorSTATUS = Error_Handler('New_Loc_LocDesc', e)
+            errorSTATUS = Error_Handler('FC_To_Table', e)
 
     #---------------------------------------------------------------------------
     # GET FIELD MAPPINGS
@@ -254,6 +256,15 @@ def main():
         except Exception as e:
             errorSTATUS = Error_Handler('Append_Data', e)
 
+    #---------------------------------------------------------------------------
+    # EXPORT to EXCEL
+    if (errorSTATUS == 0 and run_Export_To_Excel):
+        try:
+            Export_To_Excel(prodPath_FldDataExcel, dt_to_append)
+
+
+        except Exception as e:
+            errorSTATUS = Error_Handler('Export_To_Excel', e)
     #---------------------------------------------------------------------------
     # Email results
     if (run_Email_Results):
@@ -1293,6 +1304,11 @@ def Append_Data(orig_table, target_table, field_mapping):
 
     print 'Successfully appended data.\n'
     logging.debug('Successfully appended data.\n')
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                          FUNCTION:   Export to Excel
+def Export_To_Excel(table_to_export):
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
