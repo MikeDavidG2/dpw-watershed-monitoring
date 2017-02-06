@@ -51,21 +51,21 @@ def main():
     #                               Set Variables
 
     # Variables to control which Functions are run
-    run_Set_Logger         = False
-    run_Get_DateAndTime    = False
-    run_Get_Last_Data_Ret  = False
-    run_Get_Token          = False
-    run_Get_Data           = False
+    run_Set_Logger         = True
+    run_Get_DateAndTime    = True
+    run_Get_Last_Data_Ret  = True
+    run_Get_Token          = True
+    run_Get_Data           = True
     run_Get_Attachments    = False  # Requires 'run_Get_Data = True'
     run_Set_Last_Data_Ret  = False # Should be 'False' if testing
-    run_Copy_Orig_Data     = False # Requires 'run_Get_Data = True'
-    run_Add_Fields         = False # Requires 'run_Copy_Orig_Data = True'
-    run_Calculate_Fields   = False # Requires 'run_Copy_Orig_Data = True'
+    run_Copy_Orig_Data     = True # Requires 'run_Get_Data = True'
+    run_Add_Fields         = True # Requires 'run_Copy_Orig_Data = True'
+    run_Calculate_Fields   = True # Requires 'run_Copy_Orig_Data = True'
     run_Delete_Fields      = False # Requires 'run_Copy_Orig_Data = True'
     run_New_Loc_LocDesc    = True
-    run_Get_Field_Mappings = False # Requires 'run_Copy_Orig_Data = True'
+    run_Get_Field_Mappings = True # Requires 'run_Copy_Orig_Data = True'
     run_Append_Data        = False # Requires 'run_Copy_Orig_Data = True'
-    run_Email_Results      = False
+    run_Email_Results      = True
 
     # Control CSV files
     control_CSVs           = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Master'
@@ -221,8 +221,9 @@ def main():
     #---------------------------------------------------------------------------
     # NEW LOCATIONS and LOCATION DESCRIPTIONS
 
-    # TODO: delete the below line when done testing this function
-    wkgPath = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Data\DPW_Science_and_Monitoring_wkg.gdb\DPW_Data_wkg_2017_2_3__14_55_12'
+    # TODO: delete the below lines when done testing this function
+    ##wkgPath = r'U:\grue\Scripts\Testing_or_Developing\TestMovePoint\movePoint.gdb\Moved_Points'
+    ##prodPath_SitesData = r'U:\grue\Scripts\Testing_or_Developing\TestMovePoint\movePoint.gdb\Sites_Data'
     if (errorSTATUS == 0 and run_New_Loc_LocDesc):
         try:
             New_Loc_LocDesc(wkgPath, prodPath_SitesData)
@@ -1079,7 +1080,7 @@ def Delete_Fields(wkg_data, delete_fields_csv):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                    FUNCTION: New Loc and Loc Desc
-def New_Loc_LocDesc(wkg_data, sites_data):
+def New_Loc_LocDesc(wkg_data, Sites_Data):
 
     print 'Getting new Location Descriptions at:\n  {}\n'.format(wkg_data)
 
@@ -1098,6 +1099,8 @@ def New_Loc_LocDesc(wkg_data, sites_data):
             New_LocDesc = ('    For SampleEventID: "{}", Monitor: "{}" said the Location Description for StationID: "{}" was innacurate.  Suggested change: "{}"'.format(row[0], row[1], row[2], row[3]))
             New_LocDescs.append(New_LocDesc)
 
+    del cursor
+
     # If there is only the original New_LocDescs string, then there were no new
     # suggested changes to make
     if (len(New_LocDescs) == 1):
@@ -1105,11 +1108,12 @@ def New_Loc_LocDesc(wkg_data, sites_data):
 
     for desc in New_LocDescs:
         print desc
+        pass
     #---------------------------------------------------------------------------
     #---------------------------------------------------------------------------
     #                           Set new Locations
 
-    # Create lists
+    # Create needed lists
     New_Locs = ['  The following are the sites that were relocated in the field (The changes will be made to the Sites_Data now):']
     StationIDs, ShapeXs, ShapeYs, SampEvntIDs, Creators = ([] for i in range(5))
 
@@ -1131,35 +1135,45 @@ def New_Loc_LocDesc(wkg_data, sites_data):
             SampEvntIDs.append(SampleEvntID)
             Creators.append(Creator)
 
-            print 'StationID: "{}" has an X of: "{}" and a Y of: "{}"'.format(StationID, ShapeX, ShapeY)
+            ##print 'StationID: "{}" has an NEW X of: "{}" and a NEW Y of: "{}"'.format(StationID, ShapeX, ShapeY)
 
             New_Loc = ('    For SampleEventID: "{}", Monitor: "{}" said the Location Description for StationID: "{}" was innacurate.  Site has been moved.'.format(SampleEvntID, Creator, StationID))
             New_Locs.append(New_Loc)
 
+    del cursor
 
-
-
-    #---------------------------------------------------------------------------
-    # Create an Update cursor to update the Shape column in the Sites_Data
-    # TODO: may have to change this cursor so that the function works
-    # check out: http://stackoverflow.com/questions/18133191/update-cursor-command-for-arcgis-updating-coordinates-but-coordinate-location-i
-    # for an example of what might work...
-
-    list_counter = 0
-    cursor_fields = ['StationID', 'Shape@X', 'Shape@Y']
-    with arcpy.da.UpdateCursor(sites_data, cursor_fields):
-        for row in cursor:
-            if row[0] == StationIDs[list_counter]:
-                print 'Updating StationID: {}'.format(StationIDs[list_counter])
-                row[1] = ShapeXs[list_counter]
-                row[2] = ShapeYs[list_counter]
-                ##cursor.updateRow(row)
-                i += 1
-
-    # If there is only the original New_Locs string, then there were no new
-    # locations to move
+   # If there is only the original New_Locs string, then there were no new
+   #  locations to move no need to update the Sites_Data
     if(len(New_Locs) == 1):
         New_Locs = ['  There were no relocated sites.']
+    else:
+    #---------------------------------------------------------------------------
+    # Create an Update cursor to update the Shape column in the Sites_Data
+
+        list_counter = 0
+        cursor_fields = ['StationID', 'Shape@X', 'Shape@Y']
+        with arcpy.da.UpdateCursor(Sites_Data, cursor_fields) as cursor:
+            for row in cursor:
+
+                # Only loop as many times as there are StationIDs to update
+                if (list_counter < len(StationIDs)):
+
+                    # If StationID in Sites_Data equals the StationID in the
+                    #  StationIDs list, update the geom for that StationID in Sites_Data
+                    if row[0] == StationIDs[list_counter]:
+                        print '  Updating StationID: {} with new coordinates.'.format(StationIDs[list_counter])
+
+                        # Give Shape@X and Shape@Y their new values
+                        row[1] = ShapeXs[list_counter]
+                        row[2] = ShapeYs[list_counter]
+
+                        cursor.updateRow(row)
+
+                        list_counter += 1
+
+        del cursor
+
+
 
     for Loc in New_Locs:
         ##print Loc
@@ -1242,6 +1256,7 @@ def Get_Field_Mappings(orig_table, prod_table, map_fields_csv):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                        FUNCTION:  APPEND DATA
+# TODO: Get this working
 def Append_Data(wkgPath_, prodPath_, field_mappings_):
 
     print 'Appending Data...'
