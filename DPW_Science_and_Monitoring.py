@@ -105,7 +105,7 @@ def main():
     prodSitesData = 'Sites_Data'
     prodPath_FldData       = prodFolder + '\\' + prodGDB + '\\' + prodFldData
     prodPath_SitesData     = prodFolder + '\\' + prodGDB + '\\' + prodSitesData
-    prodPath_FldDataExcel  = prodFolder + '\\DPW_Field_Data'
+    prodPath_Excel         = prodFolder + '\\Excel'
 
     # Misc variables
     fileLog = wkgFolder + r'\Logs\DPW_Science_and_Monitoring.log'
@@ -170,7 +170,8 @@ def main():
     # Get the ATTACHMENTS from the online database and store it locally
     if (errorSTATUS == 0 and run_Get_Attachments):
         try:
-            Get_Attachments(token, gaURL, wkgFolder, SmpEvntIDs_dl, dt_to_append)
+            attach_fldr = Get_Attachments(token, gaURL, wkgFolder,
+                                          SmpEvntIDs_dl, dt_to_append)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Get_Attachments', e)
@@ -260,7 +261,7 @@ def main():
     # EXPORT to EXCEL
     if (errorSTATUS == 0 and run_Export_To_Excel):
         try:
-            Export_To_Excel(prodPath_FldDataExcel, dt_to_append)
+            Export_To_Excel(prodPath_FldData, prodPath_Excel, dt_to_append)
 
 
         except Exception as e:
@@ -451,6 +452,7 @@ def Get_Token(cfgFile, gtURL):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                          FUNCTION:    Get AGOL Data
+# TODO: what happens if there is no data to download.  This is not an error, but should be returned so other functions are not run.
 #############################################################################################################
 ### http://blogs.esri.com/esri/arcgis/2013/10/10/quick-tips-consuming-feature-services-with-geoprocessing/
 ### https://geonet.esri.com/thread/118781
@@ -611,7 +613,8 @@ def Get_Attachments(token, gaURL, wkgFolder, SmpEvntIDs_dl, dt_to_append):
             access and download the image at this URL.
 
     Returns:
-        <none>
+        gaFolder (str):
+            So that the email can send that information.
     """
 
     print 'Getting Attachments...'
@@ -758,6 +761,8 @@ def Get_Attachments(token, gaURL, wkgFolder, SmpEvntIDs_dl, dt_to_append):
 
     print 'Successfully got attachments.\n'
     logging.debug('Successfully got attachments.\n')
+
+    return gaFolder
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -960,6 +965,7 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
             #-------------------------------------------------------------------
             # Test to see if the field is one of the two special TIME FIELDS
             # that need a special calculation that is not available in the CSV
+            # TODO: It appears that the time delta isn't working for some reason.  Need to look into this.
             if (field == 'SurveyDate' or field == 'SurveyTime'):
                 print ('      From selected features, calculating field: %s, so that it equals SUBSET of CreationDateString\n' % (field))
 
@@ -1203,7 +1209,7 @@ def FC_To_Table(wkgFolder, wkgGDB, dt_to_append, wkgPath):
     """
     print 'Exporting FC to Table'
     in_features = wkgPath
-    out_table = '{}\\{}\\DPW_Data_to_append_{}'.format(wkgFolder, wkgGDB, dt_to_append)
+    out_table = '{}\\{}\\DPW_Data_to_apnd_{}'.format(wkgFolder, wkgGDB, dt_to_append)
 
     print '  Exporting...'
     print '    From: {}'.format(in_features)
@@ -1308,7 +1314,23 @@ def Append_Data(orig_table, target_table, field_mapping):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                          FUNCTION:   Export to Excel
-def Export_To_Excel(table_to_export):
+def Export_To_Excel(table_to_export, export_folder, dt_to_append):
+    print 'Exporting to Excel...'
+
+    # Make the export file if it doesn't exist
+    if not os.path.exists(export_folder):
+        os.mkdir(export_folder)
+
+    export_file = export_folder + '\\Field_Data_{}.xls'.format(dt_to_append)
+
+    print '  Exporting database...'
+    print '    From: ' + table_to_export
+    print '    To :  ' + export_file
+
+    # Process
+    arcpy.TableToExcel_conversion(table_to_export, export_file, 'ALIAS')
+
+    print 'Successfully exported database to Excel.\n'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
