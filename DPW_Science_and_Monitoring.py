@@ -515,13 +515,9 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     fs.load(fsURL)
 
     #---------------------------------------------------------------------------
-    #Create working FGDB if it does not already exist.  Leave alone if it does...
-    ##Create_FGDB(wkgFolder, wkgGDB_)
+    #Create working FGDB if it does not already exist. Leave alone if it does...
     FGDB_path = wkgFolder + '\\' + wkgGDB_
-    if os.path.exists(FGDB_path):
-        ##print '  %s \n    already exists. No need to create it.' % FGDB_path
-        pass
-    else:
+    if not os.path.exists(FGDB_path):
         print '  Creating FGDB: %s at: %s' % (wkgGDB_, wkgFolder)
         logging.info('  Creating FGDB: %s at: %s' % (wkgGDB_, wkgFolder))
         # Process
