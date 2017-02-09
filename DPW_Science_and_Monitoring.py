@@ -69,8 +69,8 @@ def main():
     run_Email_Results      = True
 
     # Email lists
-    dpw_email_list = ['michael.grue@sdcounty.ca.gov']#['michael.grue@sdcounty.ca.gov', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
-    lueg_admin_email = ['michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
+    dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com']#['michael.grue@sdcounty.ca.gov', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
+    lueg_admin_email = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Control CSV files
     control_CSVs           = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Master'
@@ -166,9 +166,23 @@ def main():
         except Exception as e:
             errorSTATUS = Error_Handler('Get_Data', e)
 
+        # Set flag data_was_downloaded based on the number of records in
+        # SmpEvntIDs_dl.  This will be used to determine if other functions are
+        # called in the main() function.
+        if (len(SmpEvntIDs_dl) == 0):
+            data_was_downloaded = False
+
+            # These lists are needed in the Email_Results(), but will not be
+            # created by the New_Loc_LocDesc() because that function will not be
+            # called due to no data being downloaded.  Created here to not cause a fail
+            new_loc_descs = []
+            new_locs      = []
+        else:
+            data_was_downloaded = True
+
     #---------------------------------------------------------------------------
     # Get the ATTACHMENTS from the online database and store it locally
-    if (errorSTATUS == 0 and run_Get_Attachments):
+    if (errorSTATUS == 0 and data_was_downloaded and run_Get_Attachments):
         try:
             attach_fldr = Get_Attachments(token, gaURL, prod_attachments,
                                           SmpEvntIDs_dl, dt_to_append)
@@ -179,7 +193,7 @@ def main():
     #---------------------------------------------------------------------------
     # SET THE LAST TIME the data was retrieved from AGOL to the start_time
     # so that it can be used in the where clauses the next time the script is run
-    if (errorSTATUS == 0 and run_Set_Last_Data_Ret):
+    if (errorSTATUS == 0 and data_was_downloaded and run_Set_Last_Data_Ret):
         try:
             Set_Last_Data_Ret(last_data_retrival_csv, start_time)
 
@@ -187,7 +201,7 @@ def main():
             errorSTATUS = Error_Handler('Set_Last_Data_Ret', e)
     #---------------------------------------------------------------------------
     # COPY the original data to a working table
-    if (errorSTATUS == 0 and run_Copy_Orig_Data):
+    if (errorSTATUS == 0 and data_was_downloaded and run_Copy_Orig_Data):
         try:
             wkgPath = Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath,
                                      dt_to_append)
@@ -197,7 +211,7 @@ def main():
 
     #---------------------------------------------------------------------------
     # ADD FIELDS to the working table
-    if (errorSTATUS == 0 and run_Add_Fields):
+    if (errorSTATUS == 0 and data_was_downloaded and run_Add_Fields):
         try:
             Add_Fields(wkgPath, add_fields_csv)
 
@@ -206,7 +220,7 @@ def main():
 
     #---------------------------------------------------------------------------
     # CALCULATE FIELDS in the working table
-    if (errorSTATUS == 0 and run_Calculate_Fields):
+    if (errorSTATUS == 0 and data_was_downloaded and run_Calculate_Fields):
         try:
             Calculate_Fields(wkgPath, calc_fields_csv)
 
@@ -215,7 +229,7 @@ def main():
 
     #---------------------------------------------------------------------------
     # DELETE FIELDS from the working table
-    if (errorSTATUS == 0 and run_Delete_Fields):
+    if (errorSTATUS == 0 and data_was_downloaded and run_Delete_Fields):
         try:
             Delete_Fields(wkgPath, delete_fields_csv)
 
@@ -224,7 +238,7 @@ def main():
 
     #---------------------------------------------------------------------------
     # Get NEW LOCATION DESCRIPTIONS and set NEW LOCATIONS
-    if (errorSTATUS == 0 and run_New_Loc_LocDesc):
+    if (errorSTATUS == 0 and data_was_downloaded and run_New_Loc_LocDesc):
         try:
             new_loc_descs, new_locs = New_Loc_LocDesc(wkgPath, prodPath_SitesData)
 
@@ -232,7 +246,7 @@ def main():
             errorSTATUS = Error_Handler('New_Loc_LocDesc', e)
     #---------------------------------------------------------------------------
     # EXPORT FC to TABLE
-    if (errorSTATUS == 0 and run_FC_To_Table):
+    if (errorSTATUS == 0 and data_was_downloaded and run_FC_To_Table):
         try:
             exported_table = FC_To_Table(wkgFolder, wkgGDB, dt_to_append, wkgPath)
 
@@ -241,7 +255,7 @@ def main():
 
     #---------------------------------------------------------------------------
     # GET FIELD MAPPINGS
-    if (errorSTATUS == 0 and run_Get_Field_Mappings):
+    if (errorSTATUS == 0 and data_was_downloaded and run_Get_Field_Mappings):
         try:
             field_mappings = Get_Field_Mappings(exported_table, prodPath_FldData, map_fields_csv)
 
@@ -250,7 +264,7 @@ def main():
 
     #---------------------------------------------------------------------------
     # APPEND the data
-    if (errorSTATUS == 0 and run_Append_Data):
+    if (errorSTATUS == 0 and data_was_downloaded and run_Append_Data):
         try:
             Append_Data(exported_table, prodPath_FldData, field_mappings)
 
@@ -259,7 +273,7 @@ def main():
 
     #---------------------------------------------------------------------------
     # EXPORT to EXCEL
-    if (errorSTATUS == 0 and run_Export_To_Excel):
+    if (errorSTATUS == 0 and data_was_downloaded and run_Export_To_Excel):
         try:
             Export_To_Excel(prodPath_FldData, prodPath_Excel, dt_to_append)
 
@@ -276,7 +290,6 @@ def main():
                 errorSTATUS = Error_Handler('Email_Results', e)
     #---------------------------------------------------------------------------
     #                  Print out info about the script
-
 
     if errorSTATUS == 0:
         print 'SUCCESSFULLY ran DPW_Science_and_Monitoring.py'
@@ -509,12 +522,35 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     query = "?where={}&outFields={}&returnGeometry=true&f=json&token={}".format(where_encoded,AGOfields_,token)
     fsURL = queryURL_ + query
 
-    #Get connected to the feature service
-    ##print '  Feature Service: %s' % str(fsURL)
+    # Create empty Feature Set object
     fs = arcpy.FeatureSet()
-    fs.load(fsURL)
 
     #---------------------------------------------------------------------------
+    #                 Try to load data into Feature Set object
+    # This try/except is because the fs.load(fsURL) will fail whenever no data
+    # is returned by the query; something that will happen when there are no
+    # records within the datetime that data was last retrieved "dt_last_ret_data_"
+    # and the current time
+    try:
+        fs.load(fsURL)
+    except:
+        print '  "fs.load(fsURL)" yielded no data at fsURL.'
+        print '  Query dates may not have yielded any records.'
+        print '  Or could be another problem with the Get_Data() function.'
+        print '  Feature Service: %s' % str(fsURL)
+
+        # Set the values of the expected return variables
+        origPath_ = 'No original path, data not downloaded.'
+
+        # This empty list will be used to show the rest of the script that
+        # no data was downloaded
+        SmpEvntIDs_dl = []
+
+        return origPath_, SmpEvntIDs_dl
+
+    #---------------------------------------------------------------------------
+    #             Data was loaded, CONTINUE the downloading process
+
     #Create working FGDB if it does not already exist. Leave alone if it does...
     FGDB_path = wkgFolder + '\\' + wkgGDB_
     if not os.path.exists(FGDB_path):
@@ -1327,8 +1363,6 @@ def Export_To_Excel(table_to_export, export_folder, dt_to_append):
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Email Results
 def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file, start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder, dl_features_ls, new_loc_descs, new_locs):
-    # TODO: have new_loc_descs and new_locs get printed out in the 'Success' email
-    errorSTATUS = 1
     print '\nEmailing Results...'
     logging.info('Emailing Results...')
 
