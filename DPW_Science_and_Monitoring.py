@@ -41,8 +41,6 @@ from email.mime.text import MIMEText
 
 arcpy.env.overwriteOutput = True
 
-
-
 #-------------------------------------------------------------------------------
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #-------------------------------------------------------------------------------
@@ -69,6 +67,10 @@ def main():
     run_Append_Data        = True  # Requires 'run_Copy_Orig_Data = True'
     run_Export_To_Excel    = True
     run_Email_Results      = True
+
+    # Email lists
+    dpw_email_list = ['michael.grue@sdcounty.ca.gov']#['michael.grue@sdcounty.ca.gov', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
+    lueg_admin_email = ['michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Control CSV files
     control_CSVs           = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Master'
@@ -98,24 +100,22 @@ def main():
       # There is no wkgPath variable yet since we will append the date and
       # time to it in a function below
 
-    # Production database locations and names
-    prodFolder    = wkgFolder
-    prodGDB       = "DPW_Science_and_Monitoring_prod.gdb"
-    prodFldData   = 'Field_Data'
-    prodSitesData = 'Sites_Data'
-    prodPath_FldData       = prodFolder + '\\' + prodGDB + '\\' + prodFldData
-    prodPath_SitesData     = prodFolder + '\\' + prodGDB + '\\' + prodSitesData
-    prodPath_Excel         = prodFolder + '\\Excel'
+    # Production locations and names
+    prodGDB       = wkgFolder+ "\\DPW_Science_and_Monitoring_prod.gdb"
+    prodPath_FldData       = prodGDB + '\\Field_Data'
+    prodPath_SitesData     = prodGDB + '\\Sites_Data'
+    prod_attachments       = wkgFolder + '\\Sci_Monitoring_pics'
+    prodPath_Excel         = wkgFolder + '\\Excel'
 
     # Misc variables
-    fileLog = wkgFolder + r'\Logs\DPW_Science_and_Monitoring.log'
+    log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring.log'
     errorSTATUS = 0
     #---------------------------------------------------------------------------
     # Set up the logger
     if (errorSTATUS == 0 and run_Set_Logger):
         try:
             #If you need to debug, set the level=logging.INFO to logging.DEBUG
-            logging.basicConfig(filename = fileLog, level=logging.INFO)
+            logging.basicConfig(filename = log_file, level=logging.INFO)
 
             #Header for the log file
             logging.info('\n\n\n')
@@ -170,7 +170,7 @@ def main():
     # Get the ATTACHMENTS from the online database and store it locally
     if (errorSTATUS == 0 and run_Get_Attachments):
         try:
-            attach_fldr = Get_Attachments(token, gaURL, wkgFolder,
+            attach_fldr = Get_Attachments(token, gaURL, prod_attachments,
                                           SmpEvntIDs_dl, dt_to_append)
 
         except Exception as e:
@@ -226,7 +226,7 @@ def main():
     # Get NEW LOCATION DESCRIPTIONS and set NEW LOCATIONS
     if (errorSTATUS == 0 and run_New_Loc_LocDesc):
         try:
-            New_Loc_LocDesc(wkgPath, prodPath_SitesData)
+            new_loc_descs, new_locs = New_Loc_LocDesc(wkgPath, prodPath_SitesData)
 
         except Exception as e:
             errorSTATUS = Error_Handler('New_Loc_LocDesc', e)
@@ -270,7 +270,7 @@ def main():
     # Email results
     if (run_Email_Results):
             try:
-                Email_Results()
+                Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file, start_time, dt_last_ret_data, prodGDB, prod_attachments, SmpEvntIDs_dl, new_loc_descs, new_locs)
 
             except Exception as e:
                 errorSTATUS = Error_Handler('Email_Results', e)
@@ -563,7 +563,7 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
 # the downloaded attachment.
 
 #TODO: find a way to rotate the images clockwise 90-degrees
-def Get_Attachments(token, gaURL, wkgFolder, SmpEvntIDs_dl, dt_to_append):
+def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
     """
     Gets the attachments (images) that are related to the database features and
     stores them as .jpg in a local file inside the wkgFolder.
@@ -662,7 +662,7 @@ def Get_Attachments(token, gaURL, wkgFolder, SmpEvntIDs_dl, dt_to_append):
 
     #---------------------------------------------------------------------------
     #                       Save the attachments
-    gaFolder = wkgFolder + '\\Sci_Monitoring_pics'
+    ##gaFolder = wkgFolder + '\\Sci_Monitoring_pics'
     ## Uncomment below if you want to create a new folder each time the attachments are pulled
     ##gaFolder = wkgFolder + '\\Sci_Monitoring_pics__%s' % dt_to_append
 
@@ -1115,7 +1115,7 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
     # If there is only the original New_LocDescs string, then there were no new
     # suggested changes to make
     if (len(New_LocDescs) == 1):
-        New_LocDescs = ['There were no New Location Description suggested changes.']
+        New_LocDescs = ['  There were no New Location Description suggested changes.']
 
     for desc in New_LocDescs:
         print desc
@@ -1157,10 +1157,10 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
    #  locations to move no need to update the Sites_Data
     if(len(New_Locs) == 1):
         New_Locs = ['  There were no relocated sites.']
-    else:
+
     #---------------------------------------------------------------------------
     # Create an Update cursor to update the Shape column in the Sites_Data
-
+    else:
         list_counter = 0
         cursor_fields = ['StationID', 'Shape@X', 'Shape@Y']
         with arcpy.da.UpdateCursor(Sites_Data, cursor_fields) as cursor:
@@ -1184,18 +1184,13 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
 
         del cursor
 
-
-
     for Loc in New_Locs:
-        ##print Loc
+        print Loc
         pass
-
-
-
 
     print '\nSuccessfully got new Location Descriptions and set New Locations.\n'
 
-    return New_LocDescs
+    return New_LocDescs, New_Locs
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -1330,13 +1325,182 @@ def Export_To_Excel(table_to_export, export_folder, dt_to_append):
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#                          FUNCTION:   Email results
-def Email_Results():
+#                           FUNCTION:  Email Results
+def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file, start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder, dl_features_ls, new_loc_descs, new_locs):
+    # TODO: have new_loc_descs and new_locs get printed out in the 'Success' email
+
     print '\nEmailing Results...'
     logging.info('Emailing Results...')
 
-    print '  This is a placeholder for future script.  This function is empty.'
-    logging.debug('  This is a placeholder for future script.  This function is empty.')
+    #---------------------------------------------------------------------------
+    #         Do some processing to be used in the body of the email
+
+    # Turn the start_time into a formatted string
+    start_time = [start_time_obj.strftime('%m/%d/%Y %I:%M:%S %p')]
+
+    # Get the current time and turn into a formatted string
+    finish_time_obj = datetime.datetime.now()
+    finish_time = [finish_time_obj.strftime('%m/%d/%Y %I:%M:%S %p')]
+
+    # Turn the date data last retrieved into a formatted string
+    data_last_retrieved = [dt_last_ret_data.strftime('%m/%d/%Y %I:%M:%S %p')]
+
+    # Get the number of downloaded features
+    num_dl_features = len(dl_features_ls)
+
+    # Get a formatted string of the new_loc_descs and new_locs
+    str_new_loc_descs = ' <br> &nbsp;'.join(new_loc_descs) # join each item in the list with a line break and a tab
+    str_new_locs      = ' <br> &nbsp;'.join(new_locs)
+
+    #---------------------------------------------------------------------------
+    #                         Write the "Success" email
+
+    # If there are no errors and at least one feature was downloaded
+    if (errorSTATUS == 0 and num_dl_features > 0):
+        print '  Writing the "Success" email...'
+
+        # Send this email to the dpw_email_list
+        email_list = dpw_email_list
+
+        # Format the Subject for the 'Success' email
+        subj = 'SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script'
+
+        # Format the Body in html
+        body  = ("""\
+        <html>
+          <head></head>
+          <body>
+            <h3>Info:</h3>
+            <p>
+               There were <b>{num}</b> features downloaded this run.
+            <br><br>
+            </p>
+
+            <h3>New Locations and New Location Descriptions:</h3>
+            <p>
+               {nld}
+            <br>
+            <br>
+               {nl}
+            <br><br>
+            </p>
+
+            <h3>Times:</h3>
+            <p>
+               The script started at:             <i>{st}</i><br>
+               The script finished at:            <i>{ft}</i><br>
+               The data retrieved was between:    <i>{dlr}</i>
+               and the start time of the script.
+            </p>
+            <br><br>
+
+            <h3>File Locations:</h3>
+            <p>
+               You can find the updated FGDB at:  <i>{fgdb}</i><br>
+               All Images are located at:         <i>{af}</i><br>
+               The Log file is located at:        <i>{lf}</i><br>
+            </p>
+          </body>
+        </html>
+        """.format(nld = str_new_loc_descs, nl = str_new_locs, st = start_time[0],
+                   ft = finish_time[0], dlr = data_last_retrieved[0],
+                   num = num_dl_features, fgdb = prod_FGDB, af = attach_folder,
+                   lf = log_file))
+
+    #---------------------------------------------------------------------------
+    #                     Write the "No Data Downloaded' email
+
+    # If there were no errors but no data was downloaded
+    elif(errorSTATUS == 0 and num_dl_features == 0):
+        print '  Writing the "No Data Downloaded" email'
+
+        # Send this email to the lueg_admin_emails
+        email_list = lueg_admin_email
+
+        # Format the Subject for the 'No Data Downloaded' email
+        subj = 'No Data Downloaded for DPW_Science_and_Monitoring.py Script'
+
+        # Format the Body in html
+        body  = ("""\
+        <html>
+          <head></head>
+          <body>
+            <h3>Times:</h3>
+            <p>The script started at:             <i>{st}</i><br>
+               The script finished at:            <i>{ft}</i><br>
+            </p>
+            <br>
+            <h3>Info and Locations:</h3>
+            <p>There were <b>{num}</b> features downloaded this run.<br>
+               This is NOT an error IF there was no data collected between the
+               date the data was last retrieved... <i>{dlr}</i> ... and now.<br>
+               The Log file is located at:        <i>{lf}</i><br>
+            </p>
+          </body>
+        </html>
+        """.format(st = start_time[0], ft = finish_time[0], num = num_dl_features,
+                   dlr = data_last_retrieved[0], lf = log_file))
+
+    #---------------------------------------------------------------------------
+    #                        Write the "Errors" email
+
+    # If there were errors with the script
+    elif(errorSTATUS <> 0):
+        print '  Writing "Error" email...'
+
+        # Get the current working directory
+        cwd = os.getcwd()
+
+        # Send this email to the lueg_admin_emails
+        email_list = lueg_admin_email
+
+        # Format the Subject for the 'Errors' email
+        subj = 'ERROR with DPW_Science_and_Monitoring.py Script'
+
+        # Format the Body in html
+        body = ("""\
+        <html>
+          <head></head>
+          <body>
+            <h2>ERROR</h2>
+            <h3>Times:</h3>
+            <p>The script started at:             <i>{st}</i><br>
+               The error happened at:             <i>{ft}</i><br>
+            </p>
+            <br>
+            <h3>Info and Locations:</h3>
+            <p>There were ERRORS with the DPW_Science_and_Monitoring.py script.<br>
+               The Log file is located at:        <i>{lf}</i><br>
+               The script is located at:          <i>{cwd}</i><br>
+            </p>
+          <body>
+        </html>
+
+        """.format(st = start_time[0], ft = finish_time[0], lf = log_file, cwd = cwd))
+
+    #---------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
+    #                              Send the Email
+
+    # Set the subj, From, To, and body
+    msg = MIMEMultipart()
+    msg['Subject']   = subj
+    msg['From']      = "Python Script"
+    msg['To']        = ', '.join(dpw_email_list)  # Join each item in list with a ', '
+    msg.attach(MIMEText(body, 'html'))
+
+    # Get username and password from cfgFile
+    config = ConfigParser.ConfigParser()
+    config.read(cfgFile)
+    email_usr = config.get('email', 'usr')
+    email_pwd = config.get('email', 'pwd')
+
+    # Send the email
+    SMTP_obj = smtplib.SMTP('smtp.gmail.com',587)
+    SMTP_obj.starttls()
+    SMTP_obj.login(email_usr, email_pwd)
+    SMTP_obj.sendmail(email_usr, email_list, msg.as_string())
+    SMTP_obj.quit()
 
     print 'Successfully emailed results.\n'
     logging.debug('Successfully emailed results.\n')
