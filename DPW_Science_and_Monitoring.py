@@ -1125,7 +1125,7 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
     #                           Set new Locations
 
     # Create needed lists
-    New_Locs = ['  The following are the sites that were relocated in the field (The changes will be made to the Sites_Data now):']
+    New_Locs = ['  The following are the sites that were relocated in the field (The changes will be automatically made to the Sites_Data):']
     StationIDs, ShapeXs, ShapeYs, SampEvntIDs, Creators = ([] for i in range(5))
 
     # Create Search cursor and add data to lists
@@ -1328,7 +1328,7 @@ def Export_To_Excel(table_to_export, export_folder, dt_to_append):
 #                           FUNCTION:  Email Results
 def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file, start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder, dl_features_ls, new_loc_descs, new_locs):
     # TODO: have new_loc_descs and new_locs get printed out in the 'Success' email
-
+    errorSTATUS = 1
     print '\nEmailing Results...'
     logging.info('Emailing Results...')
 
@@ -1349,8 +1349,8 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     num_dl_features = len(dl_features_ls)
 
     # Get a formatted string of the new_loc_descs and new_locs
-    str_new_loc_descs = ' <br> &nbsp;'.join(new_loc_descs) # join each item in the list with a line break and a tab
-    str_new_locs      = ' <br> &nbsp;'.join(new_locs)
+    str_new_loc_descs = ' <br> &nbsp;&nbsp;'.join(new_loc_descs) # join each item in the list with a line break and a tab
+    str_new_locs      = ' <br> &nbsp;&nbsp;'.join(new_locs)
 
     #---------------------------------------------------------------------------
     #                         Write the "Success" email
@@ -1379,8 +1379,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
             <h3>New Locations and New Location Descriptions:</h3>
             <p>
                {nld}
-            <br>
-            <br>
+            <br><br>
                {nl}
             <br><br>
             </p>
@@ -1425,15 +1424,23 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
         <html>
           <head></head>
           <body>
-            <h3>Times:</h3>
-            <p>The script started at:             <i>{st}</i><br>
-               The script finished at:            <i>{ft}</i><br>
-            </p>
-            <br>
-            <h3>Info and Locations:</h3>
-            <p>There were <b>{num}</b> features downloaded this run.<br>
-               This is NOT an error IF there was no data collected between the
+            <h3>Info:</h3>
+            <p>
+               There were <b>{num}</b> features downloaded this run.<br>
+               This is not an error IF there was no data collected between the
                date the data was last retrieved... <i>{dlr}</i> ... and now.<br>
+            <br><br>
+            </p>
+
+            <h3>Times:</h3>
+            <p>
+               The script started at:             <i>{st}</i><br>
+               The script finished at:            <i>{ft}</i>
+            </p>
+            <br><br>
+
+            <h3>File Locations:</h3>
+            <p>
                The Log file is located at:        <i>{lf}</i><br>
             </p>
           </body>
@@ -1463,13 +1470,18 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
           <head></head>
           <body>
             <h2>ERROR</h2>
+            <h3>Info:</h3>
+            <p>There were ERRORS with the DPW_Science_and_Monitoring.py script.
+            <br><br>
+            </p>
+
             <h3>Times:</h3>
             <p>The script started at:             <i>{st}</i><br>
-               The error happened at:             <i>{ft}</i><br>
+               The error happened at:             <i>{ft}</i>
+            <br><br>
             </p>
-            <br>
-            <h3>Info and Locations:</h3>
-            <p>There were ERRORS with the DPW_Science_and_Monitoring.py script.<br>
+
+            <h3>File Locations:</h3>
                The Log file is located at:        <i>{lf}</i><br>
                The script is located at:          <i>{cwd}</i><br>
             </p>
