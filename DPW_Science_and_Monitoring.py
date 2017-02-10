@@ -55,8 +55,8 @@ def main():
     run_Get_Last_Data_Ret  = True
     run_Get_Token          = True
     run_Get_Data           = True
-    run_Get_Attachments    = False # Requires 'run_Get_Data = True'
-    run_Set_Last_Data_Ret  = False # Should be 'False' if testing
+    run_Get_Attachments    = True # Requires 'run_Get_Data = True'
+    run_Set_Last_Data_Ret  = True # Should be 'False' if testing
     run_Copy_Orig_Data     = True  # Requires 'run_Get_Data = True'
     run_Add_Fields         = True  # Requires 'run_Copy_Orig_Data = True'
     run_Calculate_Fields   = True  # Requires 'run_Copy_Orig_Data = True'
@@ -110,12 +110,14 @@ def main():
     # Misc variables
     log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring.log'
     errorSTATUS = 0
+    os.chdir(wkgFolder) # Makes sure we are in the correct directory (if called from Task Scheduler)
+
     #---------------------------------------------------------------------------
     # Set up the logger
     if (errorSTATUS == 0 and run_Set_Logger):
         try:
             #If you need to debug, set the level=logging.INFO to logging.DEBUG
-            logging.basicConfig(filename = log_file, level=logging.INFO)
+            logging.basicConfig(filename = log_file, level=logging.DEBUG)
 
             #Header for the log file
             logging.info('\n\n\n')
@@ -348,6 +350,8 @@ def Get_DateAndTime():
     time = '%s_%s_%s' % (start_time.hour, start_time.minute, start_time.second)
 
     dt_to_append = '%s__%s' % (date, time)
+
+    print '  Date to append: {}'.format(dt_to_append)
 
     print 'Successfully got Date and Time\n'
     logging.debug('Successfully got Date and Time\n')
@@ -693,7 +697,7 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
     # Allow the script to access the saved JSON file
     cwd = os.getcwd()  # Get the current working directory
     jsonFilePath = cwd + '\\' + JsonFileName # Path to the downloaded json file
-    ##print '  JSON file saved to: ' + jsonFilePath
+    print '  JSON file saved to: ' + jsonFilePath
     logging.debug('  JSON file saved to: ' + jsonFilePath)
 
     #---------------------------------------------------------------------------
@@ -802,8 +806,8 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
 def Set_Last_Data_Ret(last_ret_csv, start_time):
     # TODO: write a function synopsis
     """This function is """
-    print 'Setting start_time to CSV...'
-    logging.info('Setting start_time to CSV...')
+    print 'Setting start_time to Last Data Retrival time...'
+    logging.info('Setting start_time to Last Data Retrival time...')
 
     #---------------------------------------------------------------------------
     # Get original data from the CSV and make a list out of it
@@ -1245,7 +1249,7 @@ def FC_To_Table(wkgFolder, wkgGDB, dt_to_append, wkgPath):
     # Process
     arcpy.CopyRows_management(in_features, out_table)
 
-    print 'Successfully exported FC to table'
+    print 'Successfully exported FC to table\n'
 
     return out_table
 
@@ -1277,7 +1281,7 @@ def Get_Field_Mappings(orig_table, prod_table, map_fields_csv):
             row_num += 1
 
     num_fm = len(orig_fields)
-    print '  There are %s non-default fields to map.\n' % str(num_fm)
+    print '  There are %s non-default fields to map.' % str(num_fm)
 
     #---------------------------------------------------------------------------
     #           Set the Field Maps into the Field Mapping object
@@ -1313,7 +1317,7 @@ def Get_Field_Mappings(orig_table, prod_table, map_fields_csv):
         counter += 1
 
     ##print '  Field Mappings:\n  %s' % fms
-    print '\n\nSuccessfully Got Field Mappings\n'
+    print 'Successfully Got Field Mappings\n'
     return fms
 
 #-------------------------------------------------------------------------------
@@ -1425,7 +1429,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
                The data retrieved was between:    <i>{dlr}</i>
                and the start time of the script.
             </p>
-            <br><br>
+            <br>
 
             <h3>File Locations:</h3>
             <p>
@@ -1585,11 +1589,14 @@ def Error_Handler(func_w_err, e):
             help_comment = '     Error may be the result of the Feature Service URL not being correctly set.  OR the \'Enable Sync\' option may not be enabled on the AGOL feature layer.  OR the Feature layer may not be shared.'
 
     # Help comments for 'Get_Attachments' function
+    # TODO: figure out why these help comments aren't being assigned
     if (func_w_err == 'Get_Attachments'):
-        if e_str == "'*'":
+        if e_str == "*":
             help_comment = '    This error may be the result that the field you are using to parse the data from is not correct.  Double check your fields.'
-        if e_str == "'URL'":
+        elif e_str == "URL":
             help_comment = '    This error may be the result of the feature layer may not be shared.\n    Or user in the "cfgFile" may not have permission to access the URL.  Try logging onto AGOL with that user account to see if that user has access to the database.\n    Or the problem may be that the feature layer setting doesn\'t have Sync enabled.\n    Or the URL is incorrect somehow.'
+        elif e_str == "*Permission denied:*":
+            help_comment = '    This error may be due to the present working directory not being in the right folder.'
 
 
     # Help comments for 'Append_Data' function
@@ -1598,7 +1605,7 @@ def Error_Handler(func_w_err, e):
 
     #---------------------------------------------------------------------------
     if (help_comment == ''):
-        pass
+        logging.error('    No help comment.')
     else:
         print '    Help Comment: ' + help_comment
         logging.error('    Help Comment: ' + help_comment)
