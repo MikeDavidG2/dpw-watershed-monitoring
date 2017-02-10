@@ -107,17 +107,22 @@ def main():
     prod_attachments       = wkgFolder + '\\Sci_Monitoring_pics'
     prodPath_Excel         = wkgFolder + '\\Excel'
 
-    # Misc variables
+    # Misc
     log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring.log'
     errorSTATUS = 0
     os.chdir(wkgFolder) # Makes sure we are in the correct directory (if called from Task Scheduler)
+    logging_level = logging.DEBUG # Can change to logging.DEBUG, .INFO, .WARNING, or .ERROR
 
     #---------------------------------------------------------------------------
+    #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    #---------------------------------------------------------------------------
+    #                        Start calling functions
     # Set up the logger
     if (errorSTATUS == 0 and run_Set_Logger):
         try:
-            #If you need to debug, set the level=logging.INFO to logging.DEBUG
-            logging.basicConfig(filename = log_file, level=logging.DEBUG)
+            #If you need to debug, set the logging_level above to logging.DEBUG
+            logging.basicConfig(filename = log_file, level=logging_level)
 
             #Header for the log file
             logging.info('\n\n\n')
@@ -341,6 +346,7 @@ def Get_DateAndTime():
         start_time
     """
 
+    print '------------------------------------------------------------------'
     print 'Getting Date and Time (dt)...'
     logging.info('Getting Date and Time...')
 
@@ -383,6 +389,7 @@ def Get_Last_Data_Retrival(last_ret_csv):
         dt_last_ret_data
     """
 
+    print '------------------------------------------------------------------'
     print 'Getting last data retrival...'
     logging.info('Getting last data retrival...')
 
@@ -433,6 +440,7 @@ def Get_Token(cfgFile, gtURL):
         token
     """
 
+    print '------------------------------------------------------------------'
     print "Getting Token..."
     logging.info("Getting Token...")
 
@@ -484,6 +492,7 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     creates a unique FC to store the data, and then copies the data from AGOL
     to the unique FC"""
 
+    print '------------------------------------------------------------------'
     print "Getting data..."
     logging.info("Getting data...")
 
@@ -491,29 +500,34 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     #Set the feature service URL (fsURL = the query URL + the query)
 
     # We want to set the 'where' clause to get records where the [CreationDate]
-    # field is BETWEEN the date the data was last retrieved and tomorrow.
-    # This is so we will make sure to grab the most recent data (data that is
-    # collected on the day the script is run).
+    # field is BETWEEN the date the data was last retrieved and plus two days.
+    # This is because AGOL tracks the CreationDate as UTC, which is +8 hours
+    # ahead of PST. So if any records are added after 4:00pm, the AGOL database
+    # thinks the record was submitted on our TOMORROW.
 
-    # BETWEEN means that data collected on the first date will be retrieved,
-    # while the data collected on the second date will not be retrieved. This
-    # is why we want to collect data between a previous date and TOMORROW.
-    # if we query for TOMORROW, we know that we will get all of todays data
-    # if the script is run before midnight.
-
+    # The format for the where query is "CreationData BETWEEN 'First Date' and
+    # 'Second Date'".  The data collected on the first date will be retrieved,
+    # while the data collected on the second date will NOT be retrieved.
     # For ex: If data is collected on the 28th, and 29th and the where clause is:
     #   BETWEEN the 28th and 29th. You will get the data collected on the 28th only
     #   BETWEEN the 29th and 30th. You will get the data collected on the 29th only
     #   BETWEEN the 28th and 30th. You will get the data collected on the 28th AND 29th
 
-    plus_one_day = datetime.timedelta(days=1)
+    # For these reasons, if the record was submitted on Feb 1 at 4:01pm PST.
+    # The AGOL database says the record was submitted on Feb 2 at 12:01am UTC.
+    # This means that if the query is run on Feb 1 at 4:02pm PST (right after
+    # submitting the record), and the query has a 'Second Date' SOONER
+    # than Feb 3, the script will not grab the data.  By adding 2 days into the
+    # future we account for the possibility that the record may have been recorded
+    # as being entered TOMORROW.
+    two_days = datetime.timedelta(days=2)
     now = datetime.datetime.now()
-    tomorrow = now + plus_one_day
+    plus_two_days = now + two_days
     ##print '  tomorrow: ' + str(tomorrow)
 
     # Use the dt_last_ret_data variable and tomorrow variable to set the 'where'
     # clause
-    where = "CreationDate BETWEEN '{dt.year}-{dt.month}-{dt.day}' and '{tom.year}-{tom.month}-{tom.day}'".format(dt = dt_last_ret_data_, tom = tomorrow)
+    where = "CreationDate BETWEEN '{dt.year}-{dt.month}-{dt.day}' and '{ptd.year}-{ptd.month}-{ptd.day}'".format(dt = dt_last_ret_data_, ptd = plus_two_days)
     print '  Getting data where: {}'.format(where)
     logging.debug('  Getting data where: {}'.format(where))
 
@@ -536,12 +550,15 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     # records within the datetime that data was last retrieved "dt_last_ret_data_"
     # and the current time
     try:
+        ##print 'fsURL %s' % fsURL
         fs.load(fsURL)
     except:
         print '  "fs.load(fsURL)" yielded no data at fsURL.'
         print '  Query dates may not have yielded any records.'
         print '  Or could be another problem with the Get_Data() function.'
         print '  Feature Service: %s' % str(fsURL)
+        logging.info('  Failed to load the Feature Service.
+        logging.info('  Not an error IF there was no data submitted since the last time the script ran.')
 
         # Set the values of the expected return variables
         origPath_ = 'No original path, data not downloaded.'
@@ -653,6 +670,7 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
             So that the email can send that information.
     """
 
+    print '------------------------------------------------------------------'
     print 'Getting Attachments...'
     logging.info('Getting Attachments...')
 
@@ -806,9 +824,11 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
 def Set_Last_Data_Ret(last_ret_csv, start_time):
     # TODO: write a function synopsis
     """This function is """
-    print 'Setting start_time to Last Data Retrival time...'
-    logging.info('Setting start_time to Last Data Retrival time...')
+    print '------------------------------------------------------------------'
+    print 'Setting Last Data Retrival time as start_time...'
+    logging.info('Setting Last Data Retrival time as start_time...')
 
+    print '  New Last Data Retrival time: {}'.format(start_time)
     #---------------------------------------------------------------------------
     # Get original data from the CSV and make a list out of it
     with open (last_ret_csv) as csv_file:
@@ -821,11 +841,6 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
 
             orig_rows.append(orig_row)
             row_num += 1
-
-    for orig_row in orig_rows:
-        print 'Orig data: ' + orig_row
-    print ''
-
 
     #---------------------------------------------------------------------------
     # overwrite the original file, BUT write the original information to it
@@ -841,19 +856,22 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
         for row in orig_rows:
             # This copies the first two rows from the orig script to the new one
             if row_num < 2:
-                print 'Writing: ' + row
+                ##print 'Writing: ' + row
                 writeCSV.writerow([row])
             # This writes the new start time to the third row
             else:
-                print 'New time: %s' % formated_dt[0]
+                print '  New time: %s' % formated_dt[0]
                 writeCSV.writerow(formated_dt)
             row_num += 1
+
+    print 'Successfully set last data retrival time\n'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Copy_Orig_Data
 
 def Copy_Orig_Data(wkgFolder, wkgGDB_, wkgFC_, origPath_, dt_to_append):
+    print '------------------------------------------------------------------'
     print 'Copying original data...'
     logging.info('Copying original data...')
 
@@ -879,7 +897,7 @@ def Copy_Orig_Data(wkgFolder, wkgGDB_, wkgFC_, origPath_, dt_to_append):
 
 def Add_Fields(wkg_data, add_fields_csv):
     print '------------------------------------------------------------------'
-    print 'Adding fields to:\n    %s' % wkg_data
+    print 'Adding fields to:\n  %s' % wkg_data
     with open (add_fields_csv) as csv_file:
         readCSV = csv.reader(csv_file, delimiter = ',')
 
@@ -895,21 +913,19 @@ def Add_Fields(wkg_data, add_fields_csv):
                 f_name   = row[0]
                 f_type   = row[1]
                 f_length = row[2]
-                ##f_alias  = row[3]
 
                 f_names.append(f_name)
                 f_types.append(f_type)
                 f_lengths.append(f_length)
-                ##f_aliases.append(f_alias)
             row_num += 1
 
     num_new_fs = len(f_names)
-    print '    There are %s new fields to add.\n' % str(num_new_fs)
+    print '    There are %s new fields to add:' % str(num_new_fs)
 
     f_counter = 0
     while f_counter < num_new_fs:
-        print ('    Creating field: %s, with a type of: %s, and a length of: %s'
-        % (f_names[f_counter], f_types[f_counter], f_lengths[f_counter])) ##, f_aliases[f_counter]))
+        print ('      Creating field: %s, with a type of: %s, and a length of: %s'
+        % (f_names[f_counter], f_types[f_counter], f_lengths[f_counter]))
 
         in_table          = wkg_data
         field_name        = f_names[f_counter]
@@ -968,7 +984,7 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
             row_num += 1
 
     num_calcs = len(where_clauses)
-    print '    There are %s calculations to perform.\n' % str(num_calcs)
+    print '    There are %s calculations to perform:' % str(num_calcs)
 
     #---------------------------------------------------------------------------
     #                    Select features and calculate them
@@ -981,7 +997,7 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
         selection_type   = 'NEW_SELECTION'
         my_where_clause  = where_clauses[f_counter]
 
-        print '    Selecting features where: "%s"' % my_where_clause
+        print '      Selecting features where: "%s"' % my_where_clause
 
         # Process
         arcpy.SelectLayerByAttribute_management(in_layer_or_view, selection_type, my_where_clause)
@@ -991,7 +1007,7 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
 
         countOfSelected = arcpy.GetCount_management(in_layer_or_view)
         count = int(countOfSelected.getOutput(0))
-        print '      There was/were %s feature(s) selected.' % str(count)
+        print '        There was/were %s feature(s) selected.' % str(count)
 
         if count != 0:
             in_table   = in_layer_or_view
@@ -1003,7 +1019,7 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
             # that need a special calculation that is not available in the CSV
             # TODO: It appears that the time delta isn't working for some reason.  Need to look into this.
             if (field == 'SurveyDate' or field == 'SurveyTime'):
-                print ('      From selected features, calculating field: %s, so that it equals SUBSET of CreationDateString\n' % (field))
+                print ('        From selected features, calculating field: %s, so that it equals SUBSET of CreationDateString\n' % (field))
 
                 # Create an Update Cursor to loop through values
                 with arcpy.da.UpdateCursor(wkg_data, ['CreationDateString', 'SurveyDate', 'SurveyTime']) as cursor:
@@ -1035,7 +1051,7 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
                             cursor.updateRow(row)
 
                         except Exception as e:
-                            print '*** WARNING! Field: %s was not able to be calculated.***' % field
+                            print '*** WARNING! Field: %s was not able to be calculated.***\n' % field
                             print str(e)
 
             #-------------------------------------------------------------------
@@ -1052,7 +1068,7 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
                             % (field, f_expression))
 
                 except Exception as e:
-                    print '*** WARNING! Field: %s was not able to be calculated.***' % field
+                    print '*** WARNING! Field: %s was not able to be calculated.***\n' % field
                     print str(e)
 
             #-------------------------------------------------------------------
@@ -1069,7 +1085,7 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
                             % (field, s_expression))
 
                 except Exception as e:
-                    print '*** WARNING! Field: %s was not able to be calculated.***' % field
+                    print '*** WARNING! Field: %s was not able to be calculated.***\n' % field
                     print str(e)
 
         else:
@@ -1133,7 +1149,7 @@ def Delete_Fields(wkg_data, delete_fields_csv):
 #                    FUNCTION: New Loc and Loc Desc
 def New_Loc_LocDesc(wkg_data, Sites_Data):
 
-    print 'Getting new Location Descriptions at:\n  {}\n'.format(wkg_data)
+    print 'Getting new Location Descriptions at:\n  {}'.format(wkg_data)
 
     #---------------------------------------------------------------------------
     #                      Get new Location Descriptions.
@@ -1159,7 +1175,7 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
 
     for desc in New_LocDescs:
         print desc
-        pass
+
     #---------------------------------------------------------------------------
     #---------------------------------------------------------------------------
     #                           Set new Locations
@@ -1212,7 +1228,7 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
                     # If StationID in Sites_Data equals the StationID in the
                     #  StationIDs list, update the geom for that StationID in Sites_Data
                     if row[0] == StationIDs[list_counter]:
-                        print '  Updating StationID: {} with new coordinates.'.format(StationIDs[list_counter])
+                        ##print '  Updating StationID: {} with new coordinates.'.format(StationIDs[list_counter])
 
                         # Give Shape@X and Shape@Y their new values
                         row[1] = ShapeXs[list_counter]
@@ -1226,7 +1242,6 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
 
     for Loc in New_Locs:
         print Loc
-        pass
 
     print '\nSuccessfully got new Location Descriptions and set New Locations.\n'
 
