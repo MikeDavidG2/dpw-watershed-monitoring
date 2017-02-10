@@ -14,6 +14,7 @@
 #       could then have an if/else statement to activate the get attachments
 #       function if the day == 01 (or something like that)
 # TODO: May need a 'Date Survey Filled Out' field to distinguis it from the 'Date Survey Submitted' field...
+# TODO: Try to have the print statements get added to a log file
 
 # Import modules
 
@@ -125,10 +126,11 @@ def main():
             logging.basicConfig(filename = log_file, level=logging_level)
 
             #Header for the log file
-            logging.info('\n\n\n')
+            logging.('\n\n\n')
+            logging.info('####################################################')
             logging.info('---------------------------------------------------' )
             logging.info('             ' + str(datetime.datetime.now()))
-            logging.info('           Running DPW_Science_and_Monitoring.py')
+            logging.info('           START DPW_Science_and_Monitoring.py')
             logging.info('---------------------------------------------------' )
 
         except Exception as e:
@@ -300,23 +302,22 @@ def main():
 
     if errorSTATUS == 0:
         print 'SUCCESSFULLY ran DPW_Science_and_Monitoring.py'
-        logging.info('\n\n')
+        logging.info('\n')
         logging.info('SUCCESSFULLY ran DPW_Science_and_Monitoring.py\n\n')
 
         ##raw_input('Press ENTER to continue...')
 
     else:
         print '\n*** ERROR!  There was an error with the script. See above for messages ***'
-        logging.info('\n\n')
+        logging.info('\n')
         logging.error('*** ERROR!  There was an error with the script. See above for messages ***\n\n')
 
         ##raw_input('Press ENTER to continue...')
 
-            #Header for the log file
-    logging.info('-----------------------------------------------------------' )
+    logging.info('---------------------------------------------------' )
     logging.info('             ' + str(datetime.datetime.now()))
     logging.info('           Finished DPW_Science_and_Monitoring.py')
-    logging.info('-----------------------------------------------------------' )
+    logging.info('---------------------------------------------------' )
 
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -358,6 +359,7 @@ def Get_DateAndTime():
     dt_to_append = '%s__%s' % (date, time)
 
     print '  Date to append: {}'.format(dt_to_append)
+    logging.debug('  Date to append: {}'.format(dt_to_append))
 
     print 'Successfully got Date and Time\n'
     logging.debug('Successfully got Date and Time\n')
@@ -407,13 +409,12 @@ def Get_Last_Data_Retrival(last_ret_csv):
 
         # Turn the string obtained from the CSV file into a datetime object
         dt_last_ret_data = datetime.datetime.strptime(last_ret_str, '%m/%d/%Y %I:%M:%S %p')
-        ##last_ret_formatted = last_ret_obj.strftime('%m/%d/%Y %I:%M:%S %p')
 
     print '  Last data retrival happened at: %s' % str(dt_last_ret_data)
-    logging.info('  Last data retrival happened at: %s' % str(dt_last_ret_data))
+    logging.debug('  Last data retrival happened at: %s' % str(dt_last_ret_data))
 
     print 'Successfully got the last data retrival\n'
-    logging.info('Successfully got the last data retrival\n')
+    logging.debug('Successfully got the last data retrival\n')
 
     return dt_last_ret_data
 
