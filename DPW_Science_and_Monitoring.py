@@ -126,7 +126,7 @@ def main():
             logging.basicConfig(filename = log_file, level=logging_level)
 
             #Header for the log file
-            logging.('\n\n\n')
+            logging.info('\n\n\n')
             logging.info('####################################################')
             logging.info('---------------------------------------------------' )
             logging.info('             ' + str(datetime.datetime.now()))
@@ -558,7 +558,7 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
         print '  Query dates may not have yielded any records.'
         print '  Or could be another problem with the Get_Data() function.'
         print '  Feature Service: %s' % str(fsURL)
-        logging.info('  Failed to load the Feature Service.
+        logging.info('  Failed to load the Feature Service.')
         logging.info('  Not an error IF there was no data submitted since the last time the script ran.')
 
         # Set the values of the expected return variables
