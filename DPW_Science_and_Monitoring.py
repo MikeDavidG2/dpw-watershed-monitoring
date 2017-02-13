@@ -621,6 +621,9 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
 # the downloaded attachment.
 
 #TODO: find a way to rotate the images clockwise 90-degrees
+#TODO: attachments are downloaded based on their SampleEventID, this could lead
+#  to downloading a picture again if the sample event id is accidentally reused.
+#  Is this a problem though?  There shouldn't be two sample even id's...
 def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
     """
     Gets the attachments (images) that are related to the database features and
@@ -1430,12 +1433,14 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
             <br><br>
             </p>
 
-            <h3>New Locations and New Location Descriptions:</h3>
+            <h3>New Location Descriptions and Moved Sites:</h3>
             <p>
+               <h4>Location Description (Suggested Changes):</h4>
                {nld}
-            <br><br>
+              <br><br>
+               <h4>Moved Sites:</h4>
                {nl}
-            <br><br>
+              <br><br>
             </p>
 
             <h3>Times:</h3>
