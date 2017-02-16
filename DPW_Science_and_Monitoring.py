@@ -89,7 +89,7 @@ def main():
     # Service URL that ends with .../FeatureServer
     ### Below is the service for the Test Photos service
     ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_e0c08b861bae4df895e6567c6199412f/FeatureServer'
-    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_266dbda53dd2401c8090e25b25eae10c/FeatureServer'
+    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_9405c12d48364f03815cae025a981d18/FeatureServer'
     queryURL    =  serviceURL + '/0/query'
     gaURL       =  serviceURL + '/CreateReplica'
 
@@ -1007,7 +1007,7 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
         arcpy.SelectLayerByAttribute_management(in_layer_or_view, selection_type, my_where_clause)
 
         #-----------------------------------------------------------------------
-        #         If features selected, perform on of the following calculations
+        #        If features selected, perform one of the following calculations
 
         countOfSelected = arcpy.GetCount_management(in_layer_or_view)
         count = int(countOfSelected.getOutput(0))
@@ -1021,12 +1021,11 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
             #-------------------------------------------------------------------
             # Test to see if the field is one of the two special TIME FIELDS
             # that need a special calculation that is not available in the CSV
-            # TODO: It appears that the time delta isn't working for some reason.  Need to look into this.
-            if (field == 'SurveyDate' or field == 'SurveyTime'):
+            if (field == 'DateSurveySubmit' or field == 'TimeSurveySubmit'):
                 print ('        From selected features, calculating field: %s, so that it equals SUBSET of CreationDateString\n' % (field))
 
                 # Create an Update Cursor to loop through values
-                with arcpy.da.UpdateCursor(wkg_data, ['CreationDateString', 'SurveyDate', 'SurveyTime']) as cursor:
+                with arcpy.da.UpdateCursor(wkg_data, ['CreationDateString', 'DateSurveySubmit', 'TimeSurveySubmit']) as cursor:
 
                     for row in cursor:
                         try:
@@ -1058,6 +1057,16 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
                             print '*** WARNING! Field: %s was not able to be calculated.***\n' % field
                             print str(e)
 
+            #-------------------------------------------------------------------
+            # Strip the appended Time from the DateSurveyStart field
+            elif (field == 'DateSurveyStart'):
+                expression = "Remove_Time_From_Date(!DateSurveyStart!)"
+                expression_type="PYTHON_9.3"
+                code_block = """def Remove_Time_From_Date(date):\n    if date is None:\n        return None\n    else:\n        return date.split(" ").pop(0)"""
+
+                # Process
+                arcpy.CalculateField_management(in_table, field, expression,
+                                                    expression_type, code_block)
             #-------------------------------------------------------------------
             # Test if the user wants to calculate the field being equal to
             # ANOTHER FIELD by seeing if the calculation starts or ends with an '!'
