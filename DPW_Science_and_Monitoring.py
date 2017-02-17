@@ -52,23 +52,24 @@ def main():
     #                               Set Variables
 
     # Variables to control which Functions are run
-    run_Set_Logger         = True
-    run_Get_DateAndTime    = True
-    run_Get_Last_Data_Ret  = True
-    run_Get_Token          = True
-    run_Get_Data           = True
-    run_Get_Attachments    = True # Requires 'run_Get_Data = True'
-    run_Set_Last_Data_Ret  = True # Should be 'False' if testing
-    run_Copy_Orig_Data     = True  # Requires 'run_Get_Data = True'
-    run_Add_Fields         = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Calculate_Fields   = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Delete_Fields      = False # Requires 'run_Copy_Orig_Data = True'
-    run_New_Loc_LocDesc    = True
-    run_FC_To_Table        = True
-    run_Get_Field_Mappings = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Append_Data        = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Export_To_Excel    = True
-    run_Email_Results      = True
+    run_Set_Logger              = True
+    run_Get_DateAndTime         = True
+    run_Get_Last_Data_Ret       = True
+    run_Get_Token               = True
+    run_Get_Data                = True
+    run_Get_Attachments         = True # Requires 'run_Get_Data = True'
+    run_Set_Last_Data_Ret       = True # Should be 'False' if testing
+    run_Copy_Orig_Data          = True  # Requires 'run_Get_Data = True'
+    run_Add_Fields              = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Calculate_Fields        = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Delete_Fields           = False # Requires 'run_Copy_Orig_Data = True'
+    run_New_Loc_LocDesc         = True
+    run_FC_To_Table             = True
+    run_Get_Field_Mappings      = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Append_Data             = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Export_To_Excel         = True
+    run_Sites_Data_To_Survey123 = True
+    run_Email_Results           = True
 
     # Email lists
     ##dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
@@ -292,6 +293,17 @@ def main():
 
         except Exception as e:
             errorSTATUS = Error_Handler('Export_To_Excel', e)
+
+    #---------------------------------------------------------------------------
+    # Sites Data to Survey123 CSV
+    # only run if there are new_locs or new_loc_descs to change in the CSV file
+    if (errorSTATUS == 0 and run_Sites_Data_To_Survey123 and (len(new_locs) > 1 or len(new_loc_descs) > 1)):
+        try:
+            Sites_Data_To_Survey123_csv()
+
+        except Exception as e:
+            errorSTATUS = Error_Handler('Sites_Data_To_Survey123_csv', e)
+
     #---------------------------------------------------------------------------
     # Email results
     if (run_Email_Results):
@@ -1377,6 +1389,10 @@ def Append_Data(orig_table, target_table, field_mapping):
 #-------------------------------------------------------------------------------
 #                          FUNCTION:   Export to Excel
 def Export_To_Excel(wkg_folder, wkg_FGDB, table_to_export, export_folder, dt_to_append, report_TMDL_csv):
+    """Exports the production Field_Data table to a working table, deletes the
+    unneeded fields in the working table and then exports that table to excel.
+    Essentially creating a 'Report' in Excel based on the where_clause.
+    """
     print 'Exporting to Excel...'
 
 
@@ -1439,6 +1455,17 @@ def Export_To_Excel(wkg_folder, wkg_FGDB, table_to_export, export_folder, dt_to_
     print 'Successfully exported database to Excel.\n'
 
     return export_file
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#            FUNCTION: Export Sites_Data to Survey123's Site_Info csv
+def Sites_Data_To_Survey123_csv():
+
+    # delete rows in Sites_Export_To_CSV FGDB table
+
+    # Append Sites_Data to the Sites_Export_To_CSV FGDB table
+
+    # Export to CSV in the right location
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
