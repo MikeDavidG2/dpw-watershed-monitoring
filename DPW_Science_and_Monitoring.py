@@ -1465,6 +1465,8 @@ def Sites_Data_To_Survey123_csv():
 
     # Append Sites_Data to the Sites_Export_To_CSV FGDB table
 
+    # Do a search for ',' and replace with a ' ' to make sure no commas get into the CSV file in the Loc_Desc field
+
     # Export to CSV in the right location
 
 #-------------------------------------------------------------------------------
