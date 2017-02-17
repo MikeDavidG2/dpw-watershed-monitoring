@@ -36,6 +36,7 @@ import urllib2
 import csv
 
 from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
 from email import encoders
 from email.message import Message
 from email.mime.text import MIMEText
@@ -70,7 +71,8 @@ def main():
     run_Email_Results      = True
 
     # Email lists
-    dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com']#['michael.grue@sdcounty.ca.gov', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
+    ##dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
+    dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com']
     lueg_admin_email = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Control CSV files
@@ -80,6 +82,7 @@ def main():
     calc_fields_csv        = control_CSVs + '\\FieldsToCalculate.csv'
     delete_fields_csv      = control_CSVs + '\\FieldsToDelete.csv'
     map_fields_csv         = control_CSVs + '\\MapFields.csv'
+    report_TMDL_csv        = control_CSVs + '\\Report_TMDL.csv'
 
     # Token and AGOL variables
     cfgFile     = r"U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Master\accounts.txt"
@@ -284,7 +287,7 @@ def main():
     # EXPORT to EXCEL
     if (errorSTATUS == 0 and data_was_downloaded and run_Export_To_Excel):
         try:
-            Export_To_Excel(prodPath_FldData, prodPath_Excel, dt_to_append)
+            excel_report = Export_To_Excel(wkgFolder, wkgGDB, prodPath_FldData, prodPath_Excel, dt_to_append, report_TMDL_csv)
 
 
         except Exception as e:
@@ -293,7 +296,7 @@ def main():
     # Email results
     if (run_Email_Results):
             try:
-                Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file, start_time, dt_last_ret_data, prodGDB, prod_attachments, SmpEvntIDs_dl, new_loc_descs, new_locs)
+                Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file, start_time, dt_last_ret_data, prodGDB, prod_attachments, SmpEvntIDs_dl, new_loc_descs, new_locs, excel_report)
 
             except Exception as e:
                 errorSTATUS = Error_Handler('Email_Results', e)
@@ -1373,30 +1376,80 @@ def Append_Data(orig_table, target_table, field_mapping):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                          FUNCTION:   Export to Excel
-def Export_To_Excel(table_to_export, export_folder, dt_to_append):
+def Export_To_Excel(wkg_folder, wkg_FGDB, table_to_export, export_folder, dt_to_append, report_TMDL_csv):
     print 'Exporting to Excel...'
+
+
+    #---------------------------------------------------------------------------
+    #            Export table_to_export to wkg_FGDB to delete fields
+    out_path     = wkg_folder + '\\' + wkg_FGDB
+    out_name     = 'Bacteria_TMDL_Outfall_report'
+    where_clause = "Project = 'Bacteria TMDL Outfalls'"
+
+    arcpy.TableToTable_conversion(table_to_export, out_path, out_name, where_clause)
+
+    wkg_table = out_path + '\\' + out_name
+    #---------------------------------------------------------------------------
+    #              Delete fields that are not needed/wanted in report
+
+    with open (report_TMDL_csv) as csv_file:
+        readCSV = csv.reader(csv_file, delimiter = ',')
+
+        fields_to_delete = []
+
+        row_num = 0
+        for row in readCSV:
+            if row_num > 1:
+                f_to_delete = row[0]
+
+                fields_to_delete.append(f_to_delete)
+            row_num += 1
+
+    num_deletes = len(fields_to_delete)
+
+    print '  There are {} fields to delete:'.format(num_deletes)
+
+    # If there is at least one field to delete, delete it
+    if num_deletes > 0:
+        f_counter = 0
+        while f_counter < num_deletes:
+            drop_field = fields_to_delete[f_counter]
+            print '    Deleting field: %s...' % drop_field
+
+            arcpy.DeleteField_management(wkg_table, drop_field)
+
+            f_counter += 1
+
+    #---------------------------------------------------------------------------
+    #                            Export table to Excel
 
     # Make the export file if it doesn't exist
     if not os.path.exists(export_folder):
         os.mkdir(export_folder)
 
-    export_file = export_folder + '\\Field_Data_{}.xls'.format(dt_to_append)
+    export_file = export_folder + '\\Bacteria_TMDL_Report_{}.xls'.format(dt_to_append)
 
-    print '  Exporting database...'
-    print '    From: ' + table_to_export
+    print '  Exporting table to Excel...'
+    print '    From: ' + wkg_table
     print '    To :  ' + export_file
 
     # Process
-    arcpy.TableToExcel_conversion(table_to_export, export_file, 'ALIAS')
+    arcpy.TableToExcel_conversion(wkg_table, export_file, 'ALIAS')
 
     print 'Successfully exported database to Excel.\n'
+
+    return export_file
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Email Results
-def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file, start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder, dl_features_ls, new_loc_descs, new_locs):
+def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file, start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder, dl_features_ls, new_loc_descs, new_locs, excel_report):
     print '\nEmailing Results...'
     logging.info('Emailing Results...')
+
+    # This flag will be flipped to 'True' if the 'Success' email is sent
+    # and will trigger attaching the excel report to the email (if True).
+    attach_excel_report = False
 
     #---------------------------------------------------------------------------
     #         Do some processing to be used in the body of the email
@@ -1409,7 +1462,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     finish_time = [finish_time_obj.strftime('%m/%d/%Y %I:%M:%S %p')]
 
     # Turn the date data last retrieved into a formatted string
-    data_last_retrieved = [dt_last_ret_data.strftime('%m/%d/%Y %I:%M:%S %p')]
+    data_last_retrieved = [dt_last_ret_data.strftime('%m/%d/%Y')]
 
     # Get the number of downloaded features
     num_dl_features = len(dl_features_ls)
@@ -1425,6 +1478,9 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     if (errorSTATUS == 0 and num_dl_features > 0):
         print '  Writing the "Success" email...'
 
+        # Attache the excel_report
+        attach_excel_report = True
+
         # Send this email to the dpw_email_list
         email_list = dpw_email_list
 
@@ -1438,7 +1494,9 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
           <body>
             <h3>Info:</h3>
             <p>
-               There were <b>{num}</b> features downloaded this run.
+               There was/were <b>{num}</b> feature(s) downloaded this run.<br>
+               Please find excel report attached to this email.<br>
+               -----------------------------------------------------------------
             <br><br>
             </p>
 
@@ -1448,31 +1506,34 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
                {nld}
               <br><br>
                <h4>Moved Sites:</h4>
-               {nl}
-              <br><br>
+               {nl}<br>
+               -----------------------------------------------------------------
+              <br>
             </p>
 
             <h3>Times:</h3>
             <p>
                The script started at:             <i>{st}</i><br>
                The script finished at:            <i>{ft}</i><br>
-               The data retrieved was between:    <i>{dlr}</i>
-               and the start time of the script.
+               The data retrieved was from:       <i>{dlr}</i>
+                 to the start time of the script.<br>
+               -----------------------------------------------------------------
             </p>
             <br>
 
             <h3>File Locations:</h3>
             <p>
-               You can find the updated FGDB at:  <i>{fgdb}</i><br>
-               All Images are located at:         <i>{af}</i><br>
-               The Log file is located at:        <i>{lf}</i><br>
+               The <b>FGDB</b> is located at:            <i>{fgdb}</i><br>
+               The <b>Images</b> are located at:         <i>{af}</i><br>
+               The <b>Log File</b> is located at:        <i>{lf}</i><br>
+               The <b>Excel Report</b> is located at:    <i>{er}</i><br>
             </p>
           </body>
         </html>
         """.format(nld = str_new_loc_descs, nl = str_new_locs, st = start_time[0],
                    ft = finish_time[0], dlr = data_last_retrieved[0],
                    num = num_dl_features, fgdb = prod_FGDB, af = attach_folder,
-                   lf = log_file))
+                   lf = log_file, er = excel_report))
 
     #---------------------------------------------------------------------------
     #                     Write the "No Data Downloaded' email
@@ -1568,6 +1629,18 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     msg['From']      = "Python Script"
     msg['To']        = ', '.join(dpw_email_list)  # Join each item in list with a ', '
     msg.attach(MIMEText(body, 'html'))
+
+    # Set the attachment if needed
+    if (attach_excel_report == True):
+        attachment = MIMEApplication(open(excel_report, 'rb').read())
+
+        # Get name for attachment, which should equal the name of the excel_report
+        file_name = os.path.split(excel_report)[1]
+
+        # Set attachment into msg
+        attachment['Content-Disposition'] = 'attachment; filename = "{}"'.format(file_name)
+        msg.attach(attachment)
+
 
     # Get username and password from cfgFile
     config = ConfigParser.ConfigParser()
