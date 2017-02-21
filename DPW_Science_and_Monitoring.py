@@ -85,11 +85,6 @@ def main():
     map_fields_csv         = control_CSVs + '\\MapFields.csv'
     report_TMDL_csv        = control_CSVs + '\\Report_TMDL.csv'
 
-    # Survey123 CSV file related variables
-    #  (the CSV Survey123 uses to locate the sites in the app)
-    site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon DEV\media\Site_Info.csv"
-    Sites_Export_To_CSV_tbl = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Data\DPW_Science_and_Monitoring_wkg.gdb\Sites_Export_To_CSV'
-
     # Token and AGOL variables
     cfgFile     = r"U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Master\accounts.txt"
     gtURL       = "https://www.arcgis.com/sharing/rest/generateToken"
@@ -116,6 +111,13 @@ def main():
     prodPath_SitesData     = prodGDB + '\\Sites_Data'
     prod_attachments       = wkgFolder + '\\Sci_Monitoring_pics'
     prodPath_Excel         = wkgFolder + '\\Excel'
+
+    # Survey123 CSV file related variables
+    # site_info = the CSV Survey123 uses to locate the sites in the app. It gets
+    # its data refreshed from the Sites_Data Feature Class in the
+    # Sites_Data_To_Survey123_csv() function
+    site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon DEV\media\Site_Info.csv"
+    Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\Sites_Export_To_CSV'
 
     # Misc
     log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring.log'
@@ -301,8 +303,7 @@ def main():
 
     #---------------------------------------------------------------------------
     # Sites Data to Survey123 CSV
-    # only run if there are new_locs or new_loc_descs to change in the CSV file
-    if (errorSTATUS == 0 and run_Sites_Data_To_Survey123 and (len(new_locs) > 1 or len(new_loc_descs) > 1)):
+    if (errorSTATUS == 0 and run_Sites_Data_To_Survey123):
         try:
             Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, prodPath_SitesData, site_info)
 
@@ -1485,29 +1486,47 @@ def Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, Sites_Data, Site_Info):
     # Sites_Export_To_CSV is a table that has the same schema the CSV needs in
     # order to work with Survey123.
 
-    # delete rows in Sites_Export_To_CSV FGDB table
+    #---------------------------------------------------------------------------
+    #               Delete rows in Sites_Export_To_CSV FGDB table
     print '  Deleting Rows in: {}'.format(Sites_Export_To_CSV_tbl)
     arcpy.DeleteRows_management(Sites_Export_To_CSV_tbl)
 
-    # Export prod Sites_Data to a working table in the working_FGDB
+    #---------------------------------------------------------------------------
+    #         Export prod Sites_Data to a working table in the working_FGDB
     print '  Exporting Sites_Data to a working table'
     working_FGDB = os.path.split(Sites_Export_To_CSV_tbl)[0]  # Get the working FGDB path
     Sites_Data_tbl = 'Sites_Data_tbl'
     arcpy.TableToTable_conversion(Sites_Data, working_FGDB, Sites_Data_tbl)
 
-    # Append Sites_Data_tbl to the Sites_Export_To_CSV table
+    #---------------------------------------------------------------------------
+    #            Append Sites_Data_tbl to the Sites_Export_To_CSV table
     print '  Appending Sites_Data to Sites_Export_To_CSV'
     inputs = working_FGDB + '\\' + Sites_Data_tbl
     arcpy.Append_management(inputs, Sites_Export_To_CSV_tbl, 'TEST')
 
-    # Do a search for ',' and replace with a ' ' to make sure no commas get into the CSV file in the Loc_Desc field
+    #---------------------------------------------------------------------------
+    #                         Field Calculations
+    # Some field calculations have to be performed on the Sites_Export_To_CSV_tbl
+    # in order that the comma and quote sensitive Survey123 app can read it correctly
+
+    # Do a search for ',' and replace with a ' ' to make sure no commas get into
+    #  the CSV file in the Loc_Desc field
     print '  Replacing "," with a space in Loc_Desc field'
     field = 'Loc_Desc'
     expression = '!Loc_Desc!.replace(",", " ")'
     expression_type = "PYTHON_9.3"
     arcpy.CalculateField_management(Sites_Export_To_CSV_tbl, field, expression, expression_type)
 
-    # Export to CSV in the right location.
+    # Do a search for a quote (") and replace with an 'in.' to make sure no quotes get into
+    #  the CSV file in the Loc_Desc field
+    print '  Replacing \" with an \'in.\' in Loc_Desc field'
+    field = 'Loc_Desc'
+    expression = "!Loc_Desc!.replace('\"', 'in.')"
+    expression_type = "PYTHON_9.3"
+    arcpy.CalculateField_management(Sites_Export_To_CSV_tbl, field, expression, expression_type)
+
+    #---------------------------------------------------------------------------
+    #                      Export to CSV and clean up files.
     print '  Exporting to CSV'
     out_path = os.path.split(Site_Info)[0]  # Get the Path
     out_name = os.path.split(Site_Info)[1]  # Get the file name
