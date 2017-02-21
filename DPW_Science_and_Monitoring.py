@@ -100,8 +100,8 @@ def main():
     # Working database locations and names
     wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Data'
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
-    origFC      = "DPW_Data_orig"
-    wkgFC       = 'DPW_Data_wkg'
+    origFC      = "A_DPW_Data_orig"
+    wkgFC       = 'B_DPW_Data_wkg'
       # There is no wkgPath variable yet since we will append the date and
       # time to it in a function below
 
@@ -117,7 +117,7 @@ def main():
     # its data refreshed from the Sites_Data Feature Class in the
     # Sites_Data_To_Survey123_csv() function
     site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon DEV\media\Site_Info.csv"
-    Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\Sites_Export_To_CSV'
+    Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\E_Sites_Data_export_to_csv'
 
     # Misc
     log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring.log'
@@ -604,7 +604,7 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
 
     #---------------------------------------------------------------------------
     #Copy the features to the FGDB.
-    origFC = '%s_%s' % (origFC,dt_to_append)
+    ##origFC = '%s_%s' % (origFC,dt_to_append)
     origPath_ = wkgFolder + "\\" + wkgGDB_ + '\\' + origFC
     print '  Copying features to: %s' % origPath_
     logging.info('  Copying features to: %s' % origPath_)
@@ -895,15 +895,16 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Copy_Orig_Data
 
-def Copy_Orig_Data(wkgFolder, wkgGDB_, wkgFC_, origPath_, dt_to_append):
+def Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath, dt_to_append):
     print '------------------------------------------------------------------'
     print 'Copying original data...'
     logging.info('Copying original data...')
 
     #---------------------------------------------------------------------------
     # Copy the orig FC to a working TABLE to run processing on.
-    in_features = origPath_
-    wkgPath = out_feature_class = r'%s\%s\%s_%s' % (wkgFolder, wkgGDB_, wkgFC_, dt_to_append)
+    in_features = origPath
+    wkgPath = out_feature_class = r'%s\%s\%s' % (wkgFolder, wkgGDB, wkgFC)
+    ##wkgPath = out_feature_class = r'%s\%s\%s_%s' % (wkgFolder, wkgGDB, wkgFC, dt_to_append)
 
     print '  Copying Data...'
     print '    From: ' + in_features
@@ -1305,7 +1306,8 @@ def FC_To_Table(wkgFolder, wkgGDB, dt_to_append, wkgPath):
     """
     print 'Exporting FC to Table'
     in_features = wkgPath
-    out_table = '{}\\{}\\DPW_Data_to_apnd_{}'.format(wkgFolder, wkgGDB, dt_to_append)
+    out_table = '{}\\{}\\C_DPW_Data_to_apnd'.format(wkgFolder, wkgGDB)
+    ##out_table = '{}\\{}\\DPW_Data_to_apnd_{}'.format(wkgFolder, wkgGDB, dt_to_append)
 
     print '  Exporting...'
     print '    From: {}'.format(in_features)
@@ -1421,7 +1423,7 @@ def Export_To_Excel(wkg_folder, wkg_FGDB, table_to_export, export_folder, dt_to_
     #---------------------------------------------------------------------------
     #            Export table_to_export to wkg_FGDB to delete fields
     out_path     = wkg_folder + '\\' + wkg_FGDB
-    out_name     = 'Bacteria_TMDL_Outfall_report'
+    out_name     = 'Report__Bacteria_TMDL_Outfall'
     where_clause = "Project = 'Bacteria TMDL Outfalls'"
 
     arcpy.TableToTable_conversion(table_to_export, out_path, out_name, where_clause)
@@ -1495,7 +1497,7 @@ def Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, Sites_Data, Site_Info):
     #         Export prod Sites_Data to a working table in the working_FGDB
     print '  Exporting Sites_Data to a working table'
     working_FGDB = os.path.split(Sites_Export_To_CSV_tbl)[0]  # Get the working FGDB path
-    Sites_Data_tbl = 'Sites_Data_tbl'
+    Sites_Data_tbl = 'D_Sites_Data_exported_tbl'
     arcpy.TableToTable_conversion(Sites_Data, working_FGDB, Sites_Data_tbl)
 
     #---------------------------------------------------------------------------
