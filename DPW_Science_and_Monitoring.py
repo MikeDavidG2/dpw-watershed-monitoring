@@ -85,6 +85,11 @@ def main():
     map_fields_csv         = control_CSVs + '\\MapFields.csv'
     report_TMDL_csv        = control_CSVs + '\\Report_TMDL.csv'
 
+    # Survey123 CSV file related variables
+    #  (the CSV Survey123 uses to locate the sites in the app)
+    site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon DEV\media\Site_Info.csv"
+    Sites_Export_To_CSV_tbl = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Data\DPW_Science_and_Monitoring_wkg.gdb\Sites_Export_To_CSV'
+
     # Token and AGOL variables
     cfgFile     = r"U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Master\accounts.txt"
     gtURL       = "https://www.arcgis.com/sharing/rest/generateToken"
@@ -299,7 +304,7 @@ def main():
     # only run if there are new_locs or new_loc_descs to change in the CSV file
     if (errorSTATUS == 0 and run_Sites_Data_To_Survey123 and (len(new_locs) > 1 or len(new_loc_descs) > 1)):
         try:
-            Sites_Data_To_Survey123_csv()
+            Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, prodPath_SitesData, site_info)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Sites_Data_To_Survey123_csv', e)
@@ -1238,7 +1243,7 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
     del cursor
 
    # If there is only the original New_Locs string, then there were no new
-   #  locations to move no need to update the Sites_Data
+   #  locations to move; no need to update the Sites_Data
     if(len(New_Locs) == 1):
         New_Locs = ['  There were no relocated sites.']
 
@@ -1268,8 +1273,24 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
 
         del cursor
 
+        #-----------------------------------------------------------------------
+        # Calculate X and Y fields in Sites_Data now that the geometry has been updated
+
+        # Calculate the Long_X field
+        field = 'Long_X'
+        expression = "!Shape.Centroid.X!"
+        expression_type="PYTHON_9.3"
+        arcpy.CalculateField_management(Sites_Data, field, expression, expression_type)
+
+        # Calculate the Lat_Y field now that the geometry has been updated
+        field = 'Lat_Y'
+        expression = "!Shape.Centroid.Y!"
+        expression_type="PYTHON_9.3"
+        arcpy.CalculateField_management(Sites_Data, field, expression, expression_type)
+
     for Loc in New_Locs:
         print Loc
+
 
     print '\nSuccessfully got new Location Descriptions and set New Locations.\n'
 
@@ -1459,15 +1480,49 @@ def Export_To_Excel(wkg_folder, wkg_FGDB, table_to_export, export_folder, dt_to_
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #            FUNCTION: Export Sites_Data to Survey123's Site_Info csv
-def Sites_Data_To_Survey123_csv():
+def Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, Sites_Data, Site_Info):
+    print 'Exporting Sites Data to the Survey123 CSV...'
+    # Sites_Export_To_CSV is a table that has the same schema the CSV needs in
+    # order to work with Survey123.
 
     # delete rows in Sites_Export_To_CSV FGDB table
+    print '  Deleting Rows in: {}'.format(Sites_Export_To_CSV_tbl)
+    arcpy.DeleteRows_management(Sites_Export_To_CSV_tbl)
 
-    # Append Sites_Data to the Sites_Export_To_CSV FGDB table
+    # Export prod Sites_Data to a working table in the working_FGDB
+    print '  Exporting Sites_Data to a working table'
+    working_FGDB = os.path.split(Sites_Export_To_CSV_tbl)[0]  # Get the working FGDB path
+    Sites_Data_tbl = 'Sites_Data_tbl'
+    arcpy.TableToTable_conversion(Sites_Data, working_FGDB, Sites_Data_tbl)
+
+    # Append Sites_Data_tbl to the Sites_Export_To_CSV table
+    print '  Appending Sites_Data to Sites_Export_To_CSV'
+    inputs = working_FGDB + '\\' + Sites_Data_tbl
+    arcpy.Append_management(inputs, Sites_Export_To_CSV_tbl, 'TEST')
 
     # Do a search for ',' and replace with a ' ' to make sure no commas get into the CSV file in the Loc_Desc field
+    print '  Replacing "," with a space in Loc_Desc field'
+    field = 'Loc_Desc'
+    expression = '!Loc_Desc!.replace(",", " ")'
+    expression_type = "PYTHON_9.3"
+    arcpy.CalculateField_management(Sites_Export_To_CSV_tbl, field, expression, expression_type)
 
-    # Export to CSV in the right location
+    # Export to CSV in the right location.
+    print '  Exporting to CSV'
+    out_path = os.path.split(Site_Info)[0]  # Get the Path
+    out_name = os.path.split(Site_Info)[1]  # Get the file name
+    arcpy.TableToTable_conversion(Sites_Export_To_CSV_tbl, out_path, out_name)
+
+    # Delete the extra files that are not needed that are created by the above export
+    print '  Deleting extra files'
+    schema_file = out_path + '\\schema.ini'
+    xml_file = out_path + '\\Site_Info.txt.xml'
+    if os.path.exists(schema_file):
+        os.remove(schema_file)
+    if os.path.exists(xml_file):
+        os.remove(xml_file)
+
+    print 'Successfully exported Sites_Data to Survey123 CSV'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -1507,7 +1562,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     if (errorSTATUS == 0 and num_dl_features > 0):
         print '  Writing the "Success" email...'
 
-        # Attache the excel_report
+        # Attach the excel_report
         attach_excel_report = True
 
         # Send this email to the dpw_email_list
