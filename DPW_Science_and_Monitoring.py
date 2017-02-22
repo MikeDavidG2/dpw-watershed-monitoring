@@ -26,7 +26,7 @@ import math
 import mimetypes
 import os
 import time
-import logging
+##import logging
 import smtplib
 import string
 import sys
@@ -54,6 +54,7 @@ def main():
     # Variables to control which Functions are run
     run_Set_Logger              = True
     run_Get_DateAndTime         = True
+    run_Write_Print_To_Log      = True
     run_Get_Last_Data_Ret       = True
     run_Get_Token               = True
     run_Get_Data                = True
@@ -120,32 +121,33 @@ def main():
     Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\E_Sites_Data_export_to_csv'
 
     # Misc
-    log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring.log'
+    log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring'
     errorSTATUS = 0
     os.chdir(wkgFolder) # Makes sure we are in the correct directory (if called from Task Scheduler)
-    logging_level = logging.DEBUG # Can change to logging.DEBUG, .INFO, .WARNING, or .ERROR
+    ##logging_level = logging.DEBUG # Can change to logging.DEBUG, .INFO, .WARNING, or .ERROR
 
     #---------------------------------------------------------------------------
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     #---------------------------------------------------------------------------
     #                        Start calling functions
-    # Set up the logger
-    if (errorSTATUS == 0 and run_Set_Logger):
-        try:
-            #If you need to debug, set the logging_level above to logging.DEBUG
-            logging.basicConfig(filename = log_file, level=logging_level)
+##    # Set up the logger
+##    if (errorSTATUS == 0 and run_Set_Logger):
+##        try:
+##            #If you need to debug, set the logging_level above to logging.DEBUG
+##            logging.basicConfig(filename = log_file, level=logging_level)
+##
+##            #Header for the log file
+##            logging.info('\n\n\n')
+##            logging.info('####################################################')
+##            logging.info('---------------------------------------------------' )
+##            logging.info('             ' + str(datetime.datetime.now()))
+##            logging.info('           START DPW_Science_and_Monitoring.py')
+##            logging.info('---------------------------------------------------' )
+##
+##        except Exception as e:
+##            errorSTATUS = Error_Handler('logger', e)
 
-            #Header for the log file
-            logging.info('\n\n\n')
-            logging.info('####################################################')
-            logging.info('---------------------------------------------------' )
-            logging.info('             ' + str(datetime.datetime.now()))
-            logging.info('           START DPW_Science_and_Monitoring.py')
-            logging.info('---------------------------------------------------' )
-
-        except Exception as e:
-            errorSTATUS = Error_Handler('logger', e)
 
     #---------------------------------------------------------------------------
     # Get the current date and time to append to the end of various files
@@ -156,6 +158,33 @@ def main():
 
         except Exception as e:
             errorSTATUS = Error_Handler('Get_DateAndTime', e)
+
+    #---------------------------------------------------------------------------
+    #            Turn the 'print' statement into a logging object
+    if (run_Write_Print_To_Log):
+        try:
+            # os.path.split below is used to return just the folder where the log_file lives
+            print 'Setting "print" command to write to a log file found at: {}'.format(os.path.split(log_file)[0])
+
+            # Get the original sys.stdout so it can be returned to normal at the end
+            #   of the script.
+            orig_stdout = sys.stdout
+
+            # Create the log file with the datetime appended to the file name
+            log_file_date = '{}_{}.log'.format(log_file,dt_to_append)
+            write_to_log = open(log_file_date, 'w')
+
+            # Make the 'print' statement write to the log file
+            sys.stdout = write_to_log
+
+            # Header for log file
+            print '---------------------------------------------------'
+            print '                  ' + dt_to_append
+            print '           START DPW_Science_and_Monitoring.py'
+            print '---------------------------------------------------'
+
+        except Exception as e:
+            errorSTATUS = Error_Handler('Write_Print_To_Log', e)
 
     #---------------------------------------------------------------------------
     # Get the last time the data was retrieved from AGOL
@@ -323,28 +352,30 @@ def main():
 
     if errorSTATUS == 0:
         print 'SUCCESSFULLY ran DPW_Science_and_Monitoring.py'
-        logging.info('\n')
-        logging.info('SUCCESSFULLY ran DPW_Science_and_Monitoring.py\n\n')
 
         ##raw_input('Press ENTER to continue...')
 
     else:
         print '\n*** ERROR!  There was an error with the script. See above for messages ***'
-        logging.info('\n')
-        logging.error('*** ERROR!  There was an error with the script. See above for messages ***\n\n')
 
         ##raw_input('Press ENTER to continue...')
 
-    logging.info('---------------------------------------------------' )
-    logging.info('             ' + str(datetime.datetime.now()))
-    logging.info('           Finished DPW_Science_and_Monitoring.py')
-    logging.info('---------------------------------------------------' )
+    print ('---------------------------------------------------' )
+    print ('             ' + str(datetime.datetime.now()))
+    print ('           Finished DPW_Science_and_Monitoring.py')
+    print ('---------------------------------------------------' )
 
+    if (run_Write_Print_To_Log):
+
+        # Return sys.stdout back to its original setting
+        sys.stdout = orig_stdout
+        print 'Done with script.  Please find log file location above for more info.'
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 #                                 DEFINE FUNCTIONS
 #-------------------------------------------------------------------------------
 #                 FUNCTION:    Get Start Date and Time
@@ -370,7 +401,6 @@ def Get_DateAndTime():
 
     print '------------------------------------------------------------------'
     print 'Getting Date and Time (dt)...'
-    logging.info('Getting Date and Time...')
 
     start_time = datetime.datetime.now()
 
@@ -380,10 +410,11 @@ def Get_DateAndTime():
     dt_to_append = '%s__%s' % (date, time)
 
     print '  Date to append: {}'.format(dt_to_append)
-    logging.debug('  Date to append: {}'.format(dt_to_append))
 
     print 'Successfully got Date and Time\n'
-    logging.debug('Successfully got Date and Time\n')
+
+    # TODO: uncomment the below command and troubleshoot script
+    ##print thiswillcausethefunctiontofail
 
     return dt_to_append, start_time
 
@@ -414,7 +445,6 @@ def Get_Last_Data_Retrival(last_ret_csv):
 
     print '------------------------------------------------------------------'
     print 'Getting last data retrival...'
-    logging.info('Getting last data retrival...')
 
     # Create a reader object that will read a Control CSV
     with open (last_ret_csv) as csv_file:
@@ -432,10 +462,8 @@ def Get_Last_Data_Retrival(last_ret_csv):
         dt_last_ret_data = datetime.datetime.strptime(last_ret_str, '%m/%d/%Y %I:%M:%S %p')
 
     print '  Last data retrival happened at: %s' % str(dt_last_ret_data)
-    logging.debug('  Last data retrival happened at: %s' % str(dt_last_ret_data))
 
     print 'Successfully got the last data retrival\n'
-    logging.debug('Successfully got the last data retrival\n')
 
     return dt_last_ret_data
 
@@ -464,7 +492,6 @@ def Get_Token(cfgFile, gtURL):
 
     print '------------------------------------------------------------------'
     print "Getting Token..."
-    logging.info("Getting Token...")
 
     # Get the user name and password from the cfgFile
     configRMA = ConfigParser.ConfigParser()
@@ -492,7 +519,6 @@ def Get_Token(cfgFile, gtURL):
     ##print token
 
     print "Successfully retrieved token.\n"
-    logging.debug("Successfully retrieved token.\n")
 
     return token
 
@@ -516,7 +542,6 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
 
     print '------------------------------------------------------------------'
     print "Getting data..."
-    logging.info("Getting data...")
 
     #---------------------------------------------------------------------------
     #Set the feature service URL (fsURL = the query URL + the query)
@@ -551,7 +576,6 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     # clause
     where = "CreationDate BETWEEN '{dt.year}-{dt.month}-{dt.day}' and '{ptd.year}-{ptd.month}-{ptd.day}'".format(dt = dt_last_ret_data_, ptd = plus_two_days)
     print '  Getting data where: {}'.format(where)
-    logging.debug('  Getting data where: {}'.format(where))
 
     # Encode the where statement so it is readable by URL protocol (ie %27 = ' in URL
     # visit http://meyerweb.com/eric/tools/dencoder to test URL encoding
@@ -579,8 +603,6 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
         print '  Query dates may not have yielded any records.'
         print '  Or could be another problem with the Get_Data() function.'
         print '  Feature Service: %s' % str(fsURL)
-        logging.info('  Failed to load the Feature Service.')
-        logging.info('  Not an error IF there was no data submitted since the last time the script ran.')
 
         # Set the values of the expected return variables
         origPath_ = 'No original path, data not downloaded.'
@@ -598,7 +620,7 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     FGDB_path = wkgFolder + '\\' + wkgGDB_
     if not os.path.exists(FGDB_path):
         print '  Creating FGDB: %s at: %s' % (wkgGDB_, wkgFolder)
-        logging.info('  Creating FGDB: %s at: %s' % (wkgGDB_, wkgFolder))
+
         # Process
         arcpy.CreateFileGDB_management(wkgFolder,wkgGDB_)
 
@@ -607,7 +629,6 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     ##origFC = '%s_%s' % (origFC,dt_to_append)
     origPath_ = wkgFolder + "\\" + wkgGDB_ + '\\' + origFC
     print '  Copying features to: %s' % origPath_
-    logging.info('  Copying features to: %s' % origPath_)
 
     # Process
     arcpy.CopyFeatures_management(fs,origPath_)
@@ -627,7 +648,6 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
 
     #---------------------------------------------------------------------------
     print "Successfully retrieved data.\n"
-    logging.debug("Successfully retrieved data.\n")
 
     return origPath_, SmpEvntIDs_dl
 
@@ -697,7 +717,6 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
 
     print '------------------------------------------------------------------'
     print 'Getting Attachments...'
-    logging.info('Getting Attachments...')
 
     #---------------------------------------------------------------------------
     #                       Get the attachments url (ga)
@@ -741,7 +760,6 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
     cwd = os.getcwd()  # Get the current working directory
     jsonFilePath = cwd + '\\' + JsonFileName # Path to the downloaded json file
     print '  JSON file saved to: ' + jsonFilePath
-    logging.debug('  JSON file saved to: ' + jsonFilePath)
 
     #---------------------------------------------------------------------------
     #                       Save the attachments
@@ -761,7 +779,6 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
     # Loop through each 'attachment' and get its parentGlobalId so we can name
     #  it based on its corresponding feature
     print '  Saving attachments:'
-    logging.debug('  Saving attachments:')
 
     for attachment in data['layers'][0]['attachments']:
         ##print '\nAttachment: '
@@ -817,7 +834,6 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
 
                 # Get the attachment and save as attachPath
                 print '    Saving %s' % attachName
-                logging.debug('    Saving %s' % attachName)
 
                 attachmentUrl = attachment['url']
                 urllib.urlretrieve(url=attachmentUrl, filename=attachPath,data=gaData)
@@ -831,15 +847,12 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
             pass
 
     print '  Attachments saved to: %s' % gaFolder
-    logging.info('  Attachments saved to: %s' % gaFolder)
 
     # Delete the JSON file since it is no longer needed.
     ##print '  Deleting JSON file'
-    logging.debug('  Deleting JSON file')
     os.remove(jsonFilePath)
 
     print 'Successfully got attachments.\n'
-    logging.debug('Successfully got attachments.\n')
 
     return gaFolder
 
@@ -851,7 +864,6 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
     """This function is """
     print '------------------------------------------------------------------'
     print 'Setting Last Data Retrival time as start_time...'
-    logging.info('Setting Last Data Retrival time as start_time...')
 
     print '  New Last Data Retrival time: {}'.format(start_time)
     #---------------------------------------------------------------------------
@@ -898,7 +910,6 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
 def Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath, dt_to_append):
     print '------------------------------------------------------------------'
     print 'Copying original data...'
-    logging.info('Copying original data...')
 
     #---------------------------------------------------------------------------
     # Copy the orig FC to a working TABLE to run processing on.
@@ -914,7 +925,6 @@ def Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath, dt_to_append):
     arcpy.CopyFeatures_management(in_features, out_feature_class)
 
     print 'Successfully copied original data.\n'
-    logging.debug('Successfully copied original data.\n')
 
     return wkgPath
 #-------------------------------------------------------------------------------
@@ -1398,7 +1408,6 @@ def Append_Data(orig_table, target_table, field_mapping):
     print 'Appending Data...'
     print '  From: ' + orig_table
     print '  To:   ' + target_table
-    logging.info('Appending data...\n     From: %s\n     To:   %s' % (orig_table, target_table))
 
     # Append working data to production data
     schema_type = 'NO_TEST'
@@ -1407,7 +1416,6 @@ def Append_Data(orig_table, target_table, field_mapping):
     arcpy.Append_management(orig_table, target_table, schema_type, field_mapping)
 
     print 'Successfully appended data.\n'
-    logging.debug('Successfully appended data.\n')
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -1550,7 +1558,6 @@ def Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, Sites_Data, Site_Info):
 #                           FUNCTION:  Email Results
 def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file, start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder, dl_features_ls, new_loc_descs, new_locs, excel_report):
     print '\nEmailing Results...'
-    logging.info('Emailing Results...')
 
     # This flag will be flipped to 'True' if the 'Success' email is sent
     # and will trigger attaching the excel report to the email (if True).
@@ -1761,7 +1768,6 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     SMTP_obj.quit()
 
     print 'Successfully emailed results.\n'
-    logging.debug('Successfully emailed results.\n')
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -1770,9 +1776,7 @@ def Error_Handler(func_w_err, e):
 
     e_str = str(e)
     print '\n*** ERROR in function: "%s" ***\n' % func_w_err
-    logging.error('\n*** ERROR in function: %s ***\n' % func_w_err)
     print '    error: = %s' % e_str
-    logging.error(' error: = %s ' % e_str)
 
     #---------------------------------------------------------------------------
     #                                Help comments
@@ -1813,10 +1817,9 @@ def Error_Handler(func_w_err, e):
 
     #---------------------------------------------------------------------------
     if (help_comment == ''):
-        logging.error('    No help comment.')
+        print '    No help comment.'
     else:
         print '    Help Comment: ' + help_comment
-        logging.error('    Help Comment: ' + help_comment)
 
     # Change errorSTATUS to 1 so that the script doesn't try to perform any
     # other functions
