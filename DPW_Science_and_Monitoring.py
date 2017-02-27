@@ -161,10 +161,11 @@ def main():
             sys.stdout = write_to_log
 
             # Header for log file
-            print '---------------------------------------------------'
-            print '              {st.month}/{st.day}/{st.year} at {st.hour}:{st.minute}:{st.second}'.format(st = start_time)
-            print '           START DPW_Science_and_Monitoring.py'
-            print '---------------------------------------------------'
+            start_time_str = [start_time.strftime('%m/%d/%Y  %I:%M:%S %p')][0]
+            print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+            print '                  {}'.format(start_time_str)
+            print '             START DPW_Science_and_Monitoring.py'
+            print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n'
 
         except Exception as e:
             errorSTATUS = Error_Handler('Write_Print_To_Log', e)
@@ -326,7 +327,13 @@ def main():
     # Email results
     if (run_Email_Results):
             try:
-                Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file, start_time, dt_last_ret_data, prodGDB, prod_attachments, SmpEvntIDs_dl, new_loc_descs, new_locs, excel_report)
+                Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email,
+                              log_file, start_time, dt_last_ret_data, prodGDB,
+                              prod_attachments, SmpEvntIDs_dl, new_loc_descs,
+                              new_locs, excel_report = None) # set default excel_report
+                              # to 'None'.  This is so Email_Results() will not fail if
+                              # the Export_To_Excel() function is not performed
+                              # due to no data being downloaded
 
             except Exception as e:
                 errorSTATUS = Error_Handler('Email_Results', e)
@@ -334,6 +341,7 @@ def main():
     #                  Print out info about the script
 
     if errorSTATUS == 0:
+        print '--------------------------------------------------------------------'
         print 'SUCCESSFULLY ran DPW_Science_and_Monitoring.py'
 
         ##raw_input('Press ENTER to continue...')
@@ -343,10 +351,12 @@ def main():
 
         ##raw_input('Press ENTER to continue...')
 
-    print '---------------------------------------------------'
-    print '              {st.month}/{st.day}/{st.year} at {st.hour}:{st.minute}:{st.second}'.format(st = start_time)
-    print '           Finished DPW_Science_and_Monitoring.py'
-    print '---------------------------------------------------'
+    # Footer for log file
+    finish_time_str = [datetime.datetime.now().strftime('%m/%d/%Y  %I:%M:%S %p')][0]
+    print '\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+    print '                    {}'.format(finish_time_str)
+    print '              Finished DPW_Science_and_Monitoring.py'
+    print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 
     if (run_Write_Print_To_Log):
 
@@ -594,6 +604,8 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
         # This empty list will be used to show the rest of the script that
         # no data was downloaded
         SmpEvntIDs_dl = []
+
+        print 'Finished Get_Data function.  No data retrieved.\n'
 
         # If no data downloaded, stop the function here
         return origPath_, SmpEvntIDs_dl
@@ -1592,18 +1604,16 @@ def Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, Sites_Data, Site_Info):
     if os.path.exists(xml_file):
         os.remove(xml_file)
 
-    print 'Successfully exported Sites_Data to Survey123 CSV'
+    print 'Successfully exported Sites_Data to Survey123 CSV\n'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Email Results
-def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file, start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder, dl_features_ls, new_loc_descs, new_locs, excel_report):
+def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file,
+                  start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder,
+                  dl_features_ls, new_loc_descs, new_locs, excel_report):
     print '--------------------------------------------------------------------'
-    print '\nEmailing Results...'
-
-    # This flag will be flipped to 'True' if the 'Success' email is sent
-    # and will trigger attaching the excel report to the email (if True).
-    attach_excel_report = False
+    print 'Emailing Results...'
 
     #---------------------------------------------------------------------------
     #         Do some processing to be used in the body of the email
@@ -1632,11 +1642,11 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     if (errorSTATUS == 0 and num_dl_features > 0):
         print '  Writing the "Success" email...'
 
-        # Attach the excel_report
-        attach_excel_report = True
-
         # Send this email to the dpw_email_list
         email_list = dpw_email_list
+
+        # Attach the excel_report
+        attach_excel_report = True
 
         # Format the Subject for the 'Success' email
         subj = 'SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script'
@@ -1699,6 +1709,9 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
         # Send this email to the lueg_admin_emails
         email_list = lueg_admin_email
 
+        # Do not attache an excel report if no data was downloaded
+        attach_excel_report = False
+
         # Format the Subject for the 'No Data Downloaded' email
         subj = 'No Data Downloaded for DPW_Science_and_Monitoring.py Script'
 
@@ -1710,7 +1723,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
             <h3>Info:</h3>
             <p>
                There were <b>{num}</b> features downloaded this run.<br>
-               This is not an error IF there was no data collected between the
+               This is not an error IF there was no data collected from the
                date the data was last retrieved... <i>{dlr}</i> ... and now.<br>
             <br><br>
             </p>
@@ -1743,6 +1756,9 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
 
         # Send this email to the lueg_admin_emails
         email_list = lueg_admin_email
+
+        # Do not attache an excel report if no data was downloaded
+        attach_excel_report = False
 
         # Format the Subject for the 'Errors' email
         subj = 'ERROR with DPW_Science_and_Monitoring.py Script'
