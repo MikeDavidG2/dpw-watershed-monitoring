@@ -125,7 +125,7 @@ def main():
     log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring'
     errorSTATUS = 0
     os.chdir(wkgFolder) # Makes sure we are in the correct directory (if called from Task Scheduler)
-    ##logging_level = logging.DEBUG # Can change to logging.DEBUG, .INFO, .WARNING, or .ERROR
+    excel_report = ''   # Sets variable to '' if the Export_To_Excel() is not run to create it.
 
     #---------------------------------------------------------------------------
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -331,10 +331,7 @@ def main():
                 Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email,
                               log_file, start_time, dt_last_ret_data, prodGDB,
                               prod_attachments, SmpEvntIDs_dl, new_loc_descs,
-                              new_locs, excel_report = None) # set default excel_report
-                              # to 'None'.  This is so Email_Results() will not fail if
-                              # the Export_To_Excel() function is not performed
-                              # due to no data being downloaded
+                              new_locs, excel_report)
 
             except Exception as e:
                 errorSTATUS = Error_Handler('Email_Results', e)
