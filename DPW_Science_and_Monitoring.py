@@ -1634,11 +1634,11 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     str_new_locs      = ' <br> &nbsp;&nbsp;'.join(new_locs)
 
     #---------------------------------------------------------------------------
-    #                         Write the "Success" email
+    #                Write the "Success--Data Downloaded" email
 
     # If there are no errors and at least one feature was downloaded
     if (errorSTATUS == 0 and num_dl_features > 0):
-        print '  Writing the "Success" email...'
+        print '  Writing the "Success--Data Downloaded" email...'
 
         # Send this email to the dpw_email_list
         email_list = dpw_email_list
@@ -1646,8 +1646,8 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
         # Attach the excel_report
         attach_excel_report = True
 
-        # Format the Subject for the 'Success' email
-        subj = 'SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script'
+        # Format the Subject for the email
+        subj = 'SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script.  Data Downloaded.'
 
         # Format the Body in html
         body  = ("""\
@@ -1698,11 +1698,11 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
                    lf = log_file, er = excel_report))
 
     #---------------------------------------------------------------------------
-    #                     Write the "No Data Downloaded' email
+    #             Write the "Success--No Data Downloaded' email
 
     # If there were no errors but no data was downloaded
     elif(errorSTATUS == 0 and num_dl_features == 0):
-        print '  Writing the "No Data Downloaded" email'
+        print '  Writing the "Success--No Data Downloaded" email'
 
         # Send this email to the lueg_admin_emails
         email_list = lueg_admin_email
@@ -1711,7 +1711,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
         attach_excel_report = False
 
         # Format the Subject for the 'No Data Downloaded' email
-        subj = 'No Data Downloaded for DPW_Science_and_Monitoring.py Script'
+        subj = 'SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script.  NO Data Downloaded.'
 
         # Format the Body in html
         body  = ("""\
