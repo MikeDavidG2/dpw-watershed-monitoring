@@ -88,15 +88,15 @@ def main():
     AGOfields   = '*'
 
     # Service URL that ends with .../FeatureServer
-    ### Below is the service for the Test Photos service
-    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_e0c08b861bae4df895e6567c6199412f/FeatureServer'
-    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_9405c12d48364f03815cae025a981d18/FeatureServer'
-    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_c18c7b6047654fa4a59051d9c2fc3768/FeatureServer'
+    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_a2b2541845924a1592d89600cdd83f01/FeatureServer'
     queryURL    =  serviceURL + '/0/query'
     gaURL       =  serviceURL + '/CreateReplica'
 
+    # Which version is this script pointing to? 'DEV', 'BETA', 'PROD'
+    version = 'BETA'
+
     # Working database locations and names
-    wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\Data'
+    wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{}\Data'.format(version)
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
     origFC      = "A_DPW_Data_orig"
     wkgFC       = 'B_DPW_Data_wkg'
@@ -114,7 +114,7 @@ def main():
     # site_info = the CSV Survey123 uses to locate the sites in the app. It gets
     # its data refreshed from the Sites_Data Feature Class in the
     # Sites_Data_To_Survey123_csv() function
-    site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon DEV\media\Site_Info.csv"
+    site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon {}\media\Site_Info.csv".format(version)
     Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\E_Sites_Data_export_to_csv'
 
     # Misc
