@@ -143,7 +143,7 @@ def main():
     #            Turn the 'print' statement into a logging object
     if (run_Write_Print_To_Log):
         try:
-            # os.path.split below is used to return just the folder where the log_file lives
+            # os.path.split below is used to return just the path to the folder where the log_file lives
             print 'Setting "print" command to write to a log file found at: {}'.format(os.path.split(log_file)[0])
 
             # Get the original sys.stdout so it can be returned to normal at the
@@ -325,7 +325,7 @@ def main():
     if (run_Email_Results):
             try:
                 Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email,
-                              log_file, start_time, dt_last_ret_data, prodGDB,
+                              log_file_date, start_time, dt_last_ret_data, prodGDB,
                               prod_attachments, SmpEvntIDs_dl, new_loc_descs,
                               new_locs, excel_report)
 
@@ -1603,7 +1603,7 @@ def Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, Sites_Data, Site_Info):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Email Results
-def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file,
+def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file_date,
                   start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder,
                   dl_features_ls, new_loc_descs, new_locs, excel_report):
     print '--------------------------------------------------------------------'
@@ -1612,8 +1612,8 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     #---------------------------------------------------------------------------
     #         Do some processing to be used in the body of the email
 
-    # In the email, we only want the path to the logs, not to the actual file
-    log_file = os.path.split(log_file)[0]
+    ## In the email, we only want the path to the logs, not to the actual file
+    ##log_file_date = os.path.split(log_file)[0]
 
     # Turn the start_time into a formatted string
     start_time = [start_time_obj.strftime('%m/%d/%Y %I:%M:%S %p')]
@@ -1664,12 +1664,12 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
             <h3>New Location Descriptions and Moved Sites:</h3>
             <p>
                <h4>Location Description (Suggested Changes):</h4>
-                   GIS will edit the Location Descriptions during Beta testing.
-               <br>
-                   {nld}
+                   GIS will edit the Location Descriptions changes during Beta testing.
+               <br><br>
+                   <i>{nld}</i>
                <br><br>
                <h4>Moved Sites:</h4>
-                   {nl}
+                   <i>{nl}</i>
                <br>
                -----------------------------------------------------------------
               <br>
@@ -1699,7 +1699,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
         """.format(nld = str_new_loc_descs, nl = str_new_locs, st = start_time[0],
                    ft = finish_time[0], dlr = data_last_retrieved[0],
                    num = num_dl_features, fgdb = prod_FGDB, af = attach_folder,
-                   lf = log_file, er = excel_report))
+                   lf = log_file_date, er = excel_report))
 
     #---------------------------------------------------------------------------
     #             Write the "Success--No Data Downloaded' email
@@ -1744,7 +1744,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
           </body>
         </html>
         """.format(st = start_time[0], ft = finish_time[0], num = num_dl_features,
-                   dlr = data_last_retrieved[0], lf = log_file))
+                   dlr = data_last_retrieved[0], lf = log_file_date))
 
     #---------------------------------------------------------------------------
     #                        Write the "Errors" email
@@ -1789,7 +1789,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
           <body>
         </html>
 
-        """.format(st = start_time[0], ft = finish_time[0], lf = log_file, cwd = cwd))
+        """.format(st = start_time[0], ft = finish_time[0], lf = log_file_date, cwd = cwd))
 
     #---------------------------------------------------------------------------
     #---------------------------------------------------------------------------
