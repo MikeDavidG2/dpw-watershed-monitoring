@@ -91,9 +91,18 @@ def main():
     AGOfields   = '*'
 
     # Service URL that ends with .../FeatureServer
-    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_868ce8b4c46f46c18c174c23641a721a/FeatureServer'
+    if version == 'DEV':
+        serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_868ce8b4c46f46c18c174c23641a721a/FeatureServer'
+
+    elif version == 'BETA':
+        serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_a2b2541845924a1592d89600cdd83f01/FeatureServer'
+
+    elif version == 'PROD':
+        serviceURL = ''
+
     queryURL    =  serviceURL + '/0/query'
     gaURL       =  serviceURL + '/CreateReplica'
+
 
     # Working database locations and names
     wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{}\Data'.format(version)
