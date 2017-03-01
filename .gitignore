@@ -1,5 +1,6 @@
 #My Files to Ignore
 accounts.txt
+LastDataRetrival.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

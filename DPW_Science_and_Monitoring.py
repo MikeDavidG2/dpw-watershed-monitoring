@@ -1655,7 +1655,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
         attach_excel_report = True
 
         # Format the Subject for the email
-        subj = '{ } -- SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script.  Data Downloaded.'.format(version)
+        subj = '{} -- SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script.  Data Downloaded.'.format(version)
 
         # Format the Body in html
         body  = ("""\
