@@ -9,13 +9,7 @@
 # Licence:     <your licence>
 # Modified:    02/24/2017
 #-------------------------------------------------------------------------------
-# TODO: setup emailing service
-# TODO: figure out how to run the get attachments function on a different schedule than the get data function.
-#       Actually I could use the Get_DateAndTime function to return a day and I
-#       could then have an if/else statement to activate the get attachments
-#       function if the day == 01 (or something like that)
-# TODO: May need a 'Date Survey Filled Out' field to distinguis it from the 'Date Survey Submitted' field...
-# TODO: Try to have the print statements get added to a log file
+# TODO: if the A_DPW_Data_orig is locked the script fails, which is OK, but it doens't send a failed email.  Need to make it so it does send an email.
 
 # Import modules
 
@@ -27,7 +21,6 @@ import math
 import mimetypes
 import os
 import time
-##import logging
 import smtplib
 import string
 import sys
@@ -36,12 +29,14 @@ import urllib
 import urllib2
 import csv
 
+# Import emailing modules
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from email import encoders
 from email.message import Message
 from email.mime.text import MIMEText
 
+# Set overwrite output
 arcpy.env.overwriteOutput = True
 
 #-------------------------------------------------------------------------------
@@ -74,8 +69,8 @@ def main():
     run_Email_Results           = True
 
     # Email lists
-    ##dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
-    dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com']
+    ##dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
+    dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com']  # For testing purposes
     lueg_admin_email = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Control CSV files
@@ -95,7 +90,8 @@ def main():
     # Service URL that ends with .../FeatureServer
     ### Below is the service for the Test Photos service
     ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_e0c08b861bae4df895e6567c6199412f/FeatureServer'
-    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_9405c12d48364f03815cae025a981d18/FeatureServer'
+    ##serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_9405c12d48364f03815cae025a981d18/FeatureServer'
+    serviceURL  = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_c18c7b6047654fa4a59051d9c2fc3768/FeatureServer'
     queryURL    =  serviceURL + '/0/query'
     gaURL       =  serviceURL + '/CreateReplica'
 
@@ -203,7 +199,7 @@ def main():
         # Set flag data_was_downloaded based on the number of records in
         # SmpEvntIDs_dl.  This will be used to determine if other functions are
         # called in the main() function.
-        if (len(SmpEvntIDs_dl) == 0):
+        if ((len(SmpEvntIDs_dl) == 0) or (SmpEvntIDs_dl == None)):
             data_was_downloaded = False
 
             # These lists are needed in the Email_Results(), but will not be
@@ -391,7 +387,7 @@ def Get_DateAndTime():
     """
 
     print '--------------------------------------------------------------------'
-    print 'Getting Date and Time (dt)...'
+    print 'Getting Date and Time...'
 
     start_time = datetime.datetime.now()
 
@@ -1616,6 +1612,9 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     #---------------------------------------------------------------------------
     #         Do some processing to be used in the body of the email
 
+    # In the email, we only want the path to the logs, not to the actual file
+    log_file = os.path.split(log_file)[0]
+
     # Turn the start_time into a formatted string
     start_time = [start_time_obj.strftime('%m/%d/%Y %I:%M:%S %p')]
 
@@ -1665,10 +1664,13 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
             <h3>New Location Descriptions and Moved Sites:</h3>
             <p>
                <h4>Location Description (Suggested Changes):</h4>
-               {nld}
-              <br><br>
+                   GIS will edit the Location Descriptions during Beta testing.
+               <br>
+                   {nld}
+               <br><br>
                <h4>Moved Sites:</h4>
-               {nl}<br>
+                   {nl}
+               <br>
                -----------------------------------------------------------------
               <br>
             </p>
@@ -1683,12 +1685,14 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
             </p>
             <br>
 
-            <h3>File Locations:</h3>
+            <h3>File Locations (on GIS Blue Network):</h3>
             <p>
+               The below files are on the GIS Blue Network, will not be available
+               for DPW staff during Beta testing.                     <br>
                The <b>FGDB</b> is located at:            <i>{fgdb}</i><br>
-               The <b>Images</b> are located at:         <i>{af}</i><br>
-               The <b>Log File</b> is located at:        <i>{lf}</i><br>
-               The <b>Excel Report</b> is located at:    <i>{er}</i><br>
+               The <b>Images</b> are located at:         <i>{af}  </i><br>
+               The <b>Log File</b> is located at:        <i>{lf}  </i><br>
+               The <b>Excel Report</b> is located at:    <i>{er}  </i><br>
             </p>
           </body>
         </html>
@@ -1878,7 +1882,7 @@ def Error_Handler(func_w_err, e):
         print '    Help Comment: ' + help_comment
 
     # Change errorSTATUS to 1 so that the script doesn't try to perform any
-    # other functions
+    # other functions besides emailing
     errorSTATUS = 1
     return errorSTATUS
 
