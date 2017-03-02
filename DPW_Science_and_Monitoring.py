@@ -69,9 +69,9 @@ def main():
     run_Email_Results           = True
 
     # Email lists
-    dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
-    ##dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com']  # For testing purposes
-    lueg_admin_email = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
+    ##dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
+    dpw_email_list   = ['mikedavidg2@gmail.com', 'mikedavidg2@yahoo.com']  # For testing purposes
+    lueg_admin_email = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Which version is this script pointing to? 'DEV', 'BETA', 'PROD'
     version = 'BETA'
@@ -1808,7 +1808,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     msg = MIMEMultipart()
     msg['Subject']   = subj
     msg['From']      = "Python Script"
-    msg['To']        = ', '.join(dpw_email_list)  # Join each item in list with a ', '
+    msg['To']        = ', '.join(email_list)  # Join each item in list with a ', '
     msg.attach(MIMEText(body, 'html'))
 
     # Set the attachment if needed
@@ -1830,6 +1830,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     email_pwd = config.get('email', 'pwd')
 
     # Send the email
+    print '  Sending the email to: \n    {}'.format(email_list)
     SMTP_obj = smtplib.SMTP('smtp.gmail.com',587)
     SMTP_obj.starttls()
     SMTP_obj.login(email_usr, email_pwd)
