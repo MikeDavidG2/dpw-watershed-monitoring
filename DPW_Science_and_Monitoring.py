@@ -73,11 +73,11 @@ def main():
     dpw_email_list   = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']  # For testing purposes
     lueg_admin_email = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
-    # Which  is this script pointing to? 'DEV', 'BETA', 'PROD'
-    version = 'DEV'
+    # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
+    stage = 'DEV'
 
     # Control CSV files
-    control_CSVs           = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{v}\{v}_branch'.format(v = version)
+    control_CSVs           = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{v}\{v}_branch'.format(v = stage)
     last_data_retrival_csv = control_CSVs + '\\LastDataRetrival.csv'
     add_fields_csv         = control_CSVs + '\\FieldsToAdd.csv'
     calc_fields_csv        = control_CSVs + '\\FieldsToCalculate.csv'
@@ -86,18 +86,18 @@ def main():
     report_TMDL_csv        = control_CSVs + '\\Report_TMDL.csv'
 
     # Token and AGOL variables
-    cfgFile     = r"U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{v}\{v}_branch\accounts.txt".format(v = version)
+    cfgFile     = r"U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{v}\{v}_branch\accounts.txt".format(v = stage)
     gtURL       = "https://www.arcgis.com/sharing/rest/generateToken"
     AGOfields   = '*'
 
     # Service URL that ends with .../FeatureServer
-    if version == 'DEV':
+    if stage == 'DEV':
         serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_868ce8b4c46f46c18c174c23641a721a/FeatureServer'
 
-    elif version == 'BETA':
+    elif stage == 'BETA':
         serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_a2b2541845924a1592d89600cdd83f01/FeatureServer'
 
-    elif version == 'PROD':
+    elif stage == 'PROD':
         serviceURL = ''
 
     queryURL    =  serviceURL + '/0/query'
@@ -105,7 +105,7 @@ def main():
 
 
     # Working database locations and names
-    wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{}\Data'.format(version)
+    wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{}\Data'.format(stage)
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
     origFC      = "A_DPW_Data_orig"
     wkgFC       = 'B_DPW_Data_wkg'
@@ -123,7 +123,7 @@ def main():
     # site_info = the CSV Survey123 uses to locate the sites in the app. It gets
     # its data refreshed from the Sites_Data Feature Class in the
     # Sites_Data_To_Survey123_csv() function
-    site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon {}\media\Site_Info.csv".format(version)
+    site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon {}\media\Site_Info.csv".format(stage)
     Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\E_Sites_Data_export_to_csv'
 
     # Misc
@@ -336,7 +336,7 @@ def main():
                 Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email,
                               log_file_date, start_time, dt_last_ret_data, prodGDB,
                               prod_attachments, SmpEvntIDs_dl, new_loc_descs,
-                              new_locs, excel_report, version)
+                              new_locs, excel_report, stage)
 
             except Exception as e:
                 errorSTATUS = Error_Handler('Email_Results', e)
@@ -1614,7 +1614,7 @@ def Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, Sites_Data, Site_Info):
 #                           FUNCTION:  Email Results
 def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file_date,
                   start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder,
-                  dl_features_ls, new_loc_descs, new_locs, excel_report, version):
+                  dl_features_ls, new_loc_descs, new_locs, excel_report, stage):
     print '--------------------------------------------------------------------'
     print 'Emailing Results...'
 
@@ -1655,7 +1655,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
         attach_excel_report = True
 
         # Format the Subject for the email
-        subj = '{} -- SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script.  Data Downloaded.'.format(version)
+        subj = '{} -- SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script.  Data Downloaded.'.format(stage)
 
         # Format the Body in html
         body  = ("""\
@@ -1724,7 +1724,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
         attach_excel_report = False
 
         # Format the Subject for the 'No Data Downloaded' email
-        subj = '{} -- SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script.  NO Data Downloaded.'.format(version)
+        subj = '{} -- SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script.  NO Data Downloaded.'.format(stage)
 
         # Format the Body in html
         body  = ("""\
@@ -1772,7 +1772,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
         attach_excel_report = False
 
         # Format the Subject for the 'Errors' email
-        subj = '{} -- ERROR with DPW_Science_and_Monitoring.py Script'.format(version)
+        subj = '{} -- ERROR with DPW_Science_and_Monitoring.py Script'.format(stage)
 
         # Format the Body in html
         body = ("""\
