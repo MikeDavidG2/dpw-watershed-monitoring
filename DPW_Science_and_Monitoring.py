@@ -48,9 +48,9 @@ def main():
     #                               Set Variables
 
     # Variables to control which Functions are run
-    run_Set_Logger              = True
+    ##run_Set_Logger              = True
     run_Get_DateAndTime         = True
-    run_Write_Print_To_Log      = True
+    run_Write_Print_To_Log      = False  # TODO: Flip this back to 'True' when done testing
     run_Get_Last_Data_Ret       = True
     run_Get_Token               = True
     run_Get_Data                = True
@@ -92,7 +92,7 @@ def main():
 
     # Service URL that ends with .../FeatureServer
     if stage == 'DEV':
-        serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_868ce8b4c46f46c18c174c23641a721a/FeatureServer'
+        serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/service_5d67d2f9af394836b092e49e185ffb08/FeatureServer'
 
     elif stage == 'BETA':
         serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_a2b2541845924a1592d89600cdd83f01/FeatureServer'
@@ -105,7 +105,7 @@ def main():
 
 
     # Working database locations and names
-    wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{}\Data'.format(stage)
+    wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{v}\Data'.format(v = stage)
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
     origFC      = "A_DPW_Data_orig"
     wkgFC       = 'B_DPW_Data_wkg'
@@ -113,7 +113,7 @@ def main():
       # time to it in a function below
 
     # Production locations and names
-    prodGDB       = wkgFolder+ "\\DPW_Science_and_Monitoring_prod.gdb"
+    prodGDB                = wkgFolder + "\\DPW_Science_and_Monitoring_prod.gdb"
     prodPath_FldData       = prodGDB + '\\Field_Data'
     prodPath_SitesData     = prodGDB + '\\Sites_Data'
     prod_attachments       = wkgFolder + '\\Sci_Monitoring_pics'
@@ -1006,7 +1006,7 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
     arcpy.MakeTableView_management(wkg_data, 'wkg_data_view')
 
     #---------------------------------------------------------------------------
-    #                     Get values from the CSV file
+    #                     Get values from the CSV file: FieldsToCalculate.csv (calc_fields_csv)
     with open (calc_fields_csv) as csv_file:
         readCSV = csv.reader(csv_file, delimiter = ',')
 
@@ -1067,47 +1067,48 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
             # OPTION 1:
             # TODO: Rearrange this Option so that it has the try/except in the right place
             if (field == 'DateSurveySubmit' or field == 'TimeSurveySubmit'):
-
-                # Create an Update Cursor to loop through values
-                with arcpy.da.UpdateCursor(wkg_data, ['CreationDateString', 'DateSurveySubmit', 'TimeSurveySubmit']) as cursor:
-
-                    for row in cursor:
-                        try:
-                            # Turn the string obtained from the field into a datetime object
-                            UTC_dt_obj = datetime.datetime.strptime(row[0], '%m/%d/%Y %I:%M:%S %p')
-
-                            # Subtract 8 hours from the UTC (Universal Time Coordinated)
-                            # to get PCT
-                            PCT_offset = -8
-                            t_delta = datetime.timedelta(hours = PCT_offset)
-                            PCT_dt_obj = UTC_dt_obj + t_delta
-
-                            # Set the format for the date and time
-                            survey_date = [PCT_dt_obj.strftime('%m/%d/%Y')]
-                            survey_time = [PCT_dt_obj.strftime('%H:%M')]
-
-                            # Update the rows with the correct formatting
-                            # row[1] is 'DateSurveySubmit' and row[2] is 'TimeSurveySubmit'
-                            # as defined when creating the UpdateCursor above
-                            ##print 'Survey Date: ' + survey_date[0]
-                            row[1] = survey_date[0]
-                            ##print 'Survey Time: ' + survey_time[0]
-                            row[2] = survey_time[0]
-
-                            # Update the cursor with the updated list
-                            cursor.updateRow(row)
-
-                        except Exception as e:
-                            print '*** WARNING! Field: %s was not able to be calculated.***\n' % field
-                            print str(e)
-
-                print '        From selected features, calculated field: %s, so that it equals %s hours than CreationDateString\n' % (field, str(PCT_offset))
+                print '    This shouldn\'t have been calculated.'
+##
+##                # Create an Update Cursor to loop through values
+##                with arcpy.da.UpdateCursor(wkg_data, ['CreationDateString', 'DateSurveySubmit', 'TimeSurveySubmit']) as cursor:
+##
+##                    for row in cursor:
+##                        try:
+##                            # Turn the string obtained from the field into a datetime object
+##                            UTC_dt_obj = datetime.datetime.strptime(row[0], '%m/%d/%Y %I:%M:%S %p')
+##
+##                            # Subtract 8 hours from the UTC (Universal Time Coordinated)
+##                            # to get PCT
+##                            PCT_offset = -8
+##                            t_delta = datetime.timedelta(hours = PCT_offset)
+##                            PCT_dt_obj = UTC_dt_obj + t_delta
+##
+##                            # Set the format for the date and time
+##                            survey_date = [PCT_dt_obj.strftime('%m/%d/%Y')]
+##                            survey_time = [PCT_dt_obj.strftime('%H:%M')]
+##
+##                            # Update the rows with the correct formatting
+##                            # row[1] is 'DateSurveySubmit' and row[2] is 'TimeSurveySubmit'
+##                            # as defined when creating the UpdateCursor above
+##                            ##print 'Survey Date: ' + survey_date[0]
+##                            row[1] = survey_date[0]
+##                            ##print 'Survey Time: ' + survey_time[0]
+##                            row[2] = survey_time[0]
+##
+##                            # Update the cursor with the updated list
+##                            cursor.updateRow(row)
+##
+##                        except Exception as e:
+##                            print '*** WARNING! Field: %s was not able to be calculated.***\n' % field
+##                            print str(e)
+##
+##                print '        From selected features, calculated field: %s, so that it equals %s hours than CreationDateString\n' % (field, str(PCT_offset))
             #-------------------------------------------------------------------
             # Strip the auto-appended Time from the DateSurveyStart field
             # OPTION 2:
             # TODO: Add try/except to this option
-            elif (field == 'DateSurveyStart'):
-                expression = "Remove_Time_From_Date(!DateSurveyStart!)"
+            elif (field == 'DateOfSurvey'):
+                expression = "Remove_Time_From_Date(!{f}!)".format(f = field)
                 expression_type="PYTHON_9.3"
                 code_block = """def Remove_Time_From_Date(date):\n    if date is None:\n        return None\n    else:\n        return date.split(" ").pop(0)"""
 
