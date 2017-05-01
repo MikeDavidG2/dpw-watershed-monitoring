@@ -64,9 +64,10 @@ def main():
     run_FC_To_Table             = True
     run_Get_Field_Mappings      = True  # Requires 'run_Copy_Orig_Data = True'
     run_Append_Data             = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Export_To_Excel         = True
-    run_Sites_Data_To_Survey123 = True
-    run_Email_Results           = True
+    run_Duplicate_Handler       = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Export_To_Excel         = False #TODO: decide if need to turn back on
+    run_Sites_Data_To_Survey123 = False #TODO: decide if need to turn back on
+    run_Email_Results           = False #TODO: decide if need to turn back on
 
     # Email lists
     ##dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
@@ -310,6 +311,14 @@ def main():
         except Exception as e:
             errorSTATUS = Error_Handler('Append_Data', e)
 
+    #---------------------------------------------------------------------------
+    # Handle the DUPLICATES
+    if (errorSTATUS == 0 and data_was_downloaded and run_Duplicate_Handler):
+        try:
+            Duplicate_Handler(prodPath_FldData)
+
+        except Exception as e:
+            errorSTATUS = Error_Handler('Duplicate_Handler', e)
     #---------------------------------------------------------------------------
     # EXPORT to EXCEL
     if (errorSTATUS == 0 and data_was_downloaded and run_Export_To_Excel):
@@ -1065,7 +1074,7 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
             # The calculation in option 1 is needed because the CreationDate
             # is downloaded in UTC, but it needs to be converted to PCT.
             # OPTION 1:
-            # TODO: Rearrange this Option so that it has the try/except in the right place
+            # TODO: Remove the below Option as it is no longer needed.  The calculation is being performed in Survey123 by the phone/tablets internal clock
             if (field == 'DateSurveySubmit' or field == 'TimeSurveySubmit'):
                 print '    This shouldn\'t have been calculated.'
 ##
@@ -1440,6 +1449,44 @@ def Append_Data(orig_table, target_table, field_mapping):
     arcpy.Append_management(orig_table, target_table, schema_type, field_mapping)
 
     print 'Successfully appended data.\n'
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                         FUNCTION Duplicate Handler
+
+def Duplicate_Handler(target_table):
+    """
+    """
+    print '--------------------------------------------------------------------'
+    print 'Starting Duplicate_Handler()'
+
+    # Get list of all duplicate SampleEventIDs
+    type_1_2_dups = []
+    type_3_dups   = []
+    dup_list      = []
+    with arcpy.da.SearchCursor(target_table, ['SampleEventID']) as cursor:
+        for row in cursor:
+            if row[0] in dup_list:
+                pass
+            else:
+                dup_list.append(row[0])
+    for dup in dup_list:
+        print '  {}'.format(dup)
+
+    # If SampleEventIDs match and Creators match:
+        # Then Type 1 or 2 duplicate and delete the older (as defined by the ObjectID) duplicate
+
+    # If SampleEventIDs match and the Creators DON'T match:
+        # Then Type 3 duplicate and append '_1' or '_2' to the end of the SampleEventIDs
+
+        # Send an email to DPW and GIS letting them know that we had a Type 3 duplicate
+
+
+
+
+
+
+    print 'Finished Duplicate_Handler()'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
