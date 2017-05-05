@@ -71,7 +71,7 @@ def main():
 
     # Email lists
     dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
-    dpw_email_list   = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']  # TODO: Comment out when done with testing
+    ##dpw_email_list   = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']  # TODO: Comment out when done with testing
     lueg_admin_email = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
