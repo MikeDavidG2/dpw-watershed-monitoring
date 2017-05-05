@@ -50,7 +50,7 @@ def main():
     # Variables to control which Functions are run
     ##run_Set_Logger              = True
     run_Get_DateAndTime         = True
-    run_Write_Print_To_Log      = False  # TODO: Flip this back to 'True' when done testing
+    run_Write_Print_To_Log      = True  # TODO: Flip this back to 'True' when done testing
     run_Get_Last_Data_Ret       = True
     run_Get_Token               = True
     run_Get_Data                = True
@@ -65,13 +65,13 @@ def main():
     run_Get_Field_Mappings      = True  # Requires 'run_Copy_Orig_Data = True'
     run_Append_Data             = True  # Requires 'run_Copy_Orig_Data = True'
     run_Duplicate_Handler       = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Export_To_Excel         = False #TODO: decide if need to turn back on
-    run_Sites_Data_To_Survey123 = False #TODO: decide if need to turn back on
-    run_Email_Results           = False #TODO: decide if need to turn back on
+    run_Export_To_Excel         = True  #TODO: decide if need to turn back on
+    run_Sites_Data_To_Survey123 = True  #TODO: decide if need to turn back on
+    run_Email_Results           = True  #TODO: decide if need to turn back on
 
     # Email lists
     dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
-    dpw_email_list   = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']  # For testing purposes
+    dpw_email_list   = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']  # TODO: Comment out when done with testing
     lueg_admin_email = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
@@ -1515,12 +1515,19 @@ def Duplicate_Handler(target_table):
           and:
             '20170502.1234562'
 
-          NOTE: IF a Type 3 duplicate happens and a monitor resends their
+          NOTE: IF a Type 3 duplicate happens and then a monitor resends their
           survey (creaing a Type 2 duplicate), the SampleEventID will have
           Both a Type 3 and a Type 2 duplicate associated with it.  In this event
           The script will file this duplicate as a Type 3 and will rename all
           of the duplicates.
           It will not delete the Type 2 duplicate as might be expected.
+
+          NOTE: If a Type 1 or 2 duplicate has an associated attachment, this
+          script will not delete the attachment.  The attachments will be given
+          the same names 'PEN-001_20170505.123456' and will append a the next
+          letter in the alphabet up to '_G'.  This will make it look like a
+          different photo was downloaded, but this photo is a duplicate.
+          This is a known limitation to the current function.
     """
     print '--------------------------------------------------------------------'
     print 'Starting Duplicate_Handler()...\n'
