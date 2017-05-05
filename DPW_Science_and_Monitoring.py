@@ -75,7 +75,7 @@ def main():
     lueg_admin_email = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
-    stage = 'BETA'
+    stage = 'DEV'
 
     # Control CSV files
     control_CSVs           = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{v}\{v}_branch'.format(v = stage)
