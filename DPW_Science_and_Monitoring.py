@@ -96,7 +96,7 @@ def main():
         serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_8e527e6153ed488fad0414f309ed90ed/FeatureServer'
 
     elif stage == 'BETA':
-        serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_a2b2541845924a1592d89600cdd83f01/FeatureServer'
+        serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_65a9e7bda7104cc18dbf6f76463db67d/FeatureServer'
 
     elif stage == 'PROD':
         serviceURL = ''
