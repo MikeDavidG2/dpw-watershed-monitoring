@@ -133,6 +133,13 @@ def main():
     os.chdir(wkgFolder) # Makes sure we are in the correct directory (if called from Task Scheduler)
     excel_report = ''   # Sets variable to '' if the Export_To_Excel() is not run to create it.
 
+    # Lists
+    # These lists are needed in the Email_Results(), but may not be created
+    # if no data is downloaded.  Created here to not cause a fail
+    new_loc_descs  = []
+    new_locs       = []
+    ls_type_3_dups = []
+
     #---------------------------------------------------------------------------
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -212,11 +219,6 @@ def main():
         if ((len(SmpEvntIDs_dl) == 0) or (SmpEvntIDs_dl == None)):
             data_was_downloaded = False
 
-            # These lists are needed in the Email_Results(), but will not be
-            # created by the New_Loc_LocDesc() because that function will not be
-            # called due to no data being downloaded.  Created here to not cause a fail
-            new_loc_descs = []
-            new_locs      = []
         else:
             data_was_downloaded = True
 
