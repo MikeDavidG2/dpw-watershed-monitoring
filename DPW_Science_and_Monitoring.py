@@ -133,6 +133,13 @@ def main():
     os.chdir(wkgFolder) # Makes sure we are in the correct directory (if called from Task Scheduler)
     excel_report = ''   # Sets variable to '' if the Export_To_Excel() is not run to create it.
 
+    # Lists
+    # These lists are needed in the Email_Results(), but may not be created
+    # if no data is downloaded.  Created here to not cause a fail
+    new_loc_descs  = []
+    new_locs       = []
+    ls_type_3_dups = []
+
     #---------------------------------------------------------------------------
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -212,11 +219,6 @@ def main():
         if ((len(SmpEvntIDs_dl) == 0) or (SmpEvntIDs_dl == None)):
             data_was_downloaded = False
 
-            # These lists are needed in the Email_Results(), but will not be
-            # created by the New_Loc_LocDesc() because that function will not be
-            # called due to no data being downloaded.  Created here to not cause a fail
-            new_loc_descs = []
-            new_locs      = []
         else:
             data_was_downloaded = True
 
@@ -1514,6 +1516,7 @@ def Duplicate_Handler(target_table):
             '20170502.1234561'
           and:
             '20170502.1234562'
+          This script will change the SampleEventIDs as described above
 
           NOTE: IF a Type 3 duplicate happens and then a monitor resends their
           survey (creaing a Type 2 duplicate), the SampleEventID will have
