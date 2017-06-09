@@ -17,6 +17,8 @@ def main():
     master_table = r'X:\month\Test_FGDB.gdb\Field_Data'    # Table used to update
     to_update_table = r'X:\month\Test_PGDB.mdb\Field_Data' # Table to be updated
 
+    # TODO: set the log file location, get the print statements to write to the log file
+    log_file = r''
     #---------------------------------------------------------------------------
     #                         Start calling Functions()
     Delete_Rows(to_update_table)
