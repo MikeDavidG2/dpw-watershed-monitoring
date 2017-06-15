@@ -22,8 +22,8 @@ def main():
     master_table = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\DPW_Science_and_Monitoring_prod.gdb\Field_Data'    # Table used to update
     to_update_table = r'X:\day\Testing.mdb\Field_Data'                                                                     # Table to be updated
 
-    # TODO: set the log file location, get the print statements to write to the log file
-    run_Write_Print_To_Log = True
+    # Set to "True" to have 'print' statements be written to the log_file
+    run_Write_Print_To_Log = True  # Set to "False" to have 'print' statements print to screen
     log_file = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\Logs\Update_DPW_w_MasterData'
 
     #---------------------------------------------------------------------------
@@ -42,6 +42,7 @@ def main():
         Delete_Rows(to_update_table)
 
         Copy_Rows(master_table, to_update_table)
+        print 'SUCCESS!'
 
     else:
         print 'ERROR!  There was a schema lock on "{}".  \n  Not able to update database.'.format(to_update_table)
@@ -66,17 +67,30 @@ def main():
         print '\nDone with script.  Please find log file location above for more info.'
 
 #-------------------------------------------------------------------------------
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#                           START DEFINING FUNCTIONS
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                          FUNCTION Write_Print_To_Log()
 def Write_Print_To_Log(log_file):
     """
     PARAMETERS:
-
+      log_file (str): Path to log file.  The part after the last "\" will be the
+        name of the .log file after the date, time, and ".log" is appended to it.
 
     RETURNS:
-
+      orig_stdout (os object): The original stdout is saved in this variable so
+        that the script can access it and return stdout back to its orig settings.
 
     FUNCTION:
+      To turn all the 'print' statements into a log-writing object.  A new log
+        file will be created based on log_file with the date, time, ".log"
+        appended to it.  And any print statements after the command
+        "sys.stdout = write_to_log" will be written to this log.
+      It is a good idea to use the returned orig_stdout variable to return sys.stdout
+        back to its original setting.
+      NOTE: This function needs the function Get_DT_To_Append() to run
 
     """
     print 'Starting Write_Print_To_Log()...'
