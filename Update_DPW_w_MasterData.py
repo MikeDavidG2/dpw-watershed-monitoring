@@ -13,27 +13,65 @@ arcpy.env.overwriteOutput = True
 
 def main():
 
+    print 'Starting to run script.\n'
+
     # Set variables
-    master_table = r'X:\month\Test_FGDB.gdb\Field_Data'    # Table used to update
-    to_update_table = r'X:\month\Test_PGDB.mdb\Field_Data' # Table to be updated
+    master_table = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\DPW_Science_and_Monitoring_prod.gdb\Field_Data'    # Table used to update
+    to_update_table = r'X:\day\Testing.mdb\Field_Data'                                                                     # Table to be updated
 
     # TODO: set the log file location, get the print statements to write to the log file
     log_file = r''
     #---------------------------------------------------------------------------
     #                         Start calling Functions()
-    Delete_Rows(to_update_table)
 
-    Copy_Rows(master_table, to_update_table)
+    # Test to make sure there is no existing schema lock
+    no_schema_lock = Test_Schema_Lock(to_update_table)
 
+    # If there is no schema lock, delete the rows in the table then copy new data to it
+    if no_schema_lock:
+        Delete_Rows(to_update_table)
+
+        Copy_Rows(master_table, to_update_table)
+
+    else:
+        print 'ERROR!  There was a schema lock on "{}".  \n  Not able to update database.'.format(to_update_table)
+        print '  Please have everyone disconnect from database and rerun this script.\n'
 
     #---------------------------------------------------------------------------
     # End of script reporting
-    print 'Successfully Finished.'
+    print 'Finished running script.'
 
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#                                 FUNCTION Delete_Rows()
+#                          FUNCTION Test_Schema_Lock()
+def Test_Schema_Lock(dataset):
+    """
+    PARAMETERS:
+      dataset (str): Full path to a dataset to be tested if there is a schema lock
+
+    RETURNS:
+      no_schema_lock (Boolean): "True" or "False" if there is no schema lock
+
+    FUNCTION:
+      To perform a test on a dataset and return "True" if there is no schema
+      lock, and "False" if a schema lock already exists.
+    """
+
+    print 'Starting Test_Schema_Lock()...'
+
+    print '  Testing dataset: {}'.format(dataset)
+
+    no_schema_lock = arcpy.TestSchemaLock(dataset)
+    print '  Dataset available to have a schema lock applied to it = "{}"'.format(no_schema_lock)
+
+    print 'Finished Test_Schema_Lock()\n'
+
+    return no_schema_lock
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                            FUNCTION Delete_Rows()
 def Delete_Rows(in_table):
     """
     PARAMETERS:
@@ -72,7 +110,8 @@ def Copy_Rows(in_table, out_table):
 
     print 'Starting Copy_Rows()...'
 
-    print '  Copying Rows from: "{}" to: "{}"'.format(in_table, out_table)
+    print '  Copying Rows from: "{}"'.format(in_table)
+    print '                 To: "{}"'.format(out_table)
 
     arcpy.CopyRows_management(in_table, out_table)
 
@@ -81,5 +120,6 @@ def Copy_Rows(in_table, out_table):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
+# Run the main()
 if __name__ == '__main__':
     main()
