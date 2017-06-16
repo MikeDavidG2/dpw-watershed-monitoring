@@ -19,13 +19,24 @@ def main():
     #                              Set variables
     #---------------------------------------------------------------------------
 
-    master_table = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\DPW_Science_and_Monitoring_prod.gdb\Field_Data'    # Table used to update
-    to_update_table = r'X:\day\Testing.mdb\Field_Data'                                                                     # Table to be updated
+    # Master FGDB used to update
+    master_FGDB = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\BETA\Data\DPW_Science_and_Monitoring_prod.gdb'
+
+    # Target database to be updated
+    to_update_db = r'X:\day\Testing.mdb'
+
+    # Tables to be updated that exist in both 'Master' and 'Target' databases
+    # Both tables need the same schema
+    tables_to_update = ['Field_Data', 'Sites_Data']
+
 
     # Set to "True" to have 'print' statements be written to the log_file
-    run_Write_Print_To_Log = True  # Set to "False" to have 'print' statements print to screen
+    # Set to "False" to have 'print' statements print to screen
+    run_Write_Print_To_Log = True
     log_file = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\Logs\Update_DPW_w_MasterData'
 
+    # Flag that is changed to "False" if there are errors
+    success = True
     #---------------------------------------------------------------------------
     #                         Start calling Functions()
     #---------------------------------------------------------------------------
@@ -34,23 +45,35 @@ def main():
     if (run_Write_Print_To_Log):
         orig_stdout = Write_Print_To_Log(log_file)
 
-    # Test to make sure there is no existing schema lock
-    no_schema_lock = Test_Schema_Lock(to_update_table)
+    for table in tables_to_update:
 
-    # If there is no schema lock, delete the rows in the table then copy new data to it
-    if no_schema_lock:
-        Delete_Rows(to_update_table)
+        # Set paths to 'Master' and 'Target' table
+        master_table    = os.path.join(master_FGDB, table)
+        table_to_update = os.path.join(to_update_db, table)
 
-        Copy_Rows(master_table, to_update_table)
-        print 'SUCCESS!'
+        # Test to make sure there is no existing schema lock
+        no_schema_lock = Test_Schema_Lock(table_to_update)
 
-    else:
-        print 'ERROR!  There was a schema lock on "{}".  \n  Not able to update database.'.format(to_update_table)
-        print '  Please have everyone disconnect from database and rerun this script.\n'
+        # If there is no schema lock, delete the rows in the table then copy new data to it
+        if no_schema_lock:
+            Delete_Rows(table_to_update)
+
+            Copy_Rows(master_table, table_to_update)
+            print 'Success updating "{}"\n'.format(table_to_update)
+
+        else:
+            print '***ERROR!  There was a schema lock on "{}", or the table couldn\'t be found.***\n  Not able to update database.'.format(table_to_update)
+            print '  Please make sure that path exists, and that everyone has disconnected from the database.'
+            print '  Then rerun this script.\n'
+            success = False
 
     #---------------------------------------------------------------------------
     # End of script reporting
-    print 'Finished running script.'
+    if success == True:
+        print 'SUCCESSFULLY ran script.'
+
+    else:
+        print '***ERRORS running script!  See above for messages.***'
 
     # Return sys.stdout back to its original setting
     if (run_Write_Print_To_Log):
@@ -144,7 +167,7 @@ def Get_DT_To_Append():
 
     dt_to_append = '%s__%s' % (date, time)
 
-    print '    DateTime to append: {}'.format(dt_to_append)
+    print '    DateTime to append: "{}"'.format(dt_to_append)
 
     print '  Finished Get_DT_To_Append()'
     return dt_to_append
@@ -167,7 +190,7 @@ def Test_Schema_Lock(dataset):
 
     print 'Starting Test_Schema_Lock()...'
 
-    print '  Testing dataset: {}'.format(dataset)
+    print '  Testing dataset: "{}"'.format(dataset)
 
     no_schema_lock = arcpy.TestSchemaLock(dataset)
     print '  Dataset available to have a schema lock applied to it = "{}"'.format(no_schema_lock)
