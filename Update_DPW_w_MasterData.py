@@ -298,27 +298,29 @@ def Copy_Rows(in_table, out_table):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                                 FUNCTION Copy_Features()
-def Copy_Features(in_table, out_table):
+def Copy_Features(in_FC, out_FC):
     """
     PARAMETERS:
-      in_table (str): Full path to an input table.
-      out_table (str): Full path to an existing output table.
+      in_FC (str): Full path to an input feature class.
+      out_FC (str): Full path to an existing output feature class.
 
     RETURNS:
       None
 
     FUNCTION:
-      To copy the features from one feature class to another feature class.
+      To copy the features from one feature class to another existing
+      feature class.
     """
 
     print 'Starting Copy_Features()...'
 
-    print '  Copying Features from: "{}"'.format(in_table)
-    print '                 To: "{}"'.format(out_table)
+    print '  Copying Features from: "{}"'.format(in_FC)
+    print '                 To: "{}"'.format(out_FC)
 
-    arcpy.CopyFeatures_management(in_table, out_table)
+    arcpy.CopyFeatures_management(in_FC, out_FC)
 
     print 'Finished Copy_Features()\n'
+
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
