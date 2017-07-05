@@ -32,7 +32,7 @@ def main():
 
     # Set to "True" to have 'print' statements be written to the log_file
     # Set to "False" to have 'print' statements print to screen
-    run_Write_Print_To_Log = False
+    run_Write_Print_To_Log = True
     log_file = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\Logs\Update_DPW_w_MasterData'
 
     # Flag that is changed to "False" if there are errors
@@ -99,7 +99,8 @@ def main():
 
         sys.stdout = orig_stdout
 
-        print '\nDone with script.  Please find log file location above for more info.'
+        print '\nDone with script.  Success = {}.'.format(str(success))
+        print '  Please find log file location above for more info.'
 
 #-------------------------------------------------------------------------------
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
