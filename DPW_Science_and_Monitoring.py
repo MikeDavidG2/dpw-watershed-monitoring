@@ -48,7 +48,6 @@ def main():
     #                               Set Variables
 
     # Variables to control which Functions are run
-    ##run_Set_Logger              = True
     run_Get_DateAndTime         = True
     run_Write_Print_To_Log      = True  # TODO: Flip this back to 'True' when done testing
     run_Get_Last_Data_Ret       = True
@@ -77,17 +76,17 @@ def main():
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
     stage = 'DEV'
 
-    # Control CSV files
-    control_CSVs           = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{v}\{v}_branch'.format(v = stage)
-    last_data_retrival_csv = control_CSVs + '\\LastDataRetrival.csv'
-    add_fields_csv         = control_CSVs + '\\FieldsToAdd.csv'
-    calc_fields_csv        = control_CSVs + '\\FieldsToCalculate.csv'
-    delete_fields_csv      = control_CSVs + '\\FieldsToDelete.csv'
-    map_fields_csv         = control_CSVs + '\\MapFields.csv'
-    report_TMDL_csv        = control_CSVs + '\\Report_TMDL.csv'
+    # Control files
+    control_files          = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{v}\{v}_branch\Control_Files'.format(v = stage)
+    last_data_retrival_csv = control_files + '\\LastDataRetrival.csv'
+    add_fields_csv         = control_files + '\\FieldsToAdd.csv'
+    calc_fields_csv        = control_files + '\\FieldsToCalculate.csv'
+    delete_fields_csv      = control_files + '\\FieldsToDelete.csv'
+    map_fields_csv         = control_files + '\\MapFields.csv'
+    report_TMDL_csv        = control_files + '\\Report_TMDL.csv'
+    cfgFile                = control_files + '\\accounts.txt'
 
     # Token and AGOL variables
-    cfgFile     = r"U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{v}\{v}_branch\accounts.txt".format(v = stage)
     gtURL       = "https://www.arcgis.com/sharing/rest/generateToken"
     AGOfields   = '*'
 
