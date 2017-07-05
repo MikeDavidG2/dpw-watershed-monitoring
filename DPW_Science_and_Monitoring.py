@@ -1605,7 +1605,7 @@ def Duplicate_Handler(target_table):
     # Handle the Type 1 and 2 duplicates by changing the SampleEventID to
     # 'dup_type_1_2_flag' for all duplicates except for the youngest duplicate.
     # We want to keep the youngest Type 1 or 2 duplicate.
-    print '\n  There are "{}" Type 1 and Type 2 duplicates:'.format(str(len(dup_typ_1_2)))
+    print '\n  There are "{}" Type 1 / Type 2 duplicates:'.format(str(len(dup_typ_1_2)))
 
     if len(dup_typ_1_2) == 0:
         print '    So nothing to change'
