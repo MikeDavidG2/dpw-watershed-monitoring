@@ -14,25 +14,25 @@ arcpy.env.overwriteOutput = True
 
 def main():
 
-    print 'Starting to run script.\n'
+    print 'Starting to run Update_DPW_w_MasterData.py\n'
     #---------------------------------------------------------------------------
     #                              Set variables
     #---------------------------------------------------------------------------
 
     # Master FGDB used to update
-    master_FGDB = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\BETA\Data\DPW_Science_and_Monitoring_prod.gdb'
+    master_FGDB = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\DPW_Science_and_Monitoring_prod.gdb'
 
     # Target database to be updated
-    to_update_db = r'X:\day\Testing.mdb'
+    to_update_db = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\Testing_AccessDatabase.mdb'
 
-    # Tables to be updated that exist in both 'Master' and 'Target' databases
-    # Both tables need the same schema
-    tables_to_update = ['Field_Data', 'Sites_Data']
+    # Items to be updated that exist in both 'Master' and 'Target' databases
+    # Items in 'Master' and 'Target' need the same respective schema
+    items_to_update = ['Field_Data', 'Sites_Data']
 
 
     # Set to "True" to have 'print' statements be written to the log_file
     # Set to "False" to have 'print' statements print to screen
-    run_Write_Print_To_Log = True
+    run_Write_Print_To_Log = False
     log_file = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\Logs\Update_DPW_w_MasterData'
 
     # Flag that is changed to "False" if there are errors
@@ -45,26 +45,38 @@ def main():
     if (run_Write_Print_To_Log):
         orig_stdout = Write_Print_To_Log(log_file)
 
-    for table in tables_to_update:
+    for item in items_to_update:
 
-        # Set paths to 'Master' and 'Target' table
-        master_table    = os.path.join(master_FGDB, table)
-        table_to_update = os.path.join(to_update_db, table)
+        print 'Processing item: {}\n'.format(item)
+        # Set paths to 'Master' and 'Target' item
+        master_item    = os.path.join(master_FGDB, item)
+        item_to_update = os.path.join(to_update_db, item)
 
         # Test to make sure there is no existing schema lock
-        no_schema_lock = Test_Schema_Lock(table_to_update)
+        no_schema_lock = Test_Schema_Lock(item_to_update)
 
-        # If there is no schema lock, delete the rows in the table then copy new data to it
+        # If there is no schema lock, delete the rows in the item then copy new data to it
         if no_schema_lock:
-            Delete_Rows(table_to_update)
+            Delete_Rows(item_to_update)
 
-            Copy_Rows(master_table, table_to_update)
-            print 'Success updating "{}"\n'.format(table_to_update)
+            # Get the dataset type (i.e. 'Table' or 'FeatureClass') to determine
+            # if script should copy ROWS or copy FEATURES.
+            dataset_type = Get_Dataset_Type(item_to_update)
+
+            if (dataset_type == 'Table'):
+                Copy_Rows(master_item, item_to_update)
+
+            if (dataset_type == 'FeatureClass'):
+                Copy_Features(master_item, item_to_update)
+
+            print 'Success updating "{}"'.format(item_to_update)
+            print '------------------------------------------------------------\n'
 
         else:
-            print '***ERROR!  There was a schema lock on "{}", or the table couldn\'t be found.***\n  Not able to update database.'.format(table_to_update)
-            print '  Please make sure that path exists, and that everyone has disconnected from the database.'
-            print '  Then rerun this script.\n'
+            print '***ERROR!  There was a schema lock on "{}", OR the item couldn\'t be found.***\n  Not able to update database.'.format(item_to_update)
+            print '  Please make sure that item exists, and that everyone has disconnected from the database.'
+            print '  Then rerun this script.'
+            print '------------------------------------------------------------\n'
             success = False
 
     #---------------------------------------------------------------------------
@@ -130,7 +142,7 @@ def Write_Print_To_Log(log_file):
     write_to_log = open(log_file_date, 'w')
 
     # Make the 'print' statement write to the log file
-    print '  Setting "print" command to write to a log file found at:\n  {}'.format(log_file_date)
+    print '  Setting "print" command to write to a log file found at:\n    {}'.format(log_file_date)
     sys.stdout = write_to_log
 
     # Header for log file
@@ -202,25 +214,61 @@ def Test_Schema_Lock(dataset):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                            FUNCTION Delete_Rows()
-def Delete_Rows(in_table):
+def Delete_Rows(in_item):
     """
     PARAMETERS:
-      in_table (str): Full path to a table.
+      in_item (str): Full path to an item.
 
     RETURNS:
       None
 
     FUNCTION:
-      To delete the rows from one table.
+      To delete the rows from one item.
     """
 
     print 'Starting Delete_Rows()...'
 
-    print '  Deleting Rows from: "{}"'.format(in_table)
+    print '  Deleting Rows from: "{}"'.format(in_item)
 
-    arcpy.DeleteRows_management(in_table)
+    arcpy.DeleteRows_management(in_item)
 
     print 'Finished Delete_Rows()\n'
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                                 FUNCTION Get_Dataset_Type()
+def Get_Dataset_Type(in_item):
+    """
+    PARAMETERS:
+      in_item (str): Full path to an item.
+
+    RETURNS:
+      dataset_type (str): The dataset type of the item.  Common results include:
+        'FeatureClass'
+        'Table'
+        'GeometricNetwork'
+        'RasterDataset'
+
+    FUNCTION:
+      To get the dataset type of the 'in_item' and return a string describing
+      the type of dataset.  Used when the main() may want to treat the item
+      differently based on the dataset type.
+
+      For example:
+        A 'Table' may require an        'arcpy.CopyRows_management()' while,
+        A 'FeatureClass' may require an 'arcpy.CopyFeatures_management()'
+    """
+
+    print 'Starting Get_Dataset_Type()...'
+    print '  Getting Dataset Type of: "{}":'.format(in_item)
+
+    desc = arcpy.Describe(in_item)
+    dataset_type = desc.datasetType
+
+    print '    "{}"'.format(dataset_type)
+    print 'Finished Get_Dataset_Type\n'
+
+    return dataset_type
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -247,6 +295,30 @@ def Copy_Rows(in_table, out_table):
 
     print 'Finished Copy_Rows()\n'
 
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                                 FUNCTION Copy_Features()
+def Copy_Features(in_table, out_table):
+    """
+    PARAMETERS:
+      in_table (str): Full path to an input table.
+      out_table (str): Full path to an existing output table.
+
+    RETURNS:
+      None
+
+    FUNCTION:
+      To copy the features from one feature class to another feature class.
+    """
+
+    print 'Starting Copy_Features()...'
+
+    print '  Copying Features from: "{}"'.format(in_table)
+    print '                 To: "{}"'.format(out_table)
+
+    arcpy.CopyFeatures_management(in_table, out_table)
+
+    print 'Finished Copy_Features()\n'
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
