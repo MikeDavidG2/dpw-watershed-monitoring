@@ -1,0 +1,8 @@
+This is a row for information for the user,,,
+field_name,field_type,field_length,User Notes
+SiteType,String,10,
+EventType,String,20,
+FlowVelocity_ft_sec,Double,8,
+EstFlowRate,Double,8,
+EstFlowRateUnits,String,3,
+NumPicsTaken,Short,8,
