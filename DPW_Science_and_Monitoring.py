@@ -1526,7 +1526,7 @@ def Duplicate_Handler(target_table):
 
           NOTE: If a Type 1 or 2 duplicate has an associated attachment, this
           script will not delete the attachment.  The attachments will be given
-          the same names 'PEN-001_20170505.123456' and will append a the next
+          the same names 'PEN-001_20170505.123456' and will append the next
           letter in the alphabet up to '_G'.  This will make it look like a
           different photo was downloaded, but this photo is a duplicate.
           This is a known limitation to the current function.
