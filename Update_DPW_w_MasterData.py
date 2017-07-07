@@ -80,7 +80,8 @@ def main():
             success = False
 
     #---------------------------------------------------------------------------
-    # End of script reporting
+    #                         End of script reporting
+    #---------------------------------------------------------------------------
     if success == True:
         print 'SUCCESSFULLY ran script.'
 
