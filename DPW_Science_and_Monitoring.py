@@ -65,7 +65,7 @@ def main():
     run_Append_Data             = True  # Requires 'run_Copy_Orig_Data = True'
     run_Duplicate_Handler       = True  # Requires 'run_Copy_Orig_Data = True'
     run_Export_To_Excel         = True  #TODO: decide if need to turn back on
-    run_Sites_Data_To_Survey123 = True  #TODO: decide if need to turn back on
+    run_DPW_WP_SITES_To_Survey123 = True  #TODO: decide if need to turn back on
     run_Email_Results           = True  #TODO: decide if need to turn back on
 
     # Email lists
@@ -114,17 +114,17 @@ def main():
 
     # Production locations and names
     prodGDB                = wkgFolder + "\\DPW_Science_and_Monitoring_prod.gdb"
-    prodPath_FldData       = prodGDB + '\\Field_Data'
-    prodPath_SitesData     = prodGDB + '\\Sites_Data'
+    prodPath_FldData       = prodGDB + '\\DPW_WP_FIELD_DATA'
+    prodPath_SitesData     = prodGDB + '\\DPW_WP_SITES'
     prod_attachments       = wkgFolder + '\\Sci_Monitoring_pics'
     prodPath_Excel         = wkgFolder + '\\Excel'
 
     # Survey123 CSV file related variables
     # site_info = the CSV Survey123 uses to locate the sites in the app. It gets
-    # its data refreshed from the Sites_Data Feature Class in the
-    # Sites_Data_To_Survey123_csv() function
+    # its data refreshed from the DPW_WP_SITES Feature Class in the
+    # DPW_WP_SITES_To_Survey123_csv() function
     site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon {}\media\Site_Info.csv".format(stage)
-    Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\E_Sites_Data_export_to_csv'
+    Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\E_DPW_WP_SITES_export_to_csv'
 
     # Misc
     log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring'
@@ -332,12 +332,12 @@ def main():
 
     #---------------------------------------------------------------------------
     # Sites Data to Survey123 CSV
-    if (errorSTATUS == 0 and run_Sites_Data_To_Survey123):
+    if (errorSTATUS == 0 and run_DPW_WP_SITES_To_Survey123):
         try:
-            Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, prodPath_SitesData, site_info)
+            DPW_WP_SITES_To_Survey123_csv(Sites_Export_To_CSV_tbl, prodPath_SitesData, site_info)
 
         except Exception as e:
-            errorSTATUS = Error_Handler('Sites_Data_To_Survey123_csv', e)
+            errorSTATUS = Error_Handler('DPW_WP_SITES_To_Survey123_csv', e)
 
     #---------------------------------------------------------------------------
     # Email results
@@ -1222,7 +1222,7 @@ def Delete_Fields(wkg_data, delete_fields_csv):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                    FUNCTION: New Loc and Loc Desc
-def New_Loc_LocDesc(wkg_data, Sites_Data):
+def New_Loc_LocDesc(wkg_data, DPW_WP_SITES):
 
     print '--------------------------------------------------------------------'
     print 'Getting new Location Descriptions and Locations from:\n  {}\n'.format(wkg_data)
@@ -1257,7 +1257,7 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
     #                           Set new Locations
 
     # Create needed lists
-    New_Locs = ['  The following are the sites that were relocated in the field (The changes will be automatically made to the Sites_Data):']
+    New_Locs = ['  The following are the sites that were relocated in the field (The changes will be automatically made to the DPW_WP_SITES):']
     StationIDs, ShapeXs, ShapeYs, SampEvntIDs, Creators = ([] for i in range(5))
 
     # Create Search cursor and add data to lists
@@ -1286,23 +1286,23 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
     del cursor
 
    # If there is only the original New_Locs string, then there were no new
-   #  locations to move; no need to update the Sites_Data
+   #  locations to move; no need to update the DPW_WP_SITES
     if(len(New_Locs) == 1):
         New_Locs = ['  There were no relocated sites.\n']
 
     #---------------------------------------------------------------------------
-    # Create an Update cursor to update the Shape column in the Sites_Data
+    # Create an Update cursor to update the Shape column in the DPW_WP_SITES
     else:
         list_counter = 0
         cursor_fields = ['StationID', 'Shape@X', 'Shape@Y']
-        with arcpy.da.UpdateCursor(Sites_Data, cursor_fields) as cursor:
+        with arcpy.da.UpdateCursor(DPW_WP_SITES, cursor_fields) as cursor:
             for row in cursor:
 
                 # Only loop as many times as there are StationIDs to update
                 if (list_counter < len(StationIDs)):
 
-                    # If StationID in Sites_Data equals the StationID in the
-                    #  StationIDs list, update the geom for that StationID in Sites_Data
+                    # If StationID in DPW_WP_SITES equals the StationID in the
+                    #  StationIDs list, update the geom for that StationID in DPW_WP_SITES
                     if row[0] == StationIDs[list_counter]:
                         ##print '  Updating StationID: {} with new coordinates.'.format(StationIDs[list_counter])
 
@@ -1317,19 +1317,19 @@ def New_Loc_LocDesc(wkg_data, Sites_Data):
         del cursor
 
         #-----------------------------------------------------------------------
-        # Calculate X and Y fields in Sites_Data now that the geometry has been updated
+        # Calculate X and Y fields in DPW_WP_SITES now that the geometry has been updated
 
         # Calculate the Long_X field
         field = 'Long_X'
         expression = "!Shape.Centroid.X!"
         expression_type="PYTHON_9.3"
-        arcpy.CalculateField_management(Sites_Data, field, expression, expression_type)
+        arcpy.CalculateField_management(DPW_WP_SITES, field, expression, expression_type)
 
         # Calculate the Lat_Y field now that the geometry has been updated
         field = 'Lat_Y'
         expression = "!Shape.Centroid.Y!"
         expression_type="PYTHON_9.3"
-        arcpy.CalculateField_management(Sites_Data, field, expression, expression_type)
+        arcpy.CalculateField_management(DPW_WP_SITES, field, expression, expression_type)
 
     for Loc in New_Locs:
         print Loc
@@ -1694,7 +1694,7 @@ def Duplicate_Handler(target_table):
 #-------------------------------------------------------------------------------
 #                          FUNCTION:   Export to Excel
 def Export_To_Excel(wkg_folder, wkg_FGDB, table_to_export, export_folder, dt_to_append, report_TMDL_csv):
-    """Exports the production Field_Data table to a working table, deletes the
+    """Exports the production DPW_WP_FIELD_DATA table to a working table, deletes the
     unneeded fields in the working table and then exports that table to excel.
     Essentially creating a 'Report' in Excel based on the where_clause.
     """
@@ -1771,8 +1771,8 @@ def Export_To_Excel(wkg_folder, wkg_FGDB, table_to_export, export_folder, dt_to_
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#            FUNCTION: Export Sites_Data to Survey123's Site_Info csv
-def Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, Sites_Data, Site_Info):
+#            FUNCTION: Export DPW_WP_SITES to Survey123's Site_Info csv
+def DPW_WP_SITES_To_Survey123_csv(Sites_Export_To_CSV_tbl, DPW_WP_SITES, Site_Info):
     print '--------------------------------------------------------------------'
     print 'Exporting Sites Data to the Survey123 CSV...'
 
@@ -1787,24 +1787,24 @@ def Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, Sites_Data, Site_Info):
     arcpy.DeleteRows_management(Sites_Export_To_CSV_tbl)
 
     #---------------------------------------------------------------------------
-    #         Export prod Sites_Data to a working table in the working_FGDB
+    #         Export prod DPW_WP_SITES to a working table in the working_FGDB
 
     working_FGDB = os.path.split(Sites_Export_To_CSV_tbl)[0]  # Get the working FGDB path
-    Sites_Data_tbl = 'D_Sites_Data_exported_tbl'
-    Sites_Data_tbl_path = working_FGDB + '\\' + Sites_Data_tbl
+    DPW_WP_SITES_tbl = 'D_DPW_WP_SITES_exported_tbl'
+    DPW_WP_SITES_tbl_path = working_FGDB + '\\' + DPW_WP_SITES_tbl
 
-    print '  Exporting Sites_Data to a working table:'
-    print '    From: {}'.format(Sites_Data)
-    print '    To:   {}'.format(Sites_Data_tbl_path)
+    print '  Exporting DPW_WP_SITES to a working table:'
+    print '    From: {}'.format(DPW_WP_SITES)
+    print '    To:   {}'.format(DPW_WP_SITES_tbl_path)
 
-    arcpy.TableToTable_conversion(Sites_Data, working_FGDB, Sites_Data_tbl)
+    arcpy.TableToTable_conversion(DPW_WP_SITES, working_FGDB, DPW_WP_SITES_tbl)
 
     #---------------------------------------------------------------------------
-    #            Append Sites_Data_tbl to the Sites_Export_To_CSV table
+    #            Append DPW_WP_SITES_tbl to the Sites_Export_To_CSV table
 
-    inputs = working_FGDB + '\\' + Sites_Data_tbl
+    inputs = working_FGDB + '\\' + DPW_WP_SITES_tbl
 
-    print '  Appending {}'.format(Sites_Data_tbl)
+    print '  Appending {}'.format(DPW_WP_SITES_tbl)
     print '    From: {}'.format(inputs)
     print '    To:   {}'.format(Sites_Export_To_CSV_tbl)
 
@@ -1857,7 +1857,7 @@ def Sites_Data_To_Survey123_csv(Sites_Export_To_CSV_tbl, Sites_Data, Site_Info):
     if os.path.exists(xml_file):
         os.remove(xml_file)
 
-    print 'Successfully exported Sites_Data to Survey123 CSV\n'
+    print 'Successfully exported DPW_WP_SITES to Survey123 CSV\n'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
