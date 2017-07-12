@@ -8,6 +8,9 @@
 # Copyright:   (c) mgrue 2017
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
+# TODO: This script is currently not in use.  It can be used to take data
+#       from SDEP to a PGDB on the County network with some tweaking.
+
 import arcpy, datetime, os
 
 arcpy.env.overwriteOutput = True
