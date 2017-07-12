@@ -27,7 +27,9 @@ def main():
     fgdb_to_export = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\DPW_Science_and_Monitoring_prod.gdb'
     items_to_export = ['Field_Data', 'Sites_Data']
 
-    fgdb_to_be_updated = r'V:\sde_load.gdb'
+##    fgdb_to_be_updated = r'V:\sde_load.gdb'
+    # TODO before moving to PROD: Delete below variable, and this comment, and uncomment out above
+    fgdb_to_be_updated = r'U:\grue\Projects\VDrive_to_SDEP_flow\FALSE_sde_load.gdb'
 
     # Set to "True" to have 'print' statements be written to the log_file
     # Set to "False" to have 'print' statements print to screen
@@ -148,7 +150,7 @@ def Write_Print_To_Log(log_file):
     write_to_log = open(log_file_date, 'w')
 
     # Make the 'print' statement write to the log file
-    print '  Setting "print" command to write to a log file found at:\n  {}'.format(log_file_date)
+    print '  Setting "print" command to write to a log file found at:\n    {}'.format(log_file_date)
     sys.stdout = write_to_log
 
     # Header for log file
