@@ -25,7 +25,7 @@ def main():
     #---------------------------------------------------------------------------
 
     fgdb_to_export = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\DPW_Science_and_Monitoring_prod.gdb'
-    items_to_export = ['Field_Data', 'Sites_Data']
+    items_to_export = ['DPW_WP_FIELD_DATA', 'DPW_WP_SITES']
 
 ##    fgdb_to_be_updated = r'V:\sde_load.gdb'
     # TODO before moving to PROD: Delete below variable, and this comment, and uncomment out above
