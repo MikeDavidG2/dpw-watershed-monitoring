@@ -9,7 +9,7 @@
 # Licence:     <your licence>
 # Modified:    02/24/2017
 #-------------------------------------------------------------------------------
-# TODO: if the A_DPW_Data_orig is locked the script fails, which is OK, but it doens't send a failed email.  Need to make it so it does send an email.
+# TODO: if the A_FIELD_DATA_orig is locked the script fails, which is OK, but it doens't send a failed email.  Need to make it so it does send an email.
 #
 # Import modules
 
@@ -107,8 +107,8 @@ def main():
     # Working database locations and names
     wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{v}\Data'.format(v = stage)
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
-    origFC      = "A_DPW_Data_orig"
-    wkgFC       = 'B_DPW_Data_wkg'
+    origFC      = "A_FIELD_DATA_orig"
+    wkgFC       = 'B_FIELD_DATA_wkg'
       # There is no wkgPath variable yet since we will append the date and
       # time to it in a function below
 
@@ -124,7 +124,7 @@ def main():
     # its data refreshed from the DPW_WP_SITES Feature Class in the
     # DPW_WP_SITES_To_Survey123_csv() function
     site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon {}\media\Site_Info.csv".format(stage)
-    Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\E_DPW_WP_SITES_export_to_csv'
+    Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\E_SITES_export_to_csv'
 
     # Misc
     log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring'
@@ -1349,7 +1349,7 @@ def FC_To_Table(wkgFolder, wkgGDB, dt_to_append, wkgPath):
     print '--------------------------------------------------------------------'
     print 'Exporting working FC to table:'
     in_features = wkgPath
-    out_table = '{}\\{}\\C_DPW_Data_to_apnd'.format(wkgFolder, wkgGDB)
+    out_table = '{}\\{}\\C_FIELD_DATA_to_apnd'.format(wkgFolder, wkgGDB)
     ##out_table = '{}\\{}\\DPW_Data_to_apnd_{}'.format(wkgFolder, wkgGDB, dt_to_append)
 
     ##print '  Exporting...'
@@ -1790,7 +1790,7 @@ def DPW_WP_SITES_To_Survey123_csv(Sites_Export_To_CSV_tbl, DPW_WP_SITES, Site_In
     #         Export prod DPW_WP_SITES to a working table in the working_FGDB
 
     working_FGDB = os.path.split(Sites_Export_To_CSV_tbl)[0]  # Get the working FGDB path
-    DPW_WP_SITES_tbl = 'D_DPW_WP_SITES_exported_tbl'
+    DPW_WP_SITES_tbl = 'D_SITES_exported_tbl'
     DPW_WP_SITES_tbl_path = working_FGDB + '\\' + DPW_WP_SITES_tbl
 
     print '  Exporting DPW_WP_SITES to a working table:'
