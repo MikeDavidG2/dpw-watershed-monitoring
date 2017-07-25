@@ -35,7 +35,7 @@ def main():
     log_file = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Logs\DPW_Update_sde_load'
 
     # Set email recipients
-    email_recipients = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com']
+    email_recipients = ['michael.grue@sdcounty.ca.gov']
 
 
     # Flag that is changed to "False" if there are errors
