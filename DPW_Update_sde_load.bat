@@ -1,4 +1,4 @@
-set jobdir=U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV
+set jobdir=P:\DPW_ScienceAndMonitoring\Scripts\DEV
 set script_1=%jobdir%\DEV_branch\DPW_Update_sde_load.py
 ::set script_2=%jobdir%\DEV_branch\Update_DPW_w_MasterData.py
 set log=%jobdir%\Data\Logs\DPW_Update_sde_load_batch.log
