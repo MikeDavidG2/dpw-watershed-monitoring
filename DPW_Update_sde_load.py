@@ -34,6 +34,10 @@ def main():
     run_Write_Print_To_Log = True
     log_file = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Logs\DPW_Update_sde_load'
 
+    # Set email recipients
+    email_recipients = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com']
+
+
     # Flag that is changed to "False" if there are errors
     success = True
 
@@ -43,7 +47,7 @@ def main():
 
     # Turn the 'print' statement into a logging object
     if (run_Write_Print_To_Log):
-        orig_stdout = Write_Print_To_Log(log_file)
+        orig_stdout, log_file_date = Write_Print_To_Log(log_file)
 
     # Process items
     try:
@@ -86,25 +90,32 @@ def main():
     #                         End of script reporting
     #---------------------------------------------------------------------------
     if success == True:
-        print 'SUCCESSFULLY ran script.'
-
+        email_subject = 'SUCCESSFULLY ran DPW_Update_sde_load.py'
+        print email_subject
     else:
-        print '***ERRORS running script!  See above for messages.***'
+        email_subject = 'ERROR running DPW_Update_sde_load.py'
+        print email_subject
 
     # Return sys.stdout back to its original setting
     if (run_Write_Print_To_Log):
+        try:
+            # Footer for log file
+            finish_time_str = [datetime.datetime.now().strftime('%m/%d/%Y  %I:%M:%S %p')][0]
+            print '\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+            print '                    {}'.format(finish_time_str)
+            print '              Finished DPW_Update_sde_load.py'
+            print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 
-        # Footer for log file
-        finish_time_str = [datetime.datetime.now().strftime('%m/%d/%Y  %I:%M:%S %p')][0]
-        print '\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-        print '                    {}'.format(finish_time_str)
-        print '              Finished DPW_Update_sde_load.py'
-        print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+            sys.stdout = orig_stdout
 
-        sys.stdout = orig_stdout
+            print '\nDone with script.  Success = {}.'.format(str(success))
+            print '  Please find log file location above for more info.'
+        except Exception as e:
+            print 'ERROR with end of script reporting'
+            print str(e)
 
-        print '\nDone with script.  Success = {}.'.format(str(success))
-        print '  Please find log file location above for more info.'
+    # Send email as either SUCCESS or ERROR with the log file attached
+    Email(email_subject, email_recipients, log_file_date)
 
 #-------------------------------------------------------------------------------
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -123,6 +134,7 @@ def Write_Print_To_Log(log_file):
     RETURNS:
       orig_stdout (os object): The original stdout is saved in this variable so
         that the script can access it and return stdout back to its orig settings.
+      log_file_date (str): Path to the log file with the date and time appeneded.
 
     FUNCTION:
       To turn all the 'print' statements into a log-writing object.  A new log
@@ -159,7 +171,7 @@ def Write_Print_To_Log(log_file):
     print '             START DPW_Update_sde_load.py'
     print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n'
 
-    return orig_stdout
+    return orig_stdout, log_file_date
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -275,6 +287,86 @@ def Copy_Features(in_FC, out_FC):
     arcpy.CopyFeatures_management(in_FC, out_FC)
 
     print 'Finished Copy_Features()\n'
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                       FUNCTION Email()
+def Email(email_subject, email_recipients, log_file=None):
+    """
+    PARAMETERS:
+      email_subject (str): The subject line for the email
+
+      email_recipients (list): List (of strings) of email addresses
+
+      log_file {str}: Path to a log file to be included in the body of the
+        email. Optional.
+
+
+    RETURNS:
+      None
+
+
+    FUNCTION:
+      To send an email to the listed recipients.  May provide a log file to
+      include in the body of the email.
+
+      NOTE: set the 'email_config_file' variable if needed. The format of the
+        config file should be as below with <username> and <password> completed:
+          [email]
+          usr: <username>
+          pwd: <password>
+
+    """
+    import smtplib, ConfigParser
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    #---------------------------------------------------------------------------
+    #                              Set variables
+    # Set config file to get username and password
+    email_config_file = r"M:\scripts\configFiles\accounts.txt"
+
+    #---------------------------------------------------------------------------
+    # Set log file into body of email if provided
+    if log_file != None:
+        # Get the log file to add to email body
+        fp = open(log_file,"rb")
+        msg = MIMEText(fp.read())
+        fp.close()
+    else:
+        msg = MIMEMultipart()
+
+    # Get username and pwd from the config file
+    try:
+        config = ConfigParser.ConfigParser()
+        config.read(email_config_file)
+        email_usr = config.get("email","usr")
+        email_pwd = config.get("email","pwd")
+    except:
+        print 'ERROR!  Could not read config file.  May not exist at location, or key may be incorrect.  Email not sent.'
+        return
+
+    # Set from and to addresses
+    fromaddr = "dplugis@gmail.com"
+    toaddr = email_recipients
+    email_recipients_str = ', '.join(email_recipients)  # Join each item in list with a ', '
+
+    # Set visible info in email
+    msg['Subject'] = email_subject
+    msg['From']    = "Python Script"
+    msg['To']      = email_recipients_str
+
+    # Email
+    s = smtplib.SMTP('smtp.gmail.com', 587)
+    s.ehlo()
+    s.starttls()
+    s.ehlo()
+    s.login(email_usr,email_pwd)
+    s.sendmail(fromaddr,toaddr,msg.as_string())
+    s.quit()
+
+    print 'Sent email with subject "{}"'.format(email_subject)
+    print 'To: {}'.format(email_recipients_str)
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
