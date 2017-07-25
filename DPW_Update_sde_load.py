@@ -24,17 +24,15 @@ def main():
     #                              Set variables
     #---------------------------------------------------------------------------
 
-    fgdb_to_export = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\DPW_Science_and_Monitoring_prod.gdb'
+    fgdb_to_export = r"P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\DPW_Science_and_Monitoring_prod.gdb"
     items_to_export = ['DPW_WP_FIELD_DATA', 'DPW_WP_SITES']
 
-##    fgdb_to_be_updated = r'V:\sde_load.gdb'
-    # TODO before moving to PROD: Delete below variable, and this comment, and uncomment out above
-    fgdb_to_be_updated = r'U:\grue\Projects\VDrive_to_SDEP_flow\FALSE_sde_load.gdb'
+    fgdb_to_be_updated = r'V:\sde_load.gdb'
 
     # Set to "True" to have 'print' statements be written to the log_file
     # Set to "False" to have 'print' statements print to screen
     run_Write_Print_To_Log = True
-    log_file = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\Logs\DPW_Update_sde_load'
+    log_file = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Logs\DPW_Update_sde_load'
 
     # Flag that is changed to "False" if there are errors
     success = True

@@ -70,14 +70,14 @@ def main():
 
     # Email lists
     ##dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
-    dpw_email_list   = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']  # TODO: Comment out when done with testing
-    lueg_admin_email = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
+    dpw_email_list   = ['michael.grue@sdcounty.ca.gov']  # The above commented out is for PROD
+    lueg_admin_email = ['michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
-    stage = 'DEV'
+    stage = 'DEV'  # This variable is used to control the path to the varioius stages
 
     # Control files
-    control_files          = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{v}\{v}_branch\Control_Files'.format(v = stage)
+    control_files          = r'P:\DPW_ScienceAndMonitoring\Scripts\{v}\DEV_branch\Control_Files'.format(v = stage)
     last_data_retrival_csv = control_files + '\\LastDataRetrival.csv'
     add_fields_csv         = control_files + '\\FieldsToAdd.csv'
     calc_fields_csv        = control_files + '\\FieldsToCalculate.csv'
@@ -105,7 +105,7 @@ def main():
 
 
     # Working database locations and names
-    wkgFolder   = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\{v}\Data'.format(v = stage)
+    wkgFolder   = r'P:\DPW_ScienceAndMonitoring\Scripts\{v}\Data'.format(v = stage)
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
     origFC      = "A_FIELD_DATA_orig"
     wkgFC       = 'B_FIELD_DATA_wkg'
