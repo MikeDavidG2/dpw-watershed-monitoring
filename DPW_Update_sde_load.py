@@ -90,7 +90,7 @@ def main():
     #                         End of script reporting
     #---------------------------------------------------------------------------
     if success == True:
-        email_subject = 'SUCCESSFULLY ran DPW_Update_sde_load.py'
+        email_subject = 'SUCCESS running DPW_Update_sde_load.py'
         print email_subject
     else:
         email_subject = 'ERROR running DPW_Update_sde_load.py'
