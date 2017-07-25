@@ -23,23 +23,28 @@ def main():
     #---------------------------------------------------------------------------
 
     # Master FGDB used to update
-    master_FGDB = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\DPW_Science_and_Monitoring_prod.gdb'
+    master_SDE = r"P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\DPW_Science_and_Monitoring_prod.gdb"
 
     # Target database to be updated
-    to_update_db = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\Testing_AccessDatabase.mdb'
+    to_update_db = r"P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Testing_AccessDatabase.mdb"
 
     # Items to be updated that exist in both 'Master' and 'Target' databases
     # Items in 'Master' and 'Target' need the same respective schema
-    items_to_update = ['Field_Data', 'Sites_Data']
+    items_to_update = ['DPW_WP_FIELD_DATA', 'DPW_WP_SITES']
 
 
     # Set to "True" to have 'print' statements be written to the log_file
     # Set to "False" to have 'print' statements print to screen
-    run_Write_Print_To_Log = True
-    log_file = r'U:\grue\Scripts\GitHub\DPW-Sci-Monitoring\DEV\Data\Logs\Update_DPW_w_MasterData'
+    run_Write_Print_To_Log = False
+    log_file = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Logs\Update_DPW_w_MasterData'
 
     # Flag that is changed to "False" if there are errors
     success = True
+
+    # Get a list of Tables and Feature Classes in master_SDE
+    arcpy.env.workspace = master_SDE
+    fcs_in_sde    = arcpy.ListFeatureClasses()
+    tables_in_sde = arcpy.ListTables()
     #---------------------------------------------------------------------------
     #                         Start calling Functions()
     #---------------------------------------------------------------------------
@@ -48,18 +53,31 @@ def main():
     if (run_Write_Print_To_Log):
         orig_stdout = Write_Print_To_Log(log_file)
 
+    print '----------------------------------------------------------'
+
     for item in items_to_update:
 
         print 'Processing item: {}\n'.format(item)
+
         # Set paths to 'Master' and 'Target' item
-        master_item    = os.path.join(master_FGDB, item)
+        master_item    = os.path.join(master_SDE, item)
         item_to_update = os.path.join(to_update_db, item)
 
-        # Test to make sure there is no existing schema lock
+        # Test to see if the item is in workspace.
+        if (item in fcs_in_sde) or (item in tables_in_sde):
+            item_in_workspace = True
+        else:
+            item_in_workspace = False
+        print '  Item "{}" in workspace = "{}"'.format(item, item_in_workspace)
+
+        # Test to make sure there is no existing schema lock, and that the item
+        #   exists in the Access Database.  If it does not exist in Access,
+        #   then do not continue processing it.
         no_schema_lock = Test_Schema_Lock(item_to_update)
 
-        # If there is no schema lock, delete the rows in the item then copy new data to it
-        if no_schema_lock:
+        # If there is no schema lock, and the item is in master_SDE
+        #   then delete the rows of the item in Access then copy new data to it
+        if no_schema_lock and item_in_workspace:
             Delete_Rows(item_to_update)
 
             # Get the dataset type (i.e. 'Table' or 'FeatureClass') to determine
@@ -73,20 +91,25 @@ def main():
                 Copy_Features(master_item, item_to_update)
 
             print 'Success updating "{}"'.format(item_to_update)
-            print '------------------------------------------------------------\n'
+            print '\n----------------------------------------------------------'
 
-        else:
-            print '***ERROR!  There was a schema lock on "{}", OR the item couldn\'t be found.***\n  Not able to update database.'.format(item_to_update)
+        if no_schema_lock == False:  # Item doesn't exist, or there is already a schema lock on item in Access
+            print '***ERROR!  The item "{}" could not be found, OR There was a schema lock on it.***\n  Not able to update this item in Access.'.format(item_to_update)
             print '  Please make sure that item exists, and that everyone has disconnected from the database.'
             print '  Then rerun this script.'
-            print '------------------------------------------------------------\n'
+            print '\n----------------------------------------------------------'
+            success = False
+
+        if item_in_workspace == False:  # Item is not in the master_SDE
+            print '***ERROR!  The item "{}" is not in "{}", the Access Database was not updated.'.format(item, master_SDE)
+            print '\n----------------------------------------------------------'
             success = False
 
     #---------------------------------------------------------------------------
     #                         End of script reporting
     #---------------------------------------------------------------------------
     if success == True:
-        print 'SUCCESSFULLY ran script.'
+        print '\nSUCCESSFULLY ran script.'
 
     else:
         print '***ERRORS running script!  See above for messages.***'
@@ -210,6 +233,7 @@ def Test_Schema_Lock(dataset):
     print '  Testing dataset: "{}"'.format(dataset)
 
     no_schema_lock = arcpy.TestSchemaLock(dataset)
+
     print '  Dataset available to have a schema lock applied to it = "{}"'.format(no_schema_lock)
 
     print 'Finished Test_Schema_Lock()\n'
