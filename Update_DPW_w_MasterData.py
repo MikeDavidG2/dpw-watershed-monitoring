@@ -8,12 +8,11 @@ Script uses a SDE file to access SDEP data to copy over to the Access Database.
 
 PROCESS:
 1. Creates a log file.
-2. Gets a list of the Tables and FCs in master_SDE.
-3. Tests to see if the 'item' is in master_SDE.
-4. Tests to see if the 'item' is in Access and if it can have a Schema lock
+2. Tests to see if the 'item' is in master_SDE.
+3. Tests to see if the 'item' is in Access and if it can have a Schema lock
    placed on it.
-5. Deletes rows in Access for that item
-6. Copies rows from 'master_SDE' item to 'to_update_db' item
+4. Deletes rows in Access for that item
+5. Copies rows from 'master_SDE' item to 'to_update_db' item
 """
 # Author:      mgrue
 #
@@ -30,15 +29,18 @@ def main():
 
     print 'Starting to run Update_DPW_w_MasterData.py\n'
     #---------------------------------------------------------------------------
-    #                              Set variables
+    #                              User Set variables
     #---------------------------------------------------------------------------
 
     # Master FGDB used to update
     master_SDE = r"W:\Script\Connection_Files\AD @ SDEP.sde"
+    master_SDE = r'Database Connections\AD@ATLANTIC@SDE.sde'  # TODO: delete after done testing
     master_prefix = 'SDEP.SANGIS.'
+    master_prefix = 'SDE.SANGIS.'  # TODO: delete after done testing
 
     # Target database to be updated
     to_update_db = r"W:\AccessDatabase.mdb"
+    to_update_db = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Testing_AccessDatabase.mdb'  # TODO: delete after done testing
 
     # Items to be updated that exist in both 'Master' and 'Target' databases
     # Items in 'Master' and 'Target' need the same name and respective schema
@@ -49,6 +51,11 @@ def main():
     # Set to "False" to have 'print' statements print to screen
     run_Write_Print_To_Log = True  # TODO: Change this to 'True' when done testing
     log_file = r'W:\Script\Logs\Update_DPW_w_MasterData'
+    log_file = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Logs\Update_DPW_w_MasterData'  # TODO: delete after done testing
+
+    #---------------------------------------------------------------------------
+    #                           Script Set variables
+    #---------------------------------------------------------------------------
 
     # Flag that is changed to "False" if there are errors
     success = True
@@ -60,21 +67,7 @@ def main():
     # Turn the 'print' statement into a logging object
     if (run_Write_Print_To_Log):
         orig_stdout = Write_Print_To_Log(log_file)
-        
-    # Get a list of Tables and Feature Classes in master_SDE
-    print 'Getting list of FCs and Tables in "{}"'.format(master_SDE)
-    arcpy.env.workspace = master_SDE
-    fcs_in_sde    = arcpy.ListFeatureClasses()
-    print 'Got FCs'
-    tables_in_sde = arcpy.ListTables()
-    print 'Got Tables'
-    # TODO: remove the below print statements when done testing
-    print 'xxxxxxxxxxxxxxxxxxxxxxxxxx'
-    print fcs_in_sde
-    print 'xxxxxxxxxxxxxxxxxxxxxxxxxx'
-    print tables_in_sde
-    print 'xxxxxxxxxxxxxxxxxxxxxxxxxx'
-    
+
     print '----------------------------------------------------------'
 
     for item in items_to_update:
@@ -87,21 +80,18 @@ def main():
         print '  SDE path:    "{}"'.format(master_item)
         print '  Access path: "{}"'.format(item_to_update)
 
-        # Test to see if the item is in workspace.
-        if ((master_prefix + item) in fcs_in_sde) or ((master_prefix + item) in tables_in_sde):
-            item_in_workspace = True
-        else:
-            item_in_workspace = False
-        print '  Item "{}" in workspace = "{}"\n'.format((master_prefix + item), item_in_workspace)
+        # Test to see if the item is in master_SDE.
+        item_in_SDE = Test_Exists(master_item)
 
-        # Test to make sure there is no existing schema lock, and that the item
-        #   exists in the Access Database.  If it does not exist in Access,
-        #   then do not continue processing it.
+        # Test to make sure that item exists in Access and no schema lock
         no_schema_lock = Test_Schema_Lock(item_to_update)
 
-        # If there is no schema lock, and the item is in master_SDE
-        #   then delete the rows of the item in Access then copy new data to it
-        if no_schema_lock and item_in_workspace:
+        # If the item is in master_SDE, and is in Access, and there is no schema
+        #   lock on the Access database, then delete the rows of the item in
+        #   Access, then copy new data to it.
+        if no_schema_lock and item_in_SDE:
+
+            # Delete rows for Access database item
             Delete_Rows(item_to_update)
 
             # Get the dataset type (i.e. 'Table' or 'FeatureClass') to determine
@@ -117,17 +107,25 @@ def main():
             print 'Success updating "{}"'.format(item_to_update)
             print '\n----------------------------------------------------------'
 
-        if no_schema_lock == False:  # Item doesn't exist, or there is already a schema lock on item in Access
-            print '***ERROR!  The item "{}" could not be found, OR There was a schema lock on it.***\n  Not able to update this item in Access.'.format(item_to_update)
-            print '  Please make sure that item exists, and that everyone has disconnected from the database.'
-            print '  Then rerun this script.'
-            print '\n----------------------------------------------------------'
-            success = False
+        else:  # Then there was at least one error
+            if (no_schema_lock == False) and (item_in_SDE == False):
+                print '*** ERROR!  The item "{}" is not in either SDE or Access.\n  Please check [items_to_update] in script for accuracy'.format(item)
+                print '\n----------------------------------------------------------'
+                success = False
 
-        if item_in_workspace == False:  # Item is not in the master_SDE
-            print '***ERROR!  The item "{}" is not in "{}", the Access Database was not updated.'.format(item, master_SDE)
-            print '\n----------------------------------------------------------'
-            success = False
+            elif no_schema_lock == False:  # Item doesn't exist, or there is already a schema lock on item in Access
+                print '*** ERROR!  The item "{}" could not be found, OR There was a schema lock on it.***\n  Not able to update this item in Access.'.format(item_to_update)
+                print '  Please make sure that item exists in Access, and that everyone has disconnected from the database.'
+                print '  Then rerun this script.'
+                print '\n----------------------------------------------------------'
+                success = False
+
+            elif item_in_SDE == False:  # Item is not in the master_SDE
+                print '*** ERROR!  The item "{}" is not in "{}" ***\n  Not able to update this item in Access.'.format(item, master_SDE)
+                print '  Please make sure that item exists in SDE.'
+                print '  Then rerun this script.'
+                print '\n----------------------------------------------------------'
+                success = False
 
     #---------------------------------------------------------------------------
     #                         End of script reporting
@@ -155,7 +153,7 @@ def main():
     if success == False:
         print '*** ERROR!  There were errors with script.'
         print '  Please find log file location above for more info.'
-        raw_input = 'Press ENTER to quit'
+        pause = raw_input('Press ENTER to quit')
 
 #-------------------------------------------------------------------------------
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -239,6 +237,36 @@ def Get_DT_To_Append():
 
     print '  Finished Get_DT_To_Append()'
     return dt_to_append
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+def Test_Exists(dataset):
+    """
+    PARAMETERS:
+      dataset (str): Full path to a dataset.  May be a FC, Table, etc.
+
+    RETURNS:
+      exists (bool): 'True' if the dataset exists, 'False' if not.
+
+    FUNCTION:
+      To test if a dataset exists or not.
+    """
+
+    print 'Starting Test_Exists()'
+
+    print '  Testing to see if exists: "{}"'.format(dataset)
+
+    # Test to see if 'dataset' exists or not
+    if arcpy.Exists(dataset):
+        exists = True
+    else:
+        exists = False
+
+    '  Dataset Exists = "{}"'.format(exists)
+
+    print 'Finished Test_Exists'
+
+    return exists
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
