@@ -1,15 +1,26 @@
 #-------------------------------------------------------------------------------
-# Name:        module1
+# Name:        Update_DPW_w_MasterData.py
 # Purpose:
-#
+"""
+To update a database (to_update_db) with data from an SDE (master_SDE).
+Intended to be run manually by DPW when they want to update their database.
+Script uses a SDE file to access SDEP data to copy over to the Access Database.
+
+PROCESS:
+1. Creates a log file.
+2. Gets a list of the Tables and FCs in master_SDE.
+3. Tests to see if the 'item' is in master_SDE.
+4. Tests to see if the 'item' is in Access and if it can have a Schema lock
+   placed on it.
+5. Deletes rows in Access for that item
+6. Copies rows from 'master_SDE' item to 'to_update_db' item
+"""
 # Author:      mgrue
 #
 # Created:     09/06/2017
 # Copyright:   (c) mgrue 2017
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
-# TODO: This script is currently not in use.  It can be used to take data
-#       from SDEP to a PGDB on the County network with some tweaking.
 
 import arcpy, datetime, os
 
@@ -23,36 +34,47 @@ def main():
     #---------------------------------------------------------------------------
 
     # Master FGDB used to update
-    master_SDE = r"P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\DPW_Science_and_Monitoring_prod.gdb"
+    master_SDE = r"W:\Script\Connection_Files\AD @ SDEP.sde"
+    master_prefix = 'SDEP.SANGIS.'
 
     # Target database to be updated
-    to_update_db = r"P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Testing_AccessDatabase.mdb"
+    to_update_db = r"W:\AccessDatabase.mdb"
 
     # Items to be updated that exist in both 'Master' and 'Target' databases
-    # Items in 'Master' and 'Target' need the same respective schema
+    # Items in 'Master' and 'Target' need the same name and respective schema
     items_to_update = ['DPW_WP_FIELD_DATA', 'DPW_WP_SITES']
 
 
     # Set to "True" to have 'print' statements be written to the log_file
     # Set to "False" to have 'print' statements print to screen
-    run_Write_Print_To_Log = False
-    log_file = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Logs\Update_DPW_w_MasterData'
+    run_Write_Print_To_Log = True  # TODO: Change this to 'True' when done testing
+    log_file = r'W:\Script\Logs\Update_DPW_w_MasterData'
 
     # Flag that is changed to "False" if there are errors
     success = True
 
-    # Get a list of Tables and Feature Classes in master_SDE
-    arcpy.env.workspace = master_SDE
-    fcs_in_sde    = arcpy.ListFeatureClasses()
-    tables_in_sde = arcpy.ListTables()
     #---------------------------------------------------------------------------
-    #                         Start calling Functions()
+    #                         Start Running Script
     #---------------------------------------------------------------------------
 
     # Turn the 'print' statement into a logging object
     if (run_Write_Print_To_Log):
         orig_stdout = Write_Print_To_Log(log_file)
-
+        
+    # Get a list of Tables and Feature Classes in master_SDE
+    print 'Getting list of FCs and Tables in "{}"'.format(master_SDE)
+    arcpy.env.workspace = master_SDE
+    fcs_in_sde    = arcpy.ListFeatureClasses()
+    print 'Got FCs'
+    tables_in_sde = arcpy.ListTables()
+    print 'Got Tables'
+    # TODO: remove the below print statements when done testing
+    print 'xxxxxxxxxxxxxxxxxxxxxxxxxx'
+    print fcs_in_sde
+    print 'xxxxxxxxxxxxxxxxxxxxxxxxxx'
+    print tables_in_sde
+    print 'xxxxxxxxxxxxxxxxxxxxxxxxxx'
+    
     print '----------------------------------------------------------'
 
     for item in items_to_update:
@@ -60,15 +82,17 @@ def main():
         print 'Processing item: {}\n'.format(item)
 
         # Set paths to 'Master' and 'Target' item
-        master_item    = os.path.join(master_SDE, item)
+        master_item    = os.path.join(master_SDE, master_prefix + item)
         item_to_update = os.path.join(to_update_db, item)
+        print '  SDE path:    "{}"'.format(master_item)
+        print '  Access path: "{}"'.format(item_to_update)
 
         # Test to see if the item is in workspace.
-        if (item in fcs_in_sde) or (item in tables_in_sde):
+        if ((master_prefix + item) in fcs_in_sde) or ((master_prefix + item) in tables_in_sde):
             item_in_workspace = True
         else:
             item_in_workspace = False
-        print '  Item "{}" in workspace = "{}"'.format(item, item_in_workspace)
+        print '  Item "{}" in workspace = "{}"\n'.format((master_prefix + item), item_in_workspace)
 
         # Test to make sure there is no existing schema lock, and that the item
         #   exists in the Access Database.  If it does not exist in Access,
@@ -119,15 +143,19 @@ def main():
 
         # Footer for log file
         finish_time_str = [datetime.datetime.now().strftime('%m/%d/%Y  %I:%M:%S %p')][0]
-        print '\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+        print '\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
         print '                    {}'.format(finish_time_str)
         print '              Finished Update_DPW_w_MasterData.py'
-        print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+        print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 
         sys.stdout = orig_stdout
 
         print '\nDone with script.  Success = {}.'.format(str(success))
+
+    if success == False:
+        print '*** ERROR!  There were errors with script.'
         print '  Please find log file location above for more info.'
+        raw_input = 'Press ENTER to quit'
 
 #-------------------------------------------------------------------------------
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
