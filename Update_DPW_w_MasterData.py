@@ -3,8 +3,13 @@
 # Purpose:
 """
 To update a database (to_update_db) with data from an SDE (master_SDE).
-Intended to be run manually by DPW when they want to update their database.
-Script uses a SDE file to access SDEP data to copy over to the Access Database.
+
+NOTES:
+  Intended to be run manually by DPW when they want to update their database.
+  Script uses a SDE file to access SDEP data to copy over to the Access Database.
+  If a BATCH file is used, the parameter 'RUN_AS_DPW_USER' can be passed to the
+    script that will set the paths for DPW users.  This is because DPW has different
+    paths to their root folder than GIS does.
 
 PROCESS:
 1. Creates a log file.
@@ -30,28 +35,55 @@ def main():
     print 'Starting to run Update_DPW_w_MasterData.py\n'
     #---------------------------------------------------------------------------
     #                              User Set variables
+    #                    Set variables that are the same whether
+    #                          DPW or GIS runs this script
     #---------------------------------------------------------------------------
 
-    # Master FGDB used to update
-    master_SDE = r"W:\Script\Connection_Files\AD @ SDEP.sde"
-    master_SDE = r'Database Connections\AD@ATLANTIC@SDE.sde'  # TODO: delete after done testing
+    # Prefix to dataset names in SDE
     master_prefix = 'SDEP.SANGIS.'
-    master_prefix = 'SDE.SANGIS.'  # TODO: delete after done testing
-
-    # Target database to be updated
-    to_update_db = r"W:\AccessDatabase.mdb"
-    to_update_db = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Testing_AccessDatabase.mdb'  # TODO: delete after done testing
 
     # Items to be updated that exist in both 'Master' and 'Target' databases
     # Items in 'Master' and 'Target' need the same name and respective schema
     items_to_update = ['DPW_WP_FIELD_DATA', 'DPW_WP_SITES']
 
-
     # Set to "True" to have 'print' statements be written to the log_file
     # Set to "False" to have 'print' statements print to screen
-    run_Write_Print_To_Log = True  # TODO: Change this to 'True' when done testing
-    log_file = r'W:\Script\Logs\Update_DPW_w_MasterData'
-    log_file = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Logs\Update_DPW_w_MasterData'  # TODO: delete after done testing
+    run_Write_Print_To_Log = True
+
+    #--------------------------------------------------------------------------
+    #           Set variables based on who is running the script.
+    #                   DPW uses a batch file that passes
+    #                   'RUN_AS_DPW_USER' parameter
+    #---------------------------------------------------------------------------
+    user = arcpy.GetParameterAsText(0)
+        
+    if user == 'RUN_AS_DPW_USER':
+
+        # Path to root folder
+        root = r'S:\Watershed Project\Database\ArcGIS'
+        
+        # Path to connection file of master SDE used to update
+        master_SDE = os.path.join(root, "Script\\Connection_Files\\AD @ SDEP.sde")
+
+        # Path to target database to be updated
+        to_update_db = os.path.join(root, "Sci_and_Mon_Database.mdb")
+
+        # Path to log file with log file name
+        log_file = os.path.join(root, 'Script\\Logs\\Update_DPW_w_MasterData')
+
+        
+    if (user == 'RUN_AS_GIS_USER') or (user == ''):  # Then run with GIS paths
+
+        user = 'RUN_AS_GIS_USER' # Set in case (user == '')
+        
+        # Path to connection file of master SDE used to update
+        master_SDE = r"W:\Script\Connection_Files\AD @ SDEP.sde"
+
+        # Path to target database to be updated
+        to_update_db = r"W:\Sci_and_Mon_Database.mdb"
+
+        # Path to log file with log file name
+        log_file = r'W:\Script\Logs\Update_DPW_w_MasterData'
 
     #---------------------------------------------------------------------------
     #                           Script Set variables
@@ -67,7 +99,9 @@ def main():
     # Turn the 'print' statement into a logging object
     if (run_Write_Print_To_Log):
         orig_stdout = Write_Print_To_Log(log_file)
-
+        
+    print 'User = "{}"'.format(user)
+    
     print '----------------------------------------------------------'
 
     for item in items_to_update:
@@ -78,7 +112,7 @@ def main():
         master_item    = os.path.join(master_SDE, master_prefix + item)
         item_to_update = os.path.join(to_update_db, item)
         print '  SDE path:    "{}"'.format(master_item)
-        print '  Access path: "{}"'.format(item_to_update)
+        print '  Access path: "{}"\n'.format(item_to_update)
 
         # Test to see if the item is in master_SDE.
         item_in_SDE = Test_Exists(master_item)
@@ -151,7 +185,8 @@ def main():
         print '\nDone with script.  Success = {}.'.format(str(success))
 
     if success == False:
-        raw_input('*** ERRORs with script.  Please see log file for more info.')
+        print '*** ERRORs with script.  Please see log file for more info.'
+        raw_input('Press ENTER to continue')
 
 #-------------------------------------------------------------------------------
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -238,6 +273,7 @@ def Get_DT_To_Append():
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
+#                         FUNCTION Test_Exists()
 def Test_Exists(dataset):
     """
     PARAMETERS:
@@ -260,9 +296,9 @@ def Test_Exists(dataset):
     else:
         exists = False
 
-    '  Dataset Exists = "{}"'.format(exists)
+    print '  Dataset Exists = "{}"'.format(exists)
 
-    print 'Finished Test_Exists'
+    print 'Finished Test_Exists\n'
 
     return exists
 
@@ -398,7 +434,7 @@ def Copy_Features(in_FC, out_FC):
     print 'Starting Copy_Features()...'
 
     print '  Copying Features from: "{}"'.format(in_FC)
-    print '                 To: "{}"'.format(out_FC)
+    print '                     To: "{}"'.format(out_FC)
 
     arcpy.CopyFeatures_management(in_FC, out_FC)
 
