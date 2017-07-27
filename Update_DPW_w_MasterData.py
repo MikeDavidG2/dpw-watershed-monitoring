@@ -151,9 +151,7 @@ def main():
         print '\nDone with script.  Success = {}.'.format(str(success))
 
     if success == False:
-        print '*** ERROR!  There were errors with script.'
-        print '  Please find log file location above for more info.'
-        pause = raw_input('Press ENTER to quit')
+        raw_input('*** ERRORs with script.  Please see log file for more info.')
 
 #-------------------------------------------------------------------------------
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
