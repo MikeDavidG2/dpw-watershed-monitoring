@@ -1,7 +1,26 @@
 #-------------------------------------------------------------------------------
-# Name:        module1
+# Name:        Backup_FGDB.py
 # Purpose:
-#
+"""
+To back up a FGDB (FGDB_to_backup) to a folder (backup_folder) with the date
+appended to the end of the name of the backup.  Also to delete older backups
+if the max_num_backups has been reached in the backup_folder.
+
+NOTE:
+  ListWorkspaces creates a list of workspaces in alphabetical order.
+  Since this script appends the dates in both a numerical ascending order
+  AND an alphabetical ascending order (YYYY_MM_DD),
+  listing the workspaces using arcpy.ListWorkspace() gives us a list in order of
+  the oldest workspace listed first.  So we can delete the first listed
+  workspaces, which are also the oldest workspaces in the backup_folder.
+
+PROCESS:
+  1. Set print statements to write to a log file.
+  2. Copy FGDB to Backup folder with the current date appended to its name.
+  3. Test for and delete the oldest workspaces if there are more workspaces than
+     the max_num_backups allows.
+"""
+
 # Author:      mgrue
 #
 # Created:     28/07/2017
@@ -9,48 +28,96 @@
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 
-# TODO: Document script
-# TODO: Format print statements
-
-import arcpy, os, operator
+import arcpy, os
 
 arcpy.env.overwriteOutput = True
 
 def main():
+
+    #---------------------------------------------------------------------------
+    #                           USER SET VARIABLES
+    #---------------------------------------------------------------------------
+    # Set paths
     FGDB_to_backup = r"P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\DPW_Science_and_Monitoring_prod.gdb"
     backup_folder  = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Backups'
     log_file        = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Logs\Backup_FGDB'
+
+    # Set number of backups allowed to exist in 'backup_folder'
     max_num_backups = 2
 
+    # 'True' means the print statement will write to a log file
+    run_Write_Print_To_Log = True
+
+    #---------------------------------------------------------------------------
+    #                           SCRIPT SET VARIABLES
+    #---------------------------------------------------------------------------
+    success = True
+
+    #---------------------------------------------------------------------------
+    #                               START SCRIPT
+    #---------------------------------------------------------------------------
+    print 'Starting Backup_FGDB.py\n'
 
     # Set print to logging statement
-##    orig_stdout = Write_Print_To_Log(log_file)
+    if run_Write_Print_To_Log:
+        orig_stdout = Write_Print_To_Log(log_file)
 
     # Copy FGDB to Backup folder
-    date_time = Get_DT_To_Append()
-    out_FGDB = os.path.join(backup_folder, 'DPW_Sci_and_Mon_prod_BAK__{}.gdb'.format(date_time.split('__')[0]))
-    print 'Copying FGDB: "{}"\n          To: "{}"'.format(FGDB_to_backup, out_FGDB)
-##    arcpy.Copy_management(FGDB_to_backup, out_FGDB)
-    print '   Copied'
+    try:
+        date_time = Get_DT_To_Append()  # Returns a string formatted like: 'YYYY_MM_DD__HH_MM_SS'
+        date      = date_time.split('__')[0]  # Get only the 'YYYY_MM_DD' portion
+        out_FGDB  = os.path.join(backup_folder, 'DPW_Sci_and_Mon_prod_BAK__{}.gdb'.format(date))
+        print 'Copying FGDB: "{}"\n          To: "{}"\n'.format(FGDB_to_backup, out_FGDB)
+        arcpy.Copy_management(FGDB_to_backup, out_FGDB)
+    except Exception as e:
+        print '*** ERROR with Copy FGDB to Backup fooder ***'
+        print str(e)
+        success = False
 
-
-    # Test to determine if a backup needs to be deleted
+    # Test to determine how many backups need to be deleted
     arcpy.env.workspace = backup_folder
     workspaces = arcpy.ListWorkspaces('', 'FileGDB')
     print 'There are {} existing workspaces, {} are allowed.'.format(len(workspaces), max_num_backups)
 
-    if len(workspaces) <= max_num_backups:
+    # Delete workspaces if needed
+    if len(workspaces) <= max_num_backups:  # Then no backups need to be deleted
         num_wkspaces_to_del = 0
-        print 'No need to delete any workspaces'
+        print '  No need to delete any workspaces.'
 
-    else:
+    else:  # Then delete the correct number of backups
         num_wkspaces_to_del = len(workspaces)-max_num_backups
 
-        print 'Deleting {} workspace(s)'.format(str(num_wkspaces_to_del))
+        print '  Deleting {} workspace(s):'.format(str(num_wkspaces_to_del))
 
-        # TODO: Need to have a loop to delete num_wkspaces_to_del
-        print 'Deleting "{}"'.format(workspaces[num_wkspaces_to_del-1])
+        index = 0
+        while index < num_wkspaces_to_del:  # Delete the first x number of workspaces
+            try:
+                print '    Deleting "{}"'.format(workspaces[index])
+                arcpy.Delete_management(workspaces[index])
+            except Exception as e:
+                print '*** ERROR with Deleting ***'
+                print str(e)
+                success = False
+            index += 1
 
+    # Return sys.stdout back to its original setting and end of script reporting
+    if (run_Write_Print_To_Log):
+        try:
+            # Footer for log file
+            finish_time_str = [datetime.datetime.now().strftime('%m/%d/%Y  %I:%M:%S %p')][0]
+            print '\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+            print '                    {}'.format(finish_time_str)
+            print '              Finished DPW_Update_sde_load.py'
+            print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+
+            sys.stdout = orig_stdout
+
+        except Exception as e:
+            print 'ERROR with end of script reporting'
+            print str(e)
+
+    print '\nDone with script.  Success = "{}".'.format(str(success))
+    print '  Please find log file location above for more info.'
 
 #-------------------------------------------------------------------------------
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -101,7 +168,7 @@ def Write_Print_To_Log(log_file):
     start_time_str = [start_time.strftime('%m/%d/%Y  %I:%M:%S %p')][0]
     print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
     print '                  {}'.format(start_time_str)
-    print '             START Update_DPW_w_MasterData.py'
+    print '                  START Backup_FGDB.py'
     print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n'
 
     return orig_stdout
@@ -132,7 +199,7 @@ def Get_DT_To_Append():
 
     print '    DateTime to append: "{}"'.format(dt_to_append)
 
-    print '  Finished Get_DT_To_Append()'
+    print '  Finished Get_DT_To_Append()\n'
     return dt_to_append
 
 #-------------------------------------------------------------------------------
