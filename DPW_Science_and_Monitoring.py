@@ -135,8 +135,8 @@ def main():
     # Lists
     # These lists are needed in the Email_Results(), but may not be created
     # if no data is downloaded.  Created here to not cause a fail
-    new_loc_descs  = []
-    new_locs       = []
+##    new_loc_descs  = []
+##    new_locs       = []
     ls_type_3_dups = []
 
     #---------------------------------------------------------------------------
@@ -279,12 +279,12 @@ def main():
 
     #---------------------------------------------------------------------------
     # Get NEW LOCATION DESCRIPTIONS and set NEW LOCATIONS
-    if (errorSTATUS == 0 and data_was_downloaded and run_New_Loc_LocDesc):
-        try:
-            new_loc_descs, new_locs = New_Loc_LocDesc(wkgPath, prodPath_SitesData)
-
-        except Exception as e:
-            errorSTATUS = Error_Handler('New_Loc_LocDesc', e)
+##    if (errorSTATUS == 0 and data_was_downloaded and run_New_Loc_LocDesc):
+##        try:
+##            new_loc_descs, new_locs = New_Loc_LocDesc(wkgPath, prodPath_SitesData)
+##
+##        except Exception as e:
+##            errorSTATUS = Error_Handler('New_Loc_LocDesc', e)
     #---------------------------------------------------------------------------
     # EXPORT FC to TABLE
     if (errorSTATUS == 0 and data_was_downloaded and run_FC_To_Table):
@@ -322,31 +322,39 @@ def main():
             errorSTATUS = Error_Handler('Duplicate_Handler', e)
     #---------------------------------------------------------------------------
     # EXPORT to EXCEL
-    if (errorSTATUS == 0 and data_was_downloaded and run_Export_To_Excel):
-        try:
-            excel_report = Export_To_Excel(wkgFolder, wkgGDB, prodPath_FldData, prodPath_Excel, dt_to_append, report_TMDL_csv)
-
-
-        except Exception as e:
-            errorSTATUS = Error_Handler('Export_To_Excel', e)
+##    if (errorSTATUS == 0 and data_was_downloaded and run_Export_To_Excel):
+##        try:
+##            excel_report = Export_To_Excel(wkgFolder, wkgGDB, prodPath_FldData, prodPath_Excel, dt_to_append, report_TMDL_csv)
+##
+##
+##        except Exception as e:
+##            errorSTATUS = Error_Handler('Export_To_Excel', e)
 
     #---------------------------------------------------------------------------
     # Sites Data to Survey123 CSV
-    if (errorSTATUS == 0 and run_DPW_WP_SITES_To_Survey123):
-        try:
-            DPW_WP_SITES_To_Survey123_csv(Sites_Export_To_CSV_tbl, prodPath_SitesData, site_info)
-
-        except Exception as e:
-            errorSTATUS = Error_Handler('DPW_WP_SITES_To_Survey123_csv', e)
+##    if (errorSTATUS == 0 and run_DPW_WP_SITES_To_Survey123):
+##        try:
+##            DPW_WP_SITES_To_Survey123_csv(Sites_Export_To_CSV_tbl, prodPath_SitesData, site_info)
+##
+##        except Exception as e:
+##            errorSTATUS = Error_Handler('DPW_WP_SITES_To_Survey123_csv', e)
 
     #---------------------------------------------------------------------------
     # Email results
     if (run_Email_Results):
             try:
+                # TODO: Delete the below commented out lines if script working.
+                # Below commented out because new_loc_descs, and new_locs were
+                # not created above after remoing the Site spatial information.
+##                Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email,
+##                              log_file_date, start_time, dt_last_ret_data, prodGDB,
+##                              prod_attachments, SmpEvntIDs_dl, new_loc_descs,
+##                              new_locs, excel_report, stage, ls_type_3_dups)
+
                 Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email,
                               log_file_date, start_time, dt_last_ret_data, prodGDB,
-                              prod_attachments, SmpEvntIDs_dl, new_loc_descs,
-                              new_locs, excel_report, stage, ls_type_3_dups)
+                              prod_attachments, SmpEvntIDs_dl,
+                              stage, ls_type_3_dups)
 
             except Exception as e:
                 errorSTATUS = Error_Handler('Email_Results', e)
@@ -1862,10 +1870,13 @@ def DPW_WP_SITES_To_Survey123_csv(Sites_Export_To_CSV_tbl, DPW_WP_SITES, Site_In
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Email Results
+##def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file_date,
+##                  start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder,
+##                  dl_features_ls, new_loc_descs, new_locs, excel_report, stage,
+##                  ls_type_3_dups):
 def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file_date,
                   start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder,
-                  dl_features_ls, new_loc_descs, new_locs, excel_report, stage,
-                  ls_type_3_dups):
+                  dl_features_ls, stage, ls_type_3_dups):
     print '--------------------------------------------------------------------'
     print 'Emailing Results...'
 
@@ -1891,8 +1902,8 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     num_dl_features = len(dl_features_ls)
 
     # Get a formatted string of the new_loc_descs and new_locs
-    str_new_loc_descs = ' <br> &nbsp;&nbsp;'.join(new_loc_descs) # join each item in the list with a line break and a tab
-    str_new_locs      = ' <br> &nbsp;&nbsp;'.join(new_locs)
+##    str_new_loc_descs = ' <br> &nbsp;&nbsp;'.join(new_loc_descs) # join each item in the list with a line break and a tab
+##    str_new_locs      = ' <br> &nbsp;&nbsp;'.join(new_locs)
 
     #---------------------------------------------------------------------------
     #                Write the "Success--Data Downloaded" email
@@ -1901,8 +1912,8 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     if (errorSTATUS == 0 and num_dl_features > 0):
         print '  Writing the "Success--Data Downloaded" email...'
 
-        # Send this email to the dpw_email_list
-        email_list = dpw_email_list
+        # Send this email to...
+        email_list = lueg_admin_email
 
         # Attach the excel_report
         attach_excel_report = True
@@ -1928,10 +1939,10 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
                <h4>Location Description (Suggested Changes):</h4>
                    GIS will edit the Location Descriptions changes during Beta testing.
                <br><br>
-                   <i>{nld}</i>
+                   <i>nld went here, removing this section in DEV</i>
                <br><br>
                <h4>Moved Sites:</h4>
-                   <i>{nl}</i>
+                   <i>nl went here, removing this section in DEV</i>
                <br>
                -----------------------------------------------------------------
               <br>
@@ -1954,14 +1965,19 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
                The <b>FGDB</b> is located at:            <i>{fgdb}</i><br>
                The <b>Images</b> are located at:         <i>{af}  </i><br>
                The <b>Log File</b> is located at:        <i>{lf}  </i><br>
-               The <b>Excel Report</b> is located at:    <i>{er}  </i><br>
+               The <b>Excel Report</b> is located at:    <i>er went here, removing from DEV  </i><br>
             </p>
           </body>
         </html>
-        """.format(nld = str_new_loc_descs, nl = str_new_locs, st = start_time[0],
+        """.format(st = start_time[0],
                    ft = finish_time[0], dlr = data_last_retrieved[0],
                    num = num_dl_features, fgdb = prod_FGDB, af = attach_folder,
-                   lf = log_file_date, er = excel_report))
+                   lf = log_file_date))
+
+##                  (nld = str_new_loc_descs, nl = str_new_locs, st = start_time[0],
+##                   ft = finish_time[0], dlr = data_last_retrieved[0],
+##                   num = num_dl_features, fgdb = prod_FGDB, af = attach_folder,
+##                   lf = log_file_date, er = excel_report))
 
     #---------------------------------------------------------------------------
     #             Write the "Success--No Data Downloaded' email
@@ -2064,16 +2080,16 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     msg['To']        = ', '.join(email_list)  # Join each item in list with a ', '
     msg.attach(MIMEText(body, 'html'))
 
-    # Set the attachment if needed
-    if (attach_excel_report == True):
-        attachment = MIMEApplication(open(excel_report, 'rb').read())
-
-        # Get name for attachment, which should equal the name of the excel_report
-        file_name = os.path.split(excel_report)[1]
-
-        # Set attachment into msg
-        attachment['Content-Disposition'] = 'attachment; filename = "{}"'.format(file_name)
-        msg.attach(attachment)
+##    # Set the attachment if needed
+##    if (attach_excel_report == True):
+##        attachment = MIMEApplication(open(excel_report, 'rb').read())
+##
+##        # Get name for attachment, which should equal the name of the excel_report
+##        file_name = os.path.split(excel_report)[1]
+##
+##        # Set attachment into msg
+##        attachment['Content-Disposition'] = 'attachment; filename = "{}"'.format(file_name)
+##        msg.attach(attachment)
 
 
     # Get username and password from cfgFile
