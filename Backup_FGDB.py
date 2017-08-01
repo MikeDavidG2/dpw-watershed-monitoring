@@ -43,7 +43,7 @@ def main():
     log_file        = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Logs\Backup_FGDB'
 
     # Set number of backups allowed to exist in 'backup_folder'
-    max_num_backups = 2
+    max_num_backups = 12
 
     # 'True' means the print statement will write to a log file
     run_Write_Print_To_Log = True
