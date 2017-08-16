@@ -2,10 +2,12 @@
 # Name:        DPW_Science_and_Monitoring.py
 # Purpose:
 """
-To Download data stored on AGOL servers that were added via Survey123 by DPW's
+To download data stored on AGOL servers that were added via Survey123 by DPW's
   Science and Monitoring Project.
 To process the downloaded data and append the downloaded data to a FGDB that
   contains the most up-to-date data.
+To download JPEG's taken in the field and name them based on the site ID and the
+  Sample Event ID
 
 PROCESS:
 
@@ -18,7 +20,6 @@ PROCESS:
 # Modified:    02/24/2017
 #-------------------------------------------------------------------------------
 # TODO: if the A_FIELD_DATA_orig is locked the script fails, which is OK, but it doens't send a failed email.  Need to make it so it does send an email.
-# TODO: Delete the commented out sections of the script that are no longer needed
 
 # Import modules
 
@@ -58,7 +59,7 @@ def main():
 
     # Variables to control which Functions are run
     run_Get_DateAndTime         = True
-    run_Write_Print_To_Log      = True  # TODO: Flip this back to 'True' when done testing
+    run_Write_Print_To_Log      = True
     run_Get_Last_Data_Ret       = True
     run_Get_Token               = True
     run_Get_Data                = True
@@ -73,9 +74,7 @@ def main():
     run_Get_Field_Mappings      = True  # Requires 'run_Copy_Orig_Data = True'
     run_Append_Data             = True  # Requires 'run_Copy_Orig_Data = True'
     run_Duplicate_Handler       = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Export_To_Excel         = True  #TODO: decide if need to turn back on
-    run_DPW_WP_SITES_To_Survey123 = True  #TODO: decide if need to turn back on
-    run_Email_Results           = True  #TODO: decide if need to turn back on
+    run_Email_Results           = True
 
     # Email lists
     ##dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
@@ -144,8 +143,6 @@ def main():
     # Lists
     # These lists are needed in the Email_Results(), but may not be created
     # if no data is downloaded.  Created here to not cause a fail
-##    new_loc_descs  = []
-##    new_locs       = []
     ls_type_3_dups = []
 
     #---------------------------------------------------------------------------
@@ -216,7 +213,7 @@ def main():
         try:
             origPath, SmpEvntIDs_dl = Get_Data(AGOfields, token, queryURL,
                                                 wkgFolder, wkgGDB, origFC,
-                                                dt_to_append, dt_last_ret_data)
+                                                dt_last_ret_data)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Get_Data', e)
@@ -287,14 +284,6 @@ def main():
             errorSTATUS = Error_Handler('Delete_Fields', e)
 
     #---------------------------------------------------------------------------
-    # Get NEW LOCATION DESCRIPTIONS and set NEW LOCATIONS
-##    if (errorSTATUS == 0 and data_was_downloaded and run_New_Loc_LocDesc):
-##        try:
-##            new_loc_descs, new_locs = New_Loc_LocDesc(wkgPath, prodPath_SitesData)
-##
-##        except Exception as e:
-##            errorSTATUS = Error_Handler('New_Loc_LocDesc', e)
-    #---------------------------------------------------------------------------
     # EXPORT FC to TABLE
     if (errorSTATUS == 0 and data_was_downloaded and run_FC_To_Table):
         try:
@@ -329,24 +318,6 @@ def main():
 
         except Exception as e:
             errorSTATUS = Error_Handler('Duplicate_Handler', e)
-    #---------------------------------------------------------------------------
-    # EXPORT to EXCEL
-##    if (errorSTATUS == 0 and data_was_downloaded and run_Export_To_Excel):
-##        try:
-##            excel_report = Export_To_Excel(wkgFolder, wkgGDB, prodPath_FldData, prodPath_Excel, dt_to_append, report_TMDL_csv)
-##
-##
-##        except Exception as e:
-##            errorSTATUS = Error_Handler('Export_To_Excel', e)
-
-    #---------------------------------------------------------------------------
-    # Sites Data to Survey123 CSV
-##    if (errorSTATUS == 0 and run_DPW_WP_SITES_To_Survey123):
-##        try:
-##            DPW_WP_SITES_To_Survey123_csv(Sites_Export_To_CSV_tbl, prodPath_SitesData, site_info)
-##
-##        except Exception as e:
-##            errorSTATUS = Error_Handler('DPW_WP_SITES_To_Survey123_csv', e)
 
     #---------------------------------------------------------------------------
     # Email results
@@ -397,21 +368,26 @@ def main():
 
 def Get_DateAndTime():
     """
-    Get the current date and time so that it can be used in multiple places in
-    the rest of the script where a unique name is desired.
-    It is also used to get the start_time variable which is written to the
-    LastDataRetrival.csv so a record is kept for when the data was last
-    retrieved from AGOL.
+    PARAMETERS:
+      None
 
-    Vars:
-        start_time (dt object)
-        date (str): in the format YYYY_MM_DD - No '0' padding
-        time (str): in the format HH_MM_SS   - No '0' padding
-        dt_to_append (str) : date and time merged into one string
+    VARS:
+      start_time (dt object)
+      date (str): in the format YYYY_MM_DD - No '0' padding
+      time (str): in the format HH_MM_SS   - No '0' padding
+      dt_to_append (str) : date and time merged into one string
 
-    Returns:
-        dt_to_append
-        start_time
+    RETURNS:
+      dt_to_append (str): In the format 'YYYY_M_D__H_M_S'
+      start_time (dt object): A datetime object created in this function with
+        the time of 'now'.
+
+    FUNCTION:
+      Get the current date and time so that it can be used in multiple places in
+      the rest of the script where a unique name is desired.
+      It is also used to get the start_time variable which is written to the
+      LastDataRetrival.csv so a record is kept for when the data was last
+      retrieved from AGOL.
     """
 
     print '--------------------------------------------------------------------'
@@ -428,9 +404,6 @@ def Get_DateAndTime():
 
     print 'Successfully got Date and Time\n'
 
-    # TODO: uncomment the below command and troubleshoot script
-    ##print thiswillcausethefunctiontofail
-
     return dt_to_append, start_time
 
 #-------------------------------------------------------------------------------
@@ -438,24 +411,22 @@ def Get_DateAndTime():
 
 def Get_Last_Data_Retrival(last_ret_csv):
     """
-    Reads the CSV at the last_ret_csv path to get when the script was last run.
-    We want to know this so that we can use it in the query to ask AGOL
-    to return features that have been created between the last time the
-    script was run and the start_time obtained in the FUNCTION Get_DateAndTime()
+    PARAMETERS:
+      last_ret_csv (str): The path to the CSV that stores the date and time
+        the script was last run.
 
-    Args:
-        last_ret_csv (str):
-            the path to the CSV that stores the date and time the script was
-            last run
+    VARS:
+      last_ret_str (str): The date and time string read from the CSV's
+        3rd row, 1st column.
 
-    Vars:
-        last_ret_str (str):
-            the date and time string read from the CSV's 3rd row, 1st column
-        dt_last_ret_data (dt obj):
-            a datetime object converted from last_ret_str
+    RETURNS:
+      dt_last_ret_data (dt obj): A datetime object converted from last_ret_str.
 
-    Returns:
-        dt_last_ret_data
+    FUNCTION:
+      Reads the CSV at the last_ret_csv path to get when the script was last run.
+      We want to know this so that we can use it in the query to ask AGOL
+      to return features that have been created between the last time the
+      script was run and the start_time obtained in the FUNCTION Get_DateAndTime()
     """
 
     print '--------------------------------------------------------------------'
@@ -487,22 +458,23 @@ def Get_Last_Data_Retrival(last_ret_csv):
 
 def Get_Token(cfgFile, gtURL):
     """
-    Gets a token from AGOL that allows access to the AGOL data.
+    PARAMETERS:
+      cfgFile (str):
+        Path to the .txt file that holds the user name and password of the
+        account used to access the data.  This account must be in a group
+        that has access to the online database.
+      gtURL (str): URL where ArcGIS generates tokens.
 
-    Args:
-        cfgFile (str):
-            Path to the .txt file that holds the user name and password of the
-            account used to access the data.  This account must be in a group
-            that has access to the online database.
-        gtURL: URL where ArcGIS generates tokens.
+    VARS:
+      token (str):
+        a string 'password' from ArcGIS that will allow us to to access the
+        online database.
 
-    Vars:
-        token (str):
-            a string 'password' from ArcGIS that will allow us to to access the
-            online database.
+    RETURNS:
+      token (str): A long string that acts as an access code to AGOL servers.
+        Used in later functions to gain access to our data.
 
-    Returns:
-        token
+    FUNCTION: Gets a token from AGOL that allows access to the AGOL data.
     """
 
     print '--------------------------------------------------------------------'
@@ -531,7 +503,7 @@ def Get_Token(cfgFile, gtURL):
 
     # Store the token from the json object
     token = gtJson['token']
-    ##print token
+    ##print token  # For testing purposes
 
     print "Successfully retrieved token.\n"
 
@@ -540,20 +512,40 @@ def Get_Token(cfgFile, gtURL):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                          FUNCTION:    Get AGOL Data
-# TODO: what happens if there is no data to download.  This is not an error, but should be returned so other functions are not run.
 #############################################################################################################
 ### http://blogs.esri.com/esri/arcgis/2013/10/10/quick-tips-consuming-feature-services-with-geoprocessing/
 ### https://geonet.esri.com/thread/118781
-### WARNING: Script currently only pulls up to the first 10,000 (1,000?) records - more records will require
-###     a loop for iteration - see, e.g., "Max Records" section at the first (blogs) URL listed above or for
-###     example code see the second (geonet) URL listed above
 #############################################################################################################
 
-def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_append, dt_last_ret_data_):
-    """ The Get_Data function takes the token we obtained from 'Get_Token'
-    function, establishs a connection to the data, creates a FGDB (if needed),
-    creates a unique FC to store the data, and then copies the data from AGOL
-    to the unique FC"""
+def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_last_ret_data_):
+    """
+    PARAMETERS:
+      AGOfields_ (str) = The fields we want to have the server return from our query
+      token (str) = The token obtained by the Get_Token() which gives access to
+        AGOL databases that we have permission to
+      queryURL_ (str) = The URL address for the feature service that allows us
+        to query the database.
+      wkgFolder (str) = Full path to the 'Data' folder that contains the FGDB's,
+        Excel files, Logs, and Pictures.
+      wkgGDB_ (str) = Name of the working FGDB in the wkgFolder.
+      origFC (str) = Name of the FC that will hold the original data downloaded
+        by this function.  This FC gets overwritten every time the script is run.
+      dt_last_ret_data_ (dt obj): The dt object obtained by Get_Last_Data_Retrival()
+        that represents the last time data was retrieved.  Used in the query in
+        this function.
+
+    RETURNS:
+      origPath_ (str): Full path to the FC created to hold the original data
+        downloaded by this function.
+      SmpEvntIDs_dl (list of str): A list of STRINGS of all the Sample Event ID's
+        that were downloaded this run.
+
+    FUNCTION:
+      The Get_Data function takes the token we obtained from 'Get_Token'
+      function, establishs a connection to the data, creates a FGDB (if needed),
+      creates a unique FC to store the data, and then copies the data from AGOL
+      to the unique FC.
+    """
 
     print '--------------------------------------------------------------------'
     print "Getting data..."
@@ -585,7 +577,6 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     two_days = datetime.timedelta(days=2)
     now = datetime.datetime.now()
     plus_two_days = now + two_days
-    ##print '  tomorrow: ' + str(tomorrow)
 
     # Use the dt_last_ret_data variable and tomorrow variable to set the 'where'
     # clause
@@ -597,7 +588,7 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     where_encoded = urllib.quote(where)
 
     # If you suspect the where clause is causing the problems, uncomment the below 'where = "1=1"' clause
-    ##where = "1=1"
+    ##where = "1=1"  # For testing purposes
     query = "?where={}&outFields={}&returnGeometry=true&f=json&token={}".format(where_encoded,AGOfields_,token)
     fsURL = queryURL_ + query
 
@@ -611,7 +602,7 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
     # records within the datetime that data was last retrieved "dt_last_ret_data_"
     # and the current time
     try:
-        ##print 'fsURL %s' % fsURL
+        ##print 'fsURL %s' % fsURL  # For testing purposes
         fs.load(fsURL)
     except:
         print '  "fs.load(fsURL)" yielded no data at fsURL.'
@@ -645,7 +636,6 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
 
     #---------------------------------------------------------------------------
     #Copy the features to the FGDB.
-    ##origFC = '%s_%s' % (origFC,dt_to_append)
     origPath_ = wkgFolder + "\\" + wkgGDB_ + '\\' + origFC
     print '  Copying AGOL database features to: %s' % origPath_
 
@@ -663,8 +653,6 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
 
             SmpEvntIDs_dl.append(SampleEventID)
 
-    ##print SmpEvntIDs_dl
-
     #---------------------------------------------------------------------------
     print "Successfully retrieved data.\n"
 
@@ -681,15 +669,9 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_to_app
 # the downloaded attachment.
 
 #TODO: find a way to rotate the images clockwise 90-degrees
-#TODO: attachments are downloaded based on their SampleEventID, this could lead
-#  to downloading a picture again if the sample event id is accidentally reused.
-#  Is this a problem though?  There shouldn't be two sample even id's...
 def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
     """
-    Gets the attachments (images) that are related to the database features and
-    stores them as .jpg in a local file inside the wkgFolder.
-
-    Args:
+    PARAMETERS:
         token (str):
             The string token obtained in FUNCTION Get_Token().
         gaURL (str):
@@ -701,7 +683,7 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
         dt_to_append (str):
             The date and time string returned by FUNCTION Get_DateAndTime().
 
-    Vars:
+    VARS:
         replicaUrl (str):
             URL of the replica FGDB in json format.
         JsonFileName (str):
@@ -729,9 +711,13 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
             The URL of each specific attachment.  Need a token to actually
             access and download the image at this URL.
 
-    Returns:
+    RETURNS:
         gaFolder (str):
             So that the email can send that information.
+
+    FUNCTION:
+      Gets the attachments (images) that are related to the database features and
+      stores them as .jpg in a local file inside the wkgFolder.
     """
 
     print '--------------------------------------------------------------------'
@@ -742,7 +728,6 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
 
     #---------------------------------------------------------------------------
     #                       Get the attachments url (ga)
-    ##print '  gaURL = '+ gaURL
     # Set the values in a dictionary
     gaValues = {
     'f' : 'json',
@@ -761,11 +746,11 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
     gaResponse = urllib2.urlopen(gaRequest)
     gaJson = json.load(gaResponse)
     replicaUrl = gaJson['URL']
-    ##print '  Replica URL: %s' % str(replicaUrl)
+    ##print '  Replica URL: %s' % str(replicaUrl)  # For testing purposes
 
     # Set the token into the URL so it can be accessed
     replicaUrl_token = replicaUrl + '?&token=' + token + '&f=json'
-    ##print '  Replica URL Token: %s' % str(replicaUrl_token)
+    ##print '  Replica URL Token: %s' % str(replicaUrl_token)  # For testing purposes
 
     #---------------------------------------------------------------------------
     #                         Save the JSON file
@@ -785,9 +770,6 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
 
     #---------------------------------------------------------------------------
     #                       Save the attachments
-    ##gaFolder = wkgFolder + '\\Sci_Monitoring_pics'
-    ## Uncomment below if you want to create a new folder each time the attachments are pulled
-    ##gaFolder = wkgFolder + '\\Sci_Monitoring_pics__%s' % dt_to_append
 
     # Make the gaFolder (to hold attachments) if it doesn't exist.
     if not os.path.exists(gaFolder):
@@ -803,28 +785,22 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
     print '  Attempting to save attachments:'
 
     for attachment in data['layers'][0]['attachments']:
-        ##print '\nAttachment: '
-        ##print attachment
         gaRelId = attachment['parentGlobalId']
-        ##print 'gaRelId:'
-        ##print gaRelId
 
         # Now loop through all of the 'features' and break once the corresponding
         #  GlobalId's match so we can save based on the 'StationID'
         #  and 'SampleEventID'
         for feature in data['layers'][0]['features']:
             origId = feature['attributes']['globalid']
-            ##print '  origId' + origId
             StationID = feature['attributes']['StationID']
             SampleEventID = str(feature['attributes']['SampleEventID'])
             if origId == gaRelId:
                 break
 
         # Test to see if the StationID is one of the features downloaded in
-        # FUNCTION Get_Data. Download if so, pass if not
+        # FUNCTION Get_Data. Download if so, ignore if not
         if SampleEventID in SmpEvntIDs_dl:
             attachName = '%s__%s' % (StationID, SampleEventID)
-            ##print '  attachName = ' + attachName
             # 'i' and 'dupList' are used in the event that there are
             #  multiple photos with the same StationID and SampleEventID.  If they
             #  do have the same attributes as an already saved attachment, the letter
@@ -864,13 +840,8 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
             else:
                 print '  WARNING.  There were more than 7 pictures with the same Station ID and Sample Event ID. Picture not saved.'
 
-        # The SampleEventID was not downloaded in FUNCTION Get_Data so pass
-        else:
-            ##print '  SampleEventID: %s wasn\'t downloaded this run, not downloading related attachment' % SampleEventID
-            pass
-
     if (attachment_dl == False):
-        print '  No attachments saved this run.  OK if no attachments submitted since last run.'
+        print '    No attachments saved this run.  OK if no attachments submitted since last run.'
 
     print '  All attachments can be found at: %s' % gaFolder
 
@@ -886,12 +857,25 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
 #-------------------------------------------------------------------------------
 #                    FUNCTION: Set Last Data Retrival time
 def Set_Last_Data_Ret(last_ret_csv, start_time):
-    # TODO: write a function synopsis
-    """This function is """
+    """
+    PARAMETERS:
+      last_ret_csv (str): The path to the CSV that stores the date and time
+        the script was last run.
+      start_time (dt object): A datetime object created in the Get_DateAndTime()
+        function with the time the script started.
+
+    RETURNS:
+      None
+
+    FUNCTION:
+      Now that the Data and Attachments have been downloaded, this function sets
+      this script's start_time into the CSV file that will be used as the next
+      runs last data retrival (dt_last_ret_data) in the
+      Get_Last_Data_Retrival() function.
+    """
     print '--------------------------------------------------------------------'
     print 'Setting LastDataRetrival.csv time so it equals this runs start_time...'
 
-    ##print '  New Last Data Retrival time: {}'.format(start_time)
     #---------------------------------------------------------------------------
     # Get original data from the CSV and make a list out of it
     with open (last_ret_csv) as csv_file:
@@ -934,6 +918,19 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
 #                           FUNCTION:  Copy_Orig_Data
 
 def Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath, dt_to_append):
+    """
+    PARAMETERS:
+      wkgFolder
+      wkgGDB
+      wkgFC
+      origPath
+      dt_to_append
+
+    RETURNS:
+      wkgPath:
+
+    FUNCTION:
+    """
     print '--------------------------------------------------------------------'
     print 'Copying original data...'
 
@@ -941,7 +938,6 @@ def Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath, dt_to_append):
     # Copy the orig FC to a working TABLE to run processing on.
     in_features = origPath
     wkgPath = out_feature_class = r'%s\%s\%s' % (wkgFolder, wkgGDB, wkgFC)
-    ##wkgPath = out_feature_class = r'%s\%s\%s_%s' % (wkgFolder, wkgGDB, wkgFC, dt_to_append)
 
     print '  Copying Data...'
     print '    From: ' + in_features
@@ -958,6 +954,16 @@ def Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath, dt_to_append):
 #                        FUNCTION: ADD FIELDS
 
 def Add_Fields(wkg_data, add_fields_csv):
+    """
+    PARAMETERS:
+      wkg_data:
+      add_fields_csv:
+
+    RETURNS:
+      None
+
+    FUNCTION:
+    """
     print '--------------------------------------------------------------------'
     print 'Adding fields to:\n  %s' % wkg_data
     with open (add_fields_csv) as csv_file:
@@ -967,7 +973,6 @@ def Add_Fields(wkg_data, add_fields_csv):
         f_names = []
         f_types = []
         f_lengths = []
-        ##f_aliases = []
 
         row_num = 0
         for row in readCSV:
@@ -1018,6 +1023,16 @@ def Add_Fields(wkg_data, add_fields_csv):
 #                     FUNCTION: CALCULATE FIELDS
 
 def Calculate_Fields(wkg_data, calc_fields_csv):
+    """
+    PARAMETERS:
+      wkg_data:
+      calc_fields_csv:
+
+    RETURNS:
+      None
+
+    FUNCTION:
+    """
     print '--------------------------------------------------------------------'
     print 'Calculating fields in:\n  %s' % wkg_data
 
@@ -1079,67 +1094,27 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
             calc       = calcs[f_counter]
 
             #-------------------------------------------------------------------
-            # Test to see if the field is one of the two special TIME FIELDS
-            # that need a special calculation that is not available in the CSV
-            # The calculation in option 1 is needed because the CreationDate
-            # is downloaded in UTC, but it needs to be converted to PCT.
-            # OPTION 1:
-            # TODO: Remove the below Option as it is no longer needed.  The calculation is being performed in Survey123 by the phone/tablets internal clock
-            if (field == 'DateSurveySubmit' or field == 'TimeSurveySubmit'):
-                print '    This shouldn\'t have been calculated.'
-##
-##                # Create an Update Cursor to loop through values
-##                with arcpy.da.UpdateCursor(wkg_data, ['CreationDateString', 'DateSurveySubmit', 'TimeSurveySubmit']) as cursor:
-##
-##                    for row in cursor:
-##                        try:
-##                            # Turn the string obtained from the field into a datetime object
-##                            UTC_dt_obj = datetime.datetime.strptime(row[0], '%m/%d/%Y %I:%M:%S %p')
-##
-##                            # Subtract 8 hours from the UTC (Universal Time Coordinated)
-##                            # to get PCT
-##                            PCT_offset = -8
-##                            t_delta = datetime.timedelta(hours = PCT_offset)
-##                            PCT_dt_obj = UTC_dt_obj + t_delta
-##
-##                            # Set the format for the date and time
-##                            survey_date = [PCT_dt_obj.strftime('%m/%d/%Y')]
-##                            survey_time = [PCT_dt_obj.strftime('%H:%M')]
-##
-##                            # Update the rows with the correct formatting
-##                            # row[1] is 'DateSurveySubmit' and row[2] is 'TimeSurveySubmit'
-##                            # as defined when creating the UpdateCursor above
-##                            ##print 'Survey Date: ' + survey_date[0]
-##                            row[1] = survey_date[0]
-##                            ##print 'Survey Time: ' + survey_time[0]
-##                            row[2] = survey_time[0]
-##
-##                            # Update the cursor with the updated list
-##                            cursor.updateRow(row)
-##
-##                        except Exception as e:
-##                            print '*** WARNING! Field: %s was not able to be calculated.***\n' % field
-##                            print str(e)
-##
-##                print '        From selected features, calculated field: %s, so that it equals %s hours than CreationDateString\n' % (field, str(PCT_offset))
-            #-------------------------------------------------------------------
             # Strip the auto-appended Time from the DateSurveyStart field
-            # OPTION 2:
-            # TODO: Add try/except to this option
-            elif (field == 'DateOfSurvey'):
-                expression = "Remove_Time_From_Date(!{f}!)".format(f = field)
-                expression_type="PYTHON_9.3"
-                code_block = """def Remove_Time_From_Date(date):\n    if date is None:\n        return None\n    else:\n        return date.split(" ").pop(0)"""
+            # OPTION 1:
+            if (field == 'DateOfSurvey'):
+                try:
+                    expression = "Remove_Time_From_Date(!{f}!)".format(f = field)
+                    expression_type="PYTHON_9.3"
+                    code_block = """def Remove_Time_From_Date(date):\n    if date is None:\n        return None\n    else:\n        return date.split(" ").pop(0)"""
 
-                # Process
-                arcpy.CalculateField_management(in_table, field, expression,
-                                                    expression_type, code_block)
-                print '        From selected features, calculated field: %s, so that it removed the auto-appended time from the date\n' % field
+                    # Process
+                    arcpy.CalculateField_management(in_table, field, expression,
+                                                        expression_type, code_block)
+                    print '        From selected features, calculated field: %s, so that it removed the auto-appended time from the date\n' % field
+
+                except Exception as e:
+                    print '*** WARNING! Field: %s was not able to be calculated.***\n' % field
+                    print str(e)
 
             #-------------------------------------------------------------------
             # Test if the user wants to calculate the field being equal to
             # ANOTHER FIELD by seeing if the calculation starts or ends with an '!'
-            # OPTION 3:
+            # OPTION 2:
             elif (calc.startswith('!') or calc.endswith('!')):
                 f_expression = calc
 
@@ -1157,12 +1132,12 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
             #-------------------------------------------------------------------
             # If calc does not start or end with a '!', it is probably because the
             # user wanted to calculate the field being equal to a STRING
-            # OPTION 4:
+            # OPTION 3:
             else:
                 s_expression = "'%s'" % calc
 
                 try:
-                # Process
+                    # Process
                     arcpy.CalculateField_management(in_table, field, s_expression, expression_type="PYTHON_9.3")
 
                     print ('        From selected features, calculated field: %s, so that it equals STRING: %s\n'
@@ -1189,6 +1164,16 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
 #                          FUNCTION DELETE FIELDS
 
 def Delete_Fields(wkg_data, delete_fields_csv):
+    """
+    PARAMETERS:
+      wkg_data:
+      delete_fields_csv:
+
+    RETURNS:
+      None
+
+    FUNCTION:
+    """
     print '--------------------------------------------------------------------'
     print 'Deleting fields in:\n    %s' % wkg_data
 
@@ -1230,139 +1215,22 @@ def Delete_Fields(wkg_data, delete_fields_csv):
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#                    FUNCTION: New Loc and Loc Desc
-def New_Loc_LocDesc(wkg_data, DPW_WP_SITES):
-##
-##    print '--------------------------------------------------------------------'
-##    print 'Getting new Location Descriptions and Locations from:\n  {}\n'.format(wkg_data)
-##
-##    #---------------------------------------------------------------------------
-##    #                      Get new Location Descriptions.
-##
-##    # Create list and add the first item
-##    New_LocDescs = ['  The following are New Location Description suggested changes (Please edit associated feature class appropriately):']
-##
-##    # Create a Search cursor and add data to lists
-##    cursor_fields = ['SampleEventID', 'Creator', 'StationID', 'site_loc_desc_new']
-##    where = "site_loc_desc_cor = 'No'"
-##    with arcpy.da.SearchCursor(wkg_data, cursor_fields, where) as cursor:
-##
-##        for row in cursor:
-##            New_LocDesc = ('    For SampleEventID: "{}", Monitor: "{}" said the Location Description for StationID: "{}" was innacurate.  Suggested change: "{}"\n'.format(row[0], row[1], row[2], row[3]))
-##            New_LocDescs.append(New_LocDesc)
-##
-##    del cursor
-##
-##    # If there is only the original New_LocDescs string, then there were no new
-##    # suggested changes to make, replace the original string with below
-##    if (len(New_LocDescs) == 1):
-##        New_LocDescs = ['  There were no New Location Description suggested changes.\n']
-##
-##    for desc in New_LocDescs:
-##        print desc
-##
-##    #---------------------------------------------------------------------------
-##    #---------------------------------------------------------------------------
-##    #                           Set new Locations
-##
-##    # Create needed lists
-##    New_Locs = ['  The following are the sites that were relocated in the field (The changes will be automatically made to the DPW_WP_SITES):']
-##    StationIDs, ShapeXs, ShapeYs, SampEvntIDs, Creators = ([] for i in range(5))
-##
-##    # Create Search cursor and add data to lists
-##    cursor_fields = ['StationID', 'Shape@X', 'Shape@Y', 'SampleEventID', 'Creator']
-##    where = "site_loc_map_cor = 'No'"
-##    with arcpy.da.SearchCursor(wkg_data, cursor_fields, where) as cursor:
-##
-##        for row in cursor:
-##            StationID    = row[0]
-##            ShapeX       = row[1]
-##            ShapeY       = row[2]
-##            SampleEvntID = row[3]
-##            Creator      = row[4]
-##
-##            StationIDs.append(StationID)
-##            ShapeXs.append(ShapeX)
-##            ShapeYs.append(ShapeY)
-##            SampEvntIDs.append(SampleEvntID)
-##            Creators.append(Creator)
-##
-##            ##print 'StationID: "{}" has an NEW X of: "{}" and a NEW Y of: "{}"'.format(StationID, ShapeX, ShapeY)
-##
-##            New_Loc = ('    For SampleEventID: "{}", Monitor: "{}" said the Location Description for StationID: "{}" was innacurate.  Site has been moved.\n'.format(SampleEvntID, Creator, StationID))
-##            New_Locs.append(New_Loc)
-##
-##    del cursor
-##
-##   # If there is only the original New_Locs string, then there were no new
-##   #  locations to move; no need to update the DPW_WP_SITES
-##    if(len(New_Locs) == 1):
-##        New_Locs = ['  There were no relocated sites.\n']
-##
-##    #---------------------------------------------------------------------------
-##    # Create an Update cursor to update the Shape column in the DPW_WP_SITES
-##    else:
-##        list_counter = 0
-##        cursor_fields = ['StationID', 'Shape@X', 'Shape@Y']
-##        with arcpy.da.UpdateCursor(DPW_WP_SITES, cursor_fields) as cursor:
-##            for row in cursor:
-##
-##                # Only loop as many times as there are StationIDs to update
-##                if (list_counter < len(StationIDs)):
-##
-##                    # If StationID in DPW_WP_SITES equals the StationID in the
-##                    #  StationIDs list, update the geom for that StationID in DPW_WP_SITES
-##                    if row[0] == StationIDs[list_counter]:
-##                        ##print '  Updating StationID: {} with new coordinates.'.format(StationIDs[list_counter])
-##
-##                        # Give Shape@X and Shape@Y their new values
-##                        row[1] = ShapeXs[list_counter]
-##                        row[2] = ShapeYs[list_counter]
-##
-##                        cursor.updateRow(row)
-##
-##                        list_counter += 1
-##
-##        del cursor
-##
-##        #-----------------------------------------------------------------------
-##        # Calculate X and Y fields in DPW_WP_SITES now that the geometry has been updated
-##
-##        # Calculate the Long_X field
-##        field = 'Long_X'
-##        expression = "!Shape.Centroid.X!"
-##        expression_type="PYTHON_9.3"
-##        arcpy.CalculateField_management(DPW_WP_SITES, field, expression, expression_type)
-##
-##        # Calculate the Lat_Y field now that the geometry has been updated
-##        field = 'Lat_Y'
-##        expression = "!Shape.Centroid.Y!"
-##        expression_type="PYTHON_9.3"
-##        arcpy.CalculateField_management(DPW_WP_SITES, field, expression, expression_type)
-##
-##    for Loc in New_Locs:
-##        print Loc
-##
-##
-##    print '\nSuccessfully got new Location Descriptions and set New Locations.\n'
-##
-##    return New_LocDescs, New_Locs
-    pass
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
 #                           FUNCTION: FC to Table
 def FC_To_Table(wkgFolder, wkgGDB, dt_to_append, wkgPath):
-    """The FC that has been altered and calculated above needs to be turned into
-    a table first in order to append the data to the production table.
+    """
+    PARAMETERS:
+
+    RETURNS:
+
+    FUNCTION:
+      The FC that has been altered and calculated above needs to be turned into
+      a table first in order to append the data to the production table.
     """
     print '--------------------------------------------------------------------'
     print 'Exporting working FC to table:'
     in_features = wkgPath
     out_table = '{}\\{}\\C_FIELD_DATA_to_apnd'.format(wkgFolder, wkgGDB)
-    ##out_table = '{}\\{}\\DPW_Data_to_apnd_{}'.format(wkgFolder, wkgGDB, dt_to_append)
 
-    ##print '  Exporting...'
     print '  From: {}'.format(in_features)
     print '  To:   {}'.format(out_table)
 
@@ -1437,7 +1305,6 @@ def Get_Field_Mappings(orig_table, prod_table, map_fields_csv):
         del fm
         counter += 1
 
-    ##print '  Field Mappings:\n  %s' % fms
     print 'Successfully Got Field Mappings\n'
     return fms
 
@@ -1573,8 +1440,8 @@ def Duplicate_Handler(target_table):
     #                 Stop function if there are no duplicates
 
     if (len(dup_list) == 0):
-        print '  There are no duplicates in: "{}"'.format(target_table)
-        print '\nFinished Duplicate_Handler() for: "{}"'.format(target_table)
+        print '  There are no duplicates in table'
+        print '\nFinished Duplicate_Handler()'
         return ls_type_3_dups
 
     #---------------------------------------------------------------------------
@@ -1693,182 +1560,11 @@ def Duplicate_Handler(target_table):
                     num_to_append += 1
 
         ls_type_3_dups.append("""  GIS: Please check the above Type 3 duplicates for any lingering Type 2 duplicates that still need to be removed from the database.
-    Any associated attachments should be manually renamed""")
+    Any associated attachments should be manually renamed.  See documentation in script for Duplicate Types in Duplicate_Handler() Function.""")
 
     print '\nFinished Duplicate_Handler()'
 
     return ls_type_3_dups
-
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#                          FUNCTION:   Export to Excel
-def Export_To_Excel(wkg_folder, wkg_FGDB, table_to_export, export_folder, dt_to_append, report_TMDL_csv):
-##    """Exports the production DPW_WP_FIELD_DATA table to a working table, deletes the
-##    unneeded fields in the working table and then exports that table to excel.
-##    Essentially creating a 'Report' in Excel based on the where_clause.
-##    """
-##    print '--------------------------------------------------------------------'
-##    print 'Exporting to Excel...'
-##
-##
-##    #---------------------------------------------------------------------------
-##    #            Export table_to_export to wkg_FGDB to delete fields
-##    out_path     = wkg_folder + '\\' + wkg_FGDB
-##    out_name     = 'Report__Bacteria_TMDL_Outfall'
-##    where_clause = "Project = 'Bacteria TMDL Outfalls'"
-##
-##    wkg_table = out_path + '\\' + out_name
-##    print '  Exporting table to table:'
-##    print '    From:  {}'.format(table_to_export)
-##    print '    To:    {}'.format(wkg_table)
-##    print '    Where: {}'.format(where_clause)
-##
-##    arcpy.TableToTable_conversion(table_to_export, out_path, out_name, where_clause)
-##
-##
-##    #---------------------------------------------------------------------------
-##    #              Delete fields that are not needed/wanted in report
-##
-##    with open (report_TMDL_csv) as csv_file:
-##        readCSV = csv.reader(csv_file, delimiter = ',')
-##
-##        fields_to_delete = []
-##
-##        row_num = 0
-##        for row in readCSV:
-##            if row_num > 1:
-##                f_to_delete = row[0]
-##
-##                fields_to_delete.append(f_to_delete)
-##            row_num += 1
-##
-##    num_deletes = len(fields_to_delete)
-##
-##    print '  There are {} fields to delete:'.format(num_deletes)
-##
-##    # If there is at least one field to delete, delete it
-##    if num_deletes > 0:
-##        f_counter = 0
-##        while f_counter < num_deletes:
-##            drop_field = fields_to_delete[f_counter]
-##            ##print '    Deleting field: %s...' % drop_field
-##
-##            arcpy.DeleteField_management(wkg_table, drop_field)
-##
-##            f_counter += 1
-##    print '  Fields deleted.'
-##
-##    #---------------------------------------------------------------------------
-##    #                            Export table to Excel
-##
-##    # Make the export file if it doesn't exist
-##    if not os.path.exists(export_folder):
-##        os.mkdir(export_folder)
-##
-##    export_file = export_folder + '\\Bacteria_TMDL_Report_{}.xls'.format(dt_to_append)
-##
-##    print '  Exporting table to Excel...'
-##    print '    From: ' + wkg_table
-##    print '    To :  ' + export_file
-##
-##    # Process
-##    arcpy.TableToExcel_conversion(wkg_table, export_file, 'ALIAS')
-##
-##    print 'Successfully exported database to Excel.\n'
-##
-##    return export_file
-    pass
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#            FUNCTION: Export DPW_WP_SITES to Survey123's Site_Info csv
-def DPW_WP_SITES_To_Survey123_csv(Sites_Export_To_CSV_tbl, DPW_WP_SITES, Site_Info):
-##    print '--------------------------------------------------------------------'
-##    print 'Exporting Sites Data to the Survey123 CSV...'
-##
-##    # Sites_Export_To_CSV is a table that has the same schema the CSV needs in
-##    # order to work with Survey123.
-##
-##    #---------------------------------------------------------------------------
-##    #               Delete rows in Sites_Export_To_CSV FGDB table
-##
-##    print '  Deleting Rows in: {}'.format(Sites_Export_To_CSV_tbl)
-##
-##    arcpy.DeleteRows_management(Sites_Export_To_CSV_tbl)
-##
-##    #---------------------------------------------------------------------------
-##    #         Export prod DPW_WP_SITES to a working table in the working_FGDB
-##
-##    working_FGDB = os.path.split(Sites_Export_To_CSV_tbl)[0]  # Get the working FGDB path
-##    DPW_WP_SITES_tbl = 'D_SITES_exported_tbl'
-##    DPW_WP_SITES_tbl_path = working_FGDB + '\\' + DPW_WP_SITES_tbl
-##
-##    print '  Exporting DPW_WP_SITES to a working table:'
-##    print '    From: {}'.format(DPW_WP_SITES)
-##    print '    To:   {}'.format(DPW_WP_SITES_tbl_path)
-##
-##    arcpy.TableToTable_conversion(DPW_WP_SITES, working_FGDB, DPW_WP_SITES_tbl)
-##
-##    #---------------------------------------------------------------------------
-##    #            Append DPW_WP_SITES_tbl to the Sites_Export_To_CSV table
-##
-##    inputs = working_FGDB + '\\' + DPW_WP_SITES_tbl
-##
-##    print '  Appending {}'.format(DPW_WP_SITES_tbl)
-##    print '    From: {}'.format(inputs)
-##    print '    To:   {}'.format(Sites_Export_To_CSV_tbl)
-##
-##    arcpy.Append_management(inputs, Sites_Export_To_CSV_tbl, 'TEST')
-##
-##    #---------------------------------------------------------------------------
-##    #                         Field Calculations
-##    # Some field calculations have to be performed on the Sites_Export_To_CSV_tbl
-##    # in order that the comma and quote sensitive Survey123 app can read it correctly
-##
-##    # Do a search for ',' and replace with a ' ' to make sure no commas get into
-##    #  the CSV file in the Loc_Desc field
-##    field = 'Loc_Desc'
-##    expression = '!Loc_Desc!.replace(",", " ")'
-##    expression_type = "PYTHON_9.3"
-##
-##    print '  Calculating field: {}, so that it equals: {}'.format(field, expression)
-##
-##    arcpy.CalculateField_management(Sites_Export_To_CSV_tbl, field, expression, expression_type)
-##
-##    # Do a search for a quote (") and replace with an 'in.' to make sure no quotes get into
-##    #  the CSV file in the Loc_Desc field
-##    ##print '  Replacing \" with an \'in.\' in Loc_Desc field'
-##    field = 'Loc_Desc'
-##    expression = "!Loc_Desc!.replace('\"', 'in.')"
-##    expression_type = "PYTHON_9.3"
-##
-##    print '  Calculating field: {}, so that it equals: {}'.format(field, expression)
-##
-##    arcpy.CalculateField_management(Sites_Export_To_CSV_tbl, field, expression, expression_type)
-##
-##    #---------------------------------------------------------------------------
-##    #                      Export to CSV and clean up files.
-##
-##    out_path = os.path.split(Site_Info)[0]  # Get the Path
-##    out_name = os.path.split(Site_Info)[1]  # Get the file name
-##
-##    print '  Exporting to CSV'
-##    print '    From: {}'.format(Sites_Export_To_CSV_tbl)
-##    print '    To:   {}'.format(Site_Info)
-##
-##    arcpy.TableToTable_conversion(Sites_Export_To_CSV_tbl, out_path, out_name)
-##
-##    # Delete the extra files that are not needed that are created by the above export
-##    print '  Deleting extra files auto-generated by export process.'
-##    schema_file = out_path + '\\schema.ini'
-##    xml_file = out_path + '\\Site_Info.txt.xml'
-##    if os.path.exists(schema_file):
-##        os.remove(schema_file)
-##    if os.path.exists(xml_file):
-##        os.remove(xml_file)
-##
-##    print 'Successfully exported DPW_WP_SITES to Survey123 CSV\n'
-    pass
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -1879,13 +1575,8 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     print '--------------------------------------------------------------------'
     print 'Emailing Results...'
 
-    #TODO: get ls_type_3_dups list into the successful email
-
     #---------------------------------------------------------------------------
     #         Do some processing to be used in the body of the email
-
-    ## In the email, we only want the path to the logs, not to the actual file
-    ##log_file_date = os.path.split(log_file)[0]
 
     # Turn the start_time into a formatted string
     start_time = [start_time_obj.strftime('%m/%d/%Y %I:%M:%S %p')]
@@ -1900,10 +1591,6 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     # Get the number of downloaded features
     num_dl_features = len(dl_features_ls)
 
-    # Get a formatted string of the new_loc_descs and new_locs
-##    str_new_loc_descs = ' <br> &nbsp;&nbsp;'.join(new_loc_descs) # join each item in the list with a line break and a tab
-##    str_new_locs      = ' <br> &nbsp;&nbsp;'.join(new_locs)
-
     #---------------------------------------------------------------------------
     #                Write the "Success--Data Downloaded" email
 
@@ -1914,11 +1601,12 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
         # Send this email to...
         email_list = lueg_admin_email
 
-        # Attach the excel_report
-        attach_excel_report = True
-
-        # Format the Subject for the email
-        subj = '{} -- SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script.  Data Downloaded.'.format(stage)
+        # Set the Subject of the email
+        first_type_3_duplicate = ls_type_3_dups[0]  # First result in list
+        if not first_type_3_duplicate.startswith('No duplicates created by two users'):  # Will be triggered if there was a type 3 duplicate (Very rare event)
+            subj = '{} -- WARNING! Completed DPW_Science_and_Monitoring.py Script.  Data Downloaded, but Type 3 duplicate found, see log file.'.format(stage)
+        else:
+            subj = '{} -- SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script.  Data Downloaded.'.format(stage)  # Normal email subject
 
         # Format the Body in html
         body  = ("""\
@@ -1931,20 +1619,6 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
                Please find excel report attached to this email.<br>
                -----------------------------------------------------------------
             <br><br>
-            </p>
-
-            <h3>New Location Descriptions and Moved Sites:</h3>
-            <p>
-               <h4>Location Description (Suggested Changes):</h4>
-                   GIS will edit the Location Descriptions changes during Beta testing.
-               <br><br>
-                   <i>nld went here, removing this section in DEV</i>
-               <br><br>
-               <h4>Moved Sites:</h4>
-                   <i>nl went here, removing this section in DEV</i>
-               <br>
-               -----------------------------------------------------------------
-              <br>
             </p>
 
             <h3>Times:</h3>
@@ -1964,7 +1638,6 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
                The <b>FGDB</b> is located at:            <i>{fgdb}</i><br>
                The <b>Images</b> are located at:         <i>{af}  </i><br>
                The <b>Log File</b> is located at:        <i>{lf}  </i><br>
-               The <b>Excel Report</b> is located at:    <i>er went here, removing from DEV  </i><br>
             </p>
           </body>
         </html>
@@ -1972,11 +1645,6 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
                    ft = finish_time[0], dlr = data_last_retrieved[0],
                    num = num_dl_features, fgdb = prod_FGDB, af = attach_folder,
                    lf = log_file_date))
-
-##                  (nld = str_new_loc_descs, nl = str_new_locs, st = start_time[0],
-##                   ft = finish_time[0], dlr = data_last_retrieved[0],
-##                   num = num_dl_features, fgdb = prod_FGDB, af = attach_folder,
-##                   lf = log_file_date, er = excel_report))
 
     #---------------------------------------------------------------------------
     #             Write the "Success--No Data Downloaded' email
@@ -1987,9 +1655,6 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
 
         # Send this email to the lueg_admin_emails
         email_list = lueg_admin_email
-
-        # Do not attache an excel report if no data was downloaded
-        attach_excel_report = False
 
         # Format the Subject for the 'No Data Downloaded' email
         subj = '{} -- SUCCESSFULLY Completed DPW_Science_and_Monitoring.py Script.  NO Data Downloaded.'.format(stage)
@@ -2036,9 +1701,6 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
         # Send this email to the lueg_admin_emails
         email_list = lueg_admin_email
 
-        # Do not attache an excel report if no data was downloaded
-        attach_excel_report = False
-
         # Format the Subject for the 'Errors' email
         subj = '{} -- ERROR with DPW_Science_and_Monitoring.py Script'.format(stage)
 
@@ -2078,18 +1740,6 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     msg['From']      = "Python Script"
     msg['To']        = ', '.join(email_list)  # Join each item in list with a ', '
     msg.attach(MIMEText(body, 'html'))
-
-##    # Set the attachment if needed
-##    if (attach_excel_report == True):
-##        attachment = MIMEApplication(open(excel_report, 'rb').read())
-##
-##        # Get name for attachment, which should equal the name of the excel_report
-##        file_name = os.path.split(excel_report)[1]
-##
-##        # Set attachment into msg
-##        attachment['Content-Disposition'] = 'attachment; filename = "{}"'.format(file_name)
-##        msg.attach(attachment)
-
 
     # Get username and password from cfgFile
     config = ConfigParser.ConfigParser()
