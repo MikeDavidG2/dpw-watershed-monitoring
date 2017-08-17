@@ -16,7 +16,31 @@ To download JPEG's taken in the field and name them based on the site ID and the
   Sample Event ID
 
 PROCESS:
-
+1. Import Modules
+2. Define main() function.
+  2.1 Set variables used in the script.
+  2.2 Call functions
+    2.2.1  Get the current date and time
+    2.2.2  Create a log file and turn the print statement to a logging object.
+    2.2.3  Get the last time the data was retrieved from AGOL
+    2.2.4  Get the token to gain access to the AGOL database.
+    2.2.5  Get data from AGOL and store in a working FGDB.
+    2.2.6  Get the attachments from AGOL and store it in a local folder.
+    2.2.7  Set the last time the data was retrieved from AGOL to the start_time
+             of this script so the next time it is run it will only grab
+             new data.
+    2.2.8  Copy the original data to a working FC.
+    2.2.9  Add fields to the working FC.
+    2.2.10 Calculate fields in the working FC.
+    2.2.11 Delete fields from the working FC.
+    2.2.12 Export working FC to TABLE.
+    2.2.13 Get non-default field mappings so we can append fields from the TABLE
+             to the production database if the field names are not the same
+             between the working database and the production database.
+    2.2.14 Append the working data to the production database.
+    2.2.15 Search for and handle any Duplicates.
+    2.2.16 Email results.
+  2.3 Print out information about the script
 
 NOTE:  This is a long and complex script.  Navigation between the main function
 (which drives the script) and the secondary functions (which drive specific
@@ -67,6 +91,7 @@ arcpy.env.overwriteOutput = True
 def main():
     #---------------------------------------------------------------------------
     #                               Set Variables
+    #---------------------------------------------------------------------------
 
     # Variables to control which Functions are run
     run_Get_DateAndTime         = True
@@ -158,11 +183,10 @@ def main():
 
     #---------------------------------------------------------------------------
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     #---------------------------------------------------------------------------
     #                        Start calling functions
-
     #---------------------------------------------------------------------------
+
     # Get the current date and time to append to the end of various files
     # and the start time of the script to be used in the queries.
     if (errorSTATUS == 0 and run_Get_DateAndTime):
@@ -258,7 +282,7 @@ def main():
         except Exception as e:
             errorSTATUS = Error_Handler('Set_Last_Data_Ret', e)
     #---------------------------------------------------------------------------
-    # COPY the original data to a working table
+    # COPY the original data to a working FC
     if (errorSTATUS == 0 and data_was_downloaded and run_Copy_Orig_Data):
         try:
             wkgPath = Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath)
@@ -267,7 +291,7 @@ def main():
             errorSTATUS = Error_Handler('Copy_Orig_Data', e)
 
     #---------------------------------------------------------------------------
-    # ADD FIELDS to the working table
+    # ADD FIELDS to the working FC
     if (errorSTATUS == 0 and data_was_downloaded and run_Add_Fields):
         try:
             Add_Fields(wkgPath, add_fields_csv)
@@ -276,7 +300,7 @@ def main():
             errorSTATUS = Error_Handler('Add_Fields', e)
 
     #---------------------------------------------------------------------------
-    # CALCULATE FIELDS in the working table
+    # CALCULATE FIELDS in the working FC
     if (errorSTATUS == 0 and data_was_downloaded and run_Calculate_Fields):
         try:
             Calculate_Fields(wkgPath, calc_fields_csv)
@@ -285,7 +309,7 @@ def main():
             errorSTATUS = Error_Handler('Calculate_Fields', e)
 
     #---------------------------------------------------------------------------
-    # DELETE FIELDS from the working table
+    # DELETE FIELDS from the working FC
     if (errorSTATUS == 0 and data_was_downloaded and run_Delete_Fields):
         try:
             Delete_Fields(wkgPath, delete_fields_csv)
@@ -340,9 +364,10 @@ def main():
 
             except Exception as e:
                 errorSTATUS = Error_Handler('Email_Results', e)
+
     #---------------------------------------------------------------------------
     #                  Print out info about the script
-
+    #---------------------------------------------------------------------------
     if errorSTATUS == 0:
         print '--------------------------------------------------------------------'
         print 'SUCCESSFULLY ran DPW_Science_and_Monitoring.py'
@@ -370,8 +395,8 @@ def main():
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+#-------------------------------------------------------------------------------
 #                                 DEFINE FUNCTIONS
 #-------------------------------------------------------------------------------
 #                 FUNCTION:    Get Start Date and Time
