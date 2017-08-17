@@ -4,6 +4,7 @@
 """
 To take the list of items (items_to_export) from an export FGDB (fgdb_to_export)
 and put the items into a FGDB to be updated (fgdb_to_be_updated).
+
 NOTE: the Dataset Type of the items can be either a Table or a Feature Class.
 """
 #
