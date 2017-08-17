@@ -2,6 +2,12 @@
 # Name:        DPW_Science_and_Monitoring.py
 # Purpose:
 """
+This script is intended to be used in conjunction with DPW's Science and
+Monitoring Survey123 Field Survey.  The Survey is used to gather data in the
+field by monitors.  The Survey sends the data to an AGOL database where it waits
+to be grabbed by this script.
+
+EXECUTIVE SUMMARY:
 To download data stored on AGOL servers that were added via Survey123 by DPW's
   Science and Monitoring Project.
 To process the downloaded data and append the downloaded data to a FGDB that
@@ -11,6 +17,11 @@ To download JPEG's taken in the field and name them based on the site ID and the
 
 PROCESS:
 
+
+NOTE:  This is a long and complex script.  Navigation between the main function
+(which drives the script) and the secondary functions (which drive specific
+tasks) will be easier with an IDE such as PyScripter as opposed to the generic
+IDLE.
 """
 # Author:      mgrue
 #
@@ -250,8 +261,7 @@ def main():
     # COPY the original data to a working table
     if (errorSTATUS == 0 and data_was_downloaded and run_Copy_Orig_Data):
         try:
-            wkgPath = Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath,
-                                     dt_to_append)
+            wkgPath = Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Copy_Orig_Data', e)
@@ -287,7 +297,7 @@ def main():
     # EXPORT FC to TABLE
     if (errorSTATUS == 0 and data_was_downloaded and run_FC_To_Table):
         try:
-            exported_table = FC_To_Table(wkgFolder, wkgGDB, dt_to_append, wkgPath)
+            exported_table = FC_To_Table(wkgFolder, wkgGDB, wkgPath)
 
         except Exception as e:
             errorSTATUS = Error_Handler('FC_To_Table', e)
@@ -917,25 +927,28 @@ def Set_Last_Data_Ret(last_ret_csv, start_time):
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Copy_Orig_Data
 
-def Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath, dt_to_append):
+def Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath):
     """
     PARAMETERS:
-      wkgFolder
-      wkgGDB
-      wkgFC
-      origPath
-      dt_to_append
+      wkgFolder (str) = Full path to the 'Data' folder that contains the FGDB's,
+        Excel files, Logs, and Pictures.
+      wkgGDB (str) = Name of the working FGDB in the wkgFolder.
+      wkgFC (str) = Name of the working FC in the wkgGDB. This is the FC
+        that is processed.  It is overwritten each time the script is run.
+      origPath (str) = Full path to the original FC in the wkgGDB.
 
     RETURNS:
-      wkgPath:
+      wkgPath (str): Full path to the working FC in the wkgGDB.
 
     FUNCTION:
+      To copy the orig FC to a working FC in the same FGDB
     """
+
     print '--------------------------------------------------------------------'
     print 'Copying original data...'
 
     #---------------------------------------------------------------------------
-    # Copy the orig FC to a working TABLE to run processing on.
+    # Copy the orig FC to a working FEATURE CLASS to run processing on.
     in_features = origPath
     wkgPath = out_feature_class = r'%s\%s\%s' % (wkgFolder, wkgGDB, wkgFC)
 
@@ -956,16 +969,21 @@ def Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath, dt_to_append):
 def Add_Fields(wkg_data, add_fields_csv):
     """
     PARAMETERS:
-      wkg_data:
-      add_fields_csv:
+      wkg_data (str) = Name of the working FC in the wkgGDB. This is the FC
+        that is processed.  It is overwritten each time the script is run.
+      add_fields_csv (str) = Full path to the CSV file that lists which fields
+        should be created.
 
     RETURNS:
       None
 
     FUNCTION:
+      To add fields to the wkg_data using a CSV file located at add_fields_csv.
     """
+
     print '--------------------------------------------------------------------'
     print 'Adding fields to:\n  %s' % wkg_data
+    print '  Using Control CSV at:\n    {}\n'.format(add_fields_csv)
     with open (add_fields_csv) as csv_file:
         readCSV = csv.reader(csv_file, delimiter = ',')
 
@@ -1025,16 +1043,23 @@ def Add_Fields(wkg_data, add_fields_csv):
 def Calculate_Fields(wkg_data, calc_fields_csv):
     """
     PARAMETERS:
-      wkg_data:
-      calc_fields_csv:
+      wkg_data (str) = Name of the working FC in the wkgGDB. This is the FC
+        that is processed.  It is overwritten each time the script is run.
+      calc_fields_csv (str) = Full path to the CSV file that lists which fields
+        should be calculated, and how they should be calculated.
 
     RETURNS:
       None
 
     FUNCTION:
+      To calculate fields in the wkg_data using a CSV file located at
+      calc_fields_csv. The field [DateOfSurvey] is too complicated to pass a
+      calculation via the CSV file, so it is handled in this script directly.
     """
+
     print '--------------------------------------------------------------------'
     print 'Calculating fields in:\n  %s' % wkg_data
+    print '  Using Control CSV at:\n    {}\n'.format(calc_fields_csv)
 
     # Make a table view so we can perform selections
     arcpy.MakeTableView_management(wkg_data, 'wkg_data_view')
@@ -1166,16 +1191,22 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
 def Delete_Fields(wkg_data, delete_fields_csv):
     """
     PARAMETERS:
-      wkg_data:
-      delete_fields_csv:
+      wkg_data (str) = Name of the working FC in the wkgGDB. This is the FC
+        that is processed.  It is overwritten each time the script is run.
+      delete_fields_csv (str) = Full path to the CSV file that lists which
+        fields should be deleted.
 
     RETURNS:
       None
 
     FUNCTION:
+      To delete fields from the wkg_data using a CSV file located at
+      delete_fields_csv.
     """
+
     print '--------------------------------------------------------------------'
     print 'Deleting fields in:\n    %s' % wkg_data
+    print '  Using Control CSV at:\n    {}\n'.format(delete_fields_csv)
 
     #---------------------------------------------------------------------------
     #                     Get values from the CSV file
@@ -1216,16 +1247,22 @@ def Delete_Fields(wkg_data, delete_fields_csv):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                           FUNCTION: FC to Table
-def FC_To_Table(wkgFolder, wkgGDB, dt_to_append, wkgPath):
+def FC_To_Table(wkgFolder, wkgGDB, wkgPath):
     """
     PARAMETERS:
+      wkgFolder (str) = Full path to the 'Data' folder that contains the FGDB's,
+        Excel files, Logs, and Pictures.
+      wkgGDB (str) = Name of the working FGDB in the wkgFolder.
+      wkgPath (str): Full path to the working FC in the wkgGDB.
 
     RETURNS:
+      out_table (str) = Full path to the converted TABLE (from wkgPath)
 
     FUNCTION:
       The FC that has been altered and calculated above needs to be turned into
       a table first in order to append the data to the production table.
     """
+
     print '--------------------------------------------------------------------'
     print 'Exporting working FC to table:'
     in_features = wkgPath
@@ -1245,6 +1282,32 @@ def FC_To_Table(wkgFolder, wkgGDB, dt_to_append, wkgPath):
 #-------------------------------------------------------------------------------
 #                           FUNCTION: GET FIELD MAPPINGS
 def Get_Field_Mappings(orig_table, prod_table, map_fields_csv):
+    """
+    PARAMETERS:
+      orig_table (str): Full path to the converted TABLE (from the working FC).
+      prod_table (str): Full path to the production TABLE that contains the
+        most up-to-date data.
+      map_fields_csv (str): Full path to the CSV file that lists which fields
+        in the converted TABLE match the fields in the production TABLE.
+
+    RETURNS:
+      fms (arcpy.FieldMappings object): This object contains the field mappings
+        that can be used when we append the working data to the production data.
+
+    FUNCTION:
+      By using a CSV file that lists fields in the working data and their
+      matching field in the production data, this functino gets any non-default
+      field mappings between the working data and the production data. The
+      field mapping object is returned by the function so it can be used in an
+      append function.
+
+    NOTE:
+      This function is only useful if there are any field names that are
+      different between the working database and the production database.
+      This is because the default for an append function is to match the field
+      names between the target dataset and the appending dataset.
+    """
+
     print '--------------------------------------------------------------------'
     print 'Getting Field Mappings...'
 
@@ -1312,19 +1375,32 @@ def Get_Field_Mappings(orig_table, prod_table, map_fields_csv):
 #-------------------------------------------------------------------------------
 #                        FUNCTION:  APPEND DATA
 
-def Append_Data(orig_table, target_table, field_mapping):
+def Append_Data(input_item, target, field_mapping=None):
+    """
+    PARAMETERS:
+      input_item (str) = Full path to the item to append.
+      target (str) = Full path to the item that will be updated.
+      field_mapping {arcpy.FieldMappings obj} = Arcpy Field Mapping object.
+        Optional.
 
+    RETURNS:
+      None
+
+    FUNCTION:
+      To append the data from the input_item to the target using an
+      optional arcpy field_mapping object to override the default field mapping.
+    """
 
     print '--------------------------------------------------------------------'
     print 'Appending Data...'
-    print '  From: {}'.format(orig_table)
-    print '  To:   {}'.format(target_table)
+    print '  From: {}'.format(input_item)
+    print '  To:   {}'.format(target)
 
     # Append working data to production data
     schema_type = 'NO_TEST'
 
     # Process
-    arcpy.Append_management(orig_table, target_table, schema_type, field_mapping)
+    arcpy.Append_management(input_item, target, schema_type, field_mapping)
 
     print 'Successfully appended data.\n'
 
@@ -1572,6 +1648,22 @@ def Duplicate_Handler(target_table):
 def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file_date,
                   start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder,
                   dl_features_ls, stage, ls_type_3_dups):
+    """
+    PARAMETERS:
+      <many>: This function is not a standard email function.  It receives a lot
+      of data from the script that it reports on.
+
+    RETURNS:
+      None
+
+    FUNCTION:
+      To send an email after running.  Email may be:
+        Successful. Data downloaded.
+        Successful. Data not downloaded.
+        Warning.    Data downloaded, but a Type 3 duplicate was found, GIS analysis needed
+        Error.      There was an error with the script.
+    """
+
     print '--------------------------------------------------------------------'
     print 'Emailing Results...'
 
@@ -1761,6 +1853,24 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
 #-------------------------------------------------------------------------------
 #                         FUNCTION:  Error Handler
 def Error_Handler(func_w_err, e):
+    """
+    PARAMETERS:
+      func_w_err (str): The name of the function that had the error in it.
+      e (error object): The python error that resulted from an Exception being
+        raised.
+
+    RETURNS:
+      errorSTATUS (int): Integer representing that an error happened.
+
+    FUNCTION:
+      To print out an error statement that may help the user figure out what
+      went wrong.
+
+      If this function is used, that means that there was an
+      error in the script and this variable is changed from the 0 it was
+      assigned at the beginning of hte script to 1 so that other functions
+      are not called and the email function can send the Error email.
+    """
 
     e_str = str(e)
     print '\n*** ERROR in function: "%s" ***\n' % func_w_err
