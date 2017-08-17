@@ -1,2 +1,2 @@
-User Information here,
+"The script DPW_Science_and_Monitoring.py uses this script to control which fields in the working database match up to the fields in the production database.  It will ignore the first two rows, and will ignore everything after Column B.  This CSV expects the field_name for the working database to be paired up with a field name (with the same data type) in the production database.",
 Working Database,Production Database

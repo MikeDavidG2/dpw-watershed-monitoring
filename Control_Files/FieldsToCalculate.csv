@@ -1,4 +1,4 @@
-Instructions for the user,,,,,
+"The script DPW_Science_and_Monitoring.py uses this script to control which fields to calculate and how to calculate them.  It will ignore the first two rows, and will ignore Columns B, D, F (which are used for human readability).  This CSV can pass the field name to use as the select field, the field name to calculate, and the calculation itself.  NOTE that [DateOfSurvey] field is too complicated to pass a calculation via this CSV.  That calculation is performed in the script itself.",,,,,
 SelectField Where,<Column not used in script>,FieldToCalc,<Column not used in script>,"Calculation (Below must start or end with a '!' if you want to calculate a FIELD, otherwise it will be calculated as a STRING)",User Notes
 Project IS NOT NULL,Then calculate field...,Project,...so that it performs this...,"!Project!.replace(""_"", "" "")",Replace the underscore with a space to make the field look 'neater'.
 Project = 'Bacteria TMDL Outfalls',Then calculate field...,SiteType,...so that it equals STRING...,MS4,All 'Bacteria TMDL Outfalls' projects should have [SiteType] equal to 'MS4'
