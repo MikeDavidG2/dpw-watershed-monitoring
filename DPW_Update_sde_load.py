@@ -25,7 +25,7 @@ def main():
     #                              Set variables
     #---------------------------------------------------------------------------
 
-    fgdb_to_export = r"P:\DPW_ScienceAndMonitoring\Scripts\BETA\Data\DPW_Science_and_Monitoring_prod.gdb"
+    fgdb_to_export = r"P:\DPW_ScienceAndMonitoring\Scripts\PROD\Data\DPW_Science_and_Monitoring_prod.gdb"
     items_to_export = ['DPW_WP_FIELD_DATA', 'DPW_WP_SITES']
 
     fgdb_to_be_updated = r'V:\sde_load.gdb'
@@ -33,7 +33,7 @@ def main():
     # Set to "True" to have 'print' statements be written to the log_file
     # Set to "False" to have 'print' statements print to screen
     run_Write_Print_To_Log = True
-    log_file = r'P:\DPW_ScienceAndMonitoring\Scripts\BETA\Data\Logs\DPW_Update_sde_load'
+    log_file = r'P:\DPW_ScienceAndMonitoring\Scripts\PROD\Data\Logs\DPW_Update_sde_load'
 
     # Set email recipients
     email_recipients = ['michael.grue@sdcounty.ca.gov']

@@ -118,7 +118,7 @@ def main():
     lueg_admin_email = ['michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
-    stage = 'BETA'  # This variable is used to control the path to the varioius stages
+    stage = 'PROD'  # This variable is used to control the path to the varioius stages
 
     # Control files
     control_files          = r'P:\DPW_ScienceAndMonitoring\Scripts\{v}\{v}_branch\Control_Files'.format(v = stage)
@@ -142,7 +142,7 @@ def main():
         serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_65a9e7bda7104cc18dbf6f76463db67d/FeatureServer'
 
     elif stage == 'PROD':
-        serviceURL = ''
+        serviceURL = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_b26dc331edd84156ac4f08d50f8ca6bb/FeatureServer'
 
     queryURL    =  serviceURL + '/0/query'        # Get Data URL
     gaURL       =  serviceURL + '/CreateReplica'  # Get Attachments URL
