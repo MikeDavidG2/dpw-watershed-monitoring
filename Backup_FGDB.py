@@ -38,9 +38,9 @@ def main():
     #                           USER SET VARIABLES
     #---------------------------------------------------------------------------
     # Set paths
-    FGDB_to_backup = r"P:\DPW_ScienceAndMonitoring\Scripts\BETA\Data\DPW_Science_and_Monitoring_prod.gdb"
-    backup_folder  = r'P:\DPW_ScienceAndMonitoring\Scripts\BETA\Data\Backups'
-    log_file        = r'P:\DPW_ScienceAndMonitoring\Scripts\BETA\Data\Logs\Backup_FGDB'
+    FGDB_to_backup = r"P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\DPW_Science_and_Monitoring_prod.gdb"
+    backup_folder  = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Backups'
+    log_file        = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\Logs\Backup_FGDB'
 
     # Set number of backups allowed to exist in 'backup_folder'
     max_num_backups = 12

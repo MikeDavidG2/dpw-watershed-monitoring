@@ -118,7 +118,7 @@ def main():
     lueg_admin_email = ['michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
-    stage = 'BETA'  # This variable is used to control the path to the varioius stages
+    stage = 'DEV'  # This variable is used to control the path to the varioius stages
 
     # Control files
     control_files          = r'P:\DPW_ScienceAndMonitoring\Scripts\{v}\{v}_branch\Control_Files'.format(v = stage)
