@@ -72,7 +72,7 @@ def main():
     # Email lists
     dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
     ##dpw_email_list   = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']  # TODO: Comment out when done with testing
-    lueg_admin_email = ['mikedavidg2@gmail.com','michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
+    lueg_admin_email = ['michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
     stage = 'BETA'
@@ -1901,8 +1901,8 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
     if (errorSTATUS == 0 and num_dl_features > 0):
         print '  Writing the "Success--Data Downloaded" email...'
 
-        # Send this email to the dpw_email_list
-        email_list = dpw_email_list
+        # Send this email to the desired recipients
+        email_list = lueg_admin_email
 
         # Attach the excel_report
         attach_excel_report = True
