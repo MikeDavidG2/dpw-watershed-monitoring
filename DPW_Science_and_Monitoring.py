@@ -118,10 +118,10 @@ def main():
     lueg_admin_email = ['michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
-    stage = 'DEV'  # This variable is used to control the path to the varioius stages
+    stage = 'BETA'  # This variable is used to control the path to the varioius stages
 
     # Control files
-    control_files          = r'P:\DPW_ScienceAndMonitoring\Scripts\{v}\DEV_branch\Control_Files'.format(v = stage)
+    control_files          = r'P:\DPW_ScienceAndMonitoring\Scripts\{v}\{v}_branch\Control_Files'.format(v = stage)
     last_data_retrival_csv = control_files + '\\LastDataRetrival.csv'
     add_fields_csv         = control_files + '\\FieldsToAdd.csv'
     calc_fields_csv        = control_files + '\\FieldsToCalculate.csv'
@@ -1914,7 +1914,7 @@ def Error_Handler(func_w_err, e):
     # Help comments for 'Get_Token' function
     if (func_w_err == 'Get_Token'):
         if (e_str.startswith('No section:')):
-            help_comment = '    The section in brakets in "cfgFile" variable may not be in the file, or the file cannot be found.  Check both!'
+            help_comment = '    The section in brakets in "cfgFile" variable may not be in the file, or the "dfgFile" cannot be found.  Check both!'
 
     # Help comments for 'Get_Data' function
     if (func_w_err == 'Get_Data'):
