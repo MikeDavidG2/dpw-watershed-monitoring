@@ -100,6 +100,7 @@ def main():
     run_Get_Token               = True
     run_Get_Data                = True
     run_Get_Attachments         = True # Requires 'run_Get_Data = True'
+    run_Get_SITES_data          = True
     run_Set_Last_Data_Ret       = True # Should be 'False' if testing
     run_Copy_Orig_Data          = True  # Requires 'run_Get_Data = True'
     run_Add_Fields              = True  # Requires 'run_Copy_Orig_Data = True'
@@ -130,13 +131,12 @@ def main():
     report_TMDL_csv        = control_files + '\\Report_TMDL.csv'
     cfgFile                = control_files + '\\accounts.txt'
 
-    # Token and AGOL variables
-    gtURL       = "https://www.arcgis.com/sharing/rest/generateToken"
-    AGOfields   = '*'
+
 
     # Service URL that ends with .../FeatureServer
     if stage == 'DEV':
-        serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_8e527e6153ed488fad0414f309ed90ed/FeatureServer'
+        FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_8e527e6153ed488fad0414f309ed90ed/FeatureServer'
+        SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV/FeatureServer'
 
     elif stage == 'BETA':
         serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_65a9e7bda7104cc18dbf6f76463db67d/FeatureServer'
@@ -144,17 +144,25 @@ def main():
     elif stage == 'PROD':
         serviceURL = ''
 
-    queryURL    =  serviceURL + '/0/query'        # Get Data URL
-    gaURL       =  serviceURL + '/CreateReplica'  # Get Attachments URL
+    # Token and AGOL variables
+    gtURL       = "https://www.arcgis.com/sharing/rest/generateToken"
+    AGOfields   = '*'
+    FIELD_DATA_queryURL =  FIELD_DATA_serviceURL + '/0/query'        # Get FIELD DATA URL
+    FIELD_DATA_gaURL    =  FIELD_DATA_serviceURL + '/CreateReplica'  # Get Attachments URL
+    SITES_query_url     =  SITES_serviceURL      + '/0/query'        # Get SITES URL
 
 
     # Working database locations and names
     wkgFolder   = r'P:\DPW_ScienceAndMonitoring\Scripts\{v}\Data'.format(v = stage)
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
-    origFC      = "A_FIELD_DATA_orig"
-    wkgFC       = 'B_FIELD_DATA_wkg'
-      # There is no wkgPath variable yet since we will append the date and
-      # time to it in a function below
+
+    # FIELD_DATA variables
+    origFC      = "A_FIELD_DATA_orig"  # Name of downloaded FIELD_DATA
+    wkgFC       = 'B_FIELD_DATA_wkg'   # Name of working FIELD_DATA
+
+    # SITES variables
+    SITES_days_to_search = 14  # Number of days ago to input into where_clause
+    SITES_FC_orig = 'D_SITES_edited_in_last_{}_days_orig'.format(str(SITES_days_to_search)) # Name of downloaded SITES data
 
     # Production locations and names
     prodGDB                = wkgFolder + "\\DPW_Science_and_Monitoring_prod.gdb"
@@ -163,12 +171,12 @@ def main():
     prod_attachments       = wkgFolder + '\\Sci_Monitoring_pics'
     prodPath_Excel         = wkgFolder + '\\Excel'
 
-    # Survey123 CSV file related variables
-    # site_info = the CSV Survey123 uses to locate the sites in the app. It gets
-    # its data refreshed from the DPW_WP_SITES Feature Class in the
-    # DPW_WP_SITES_To_Survey123_csv() function
-    site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon {}\media\Site_Info.csv".format(stage)
-    Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\E_SITES_export_to_csv'
+##    # Survey123 CSV file related variables
+##    # site_info = the CSV Survey123 uses to locate the sites in the app. It gets
+##    # its data refreshed from the DPW_WP_SITES Feature Class in the
+##    # DPW_WP_SITES_To_Survey123_csv() function
+##    site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon {}\media\Site_Info.csv".format(stage)
+##    Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\E_SITES_export_to_csv'
 
     # Misc
     log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring'
@@ -246,7 +254,7 @@ def main():
     # GET DATA from AGOL and store in: wkgFolder\wkgGDB\origFC_dt_to_append
     if (errorSTATUS == 0 and run_Get_Data):
         try:
-            origPath, SmpEvntIDs_dl = Get_Data(AGOfields, token, queryURL,
+            origPath, SmpEvntIDs_dl = Get_Data(AGOfields, token, FIELD_DATA_queryURL,
                                                 wkgFolder, wkgGDB, origFC,
                                                 dt_last_ret_data)
 
@@ -266,11 +274,26 @@ def main():
     # Get the ATTACHMENTS from the online database and store it locally
     if (errorSTATUS == 0 and data_was_downloaded and run_Get_Attachments):
         try:
-            attach_fldr = Get_Attachments(token, gaURL, prod_attachments,
+            attach_fldr = Get_Attachments(token, FIELD_DATA_gaURL, prod_attachments,
                                           SmpEvntIDs_dl, dt_to_append)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Get_Attachments', e)
+
+    #---------------------------------------------------------------------------
+    # Get the Data from the DPW_WP_SITES on AGOL
+    if (errorSTATUS == 0 and data_was_downloaded and run_Get_SITES_data):
+        try:
+
+            # Get the where_clause
+            now = datetime.datetime.now()
+            search_dates = now - datetime.timedelta(days=SITES_days_to_search)
+            SITES_where_clause = "EditDate > '{dt.year}-{dt.month}-{dt.day}'".format(dt = search_dates)
+
+            Get_AGOL_Data(AGOfields, token, SITES_query_url, SITES_where_clause, wkgFolder, wkgGDB, SITES_FC_orig)
+
+        except Exception as e:
+            errorSTATUS = Error_Handler('Get_AGOL_Data', e)
 
     #---------------------------------------------------------------------------
     # SET THE LAST TIME the data was retrieved from AGOL to the start_time
@@ -489,6 +512,7 @@ def Get_Last_Data_Retrival(last_ret_csv):
     return dt_last_ret_data
 
 #-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 #                       FUNCTION:    Get AGOL token
 
 def Get_Token(cfgFile, gtURL):
@@ -576,6 +600,10 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_last_r
         that were downloaded this run.
 
     FUNCTION:
+      To get the FIELD_DATA from Survey123.  This is a customized function that
+      is used for FIELD_DATA only.  To download other data from AGOL, please use
+      'Get_AGOL_Data()'.
+
       The Get_Data function takes the token we obtained from 'Get_Token'
       function, establishs a connection to the data, creates a FGDB (if needed),
       creates a unique FC to store the data, and then copies the data from AGOL
@@ -887,6 +915,100 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
     print 'Successfully got attachments.\n'
 
     return gaFolder
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                             FUNCTION Get_AGOL_Data()
+def Get_AGOL_Data(AGOL_fields, token, query_url, where_clause, wkg_folder, wkg_FGDB, orig_FC):
+    """
+    PARAMETERS:
+      AGOL_fields (str) = The fields we want to have the server return from our query.
+        use the string ('*') to return all fields.
+      token (str) = The token obtained by the Get_Token() which gives access to
+        AGOL databases that we have permission to access.
+      query_url (str) = The URL address for the feature service that allows us
+        to query the database.
+        Should be the service URL on AGOL (up to the '/FeatureServer' part
+        plus the string '/0/query'.
+      where_clause (str) = The where clause to add to the query to receive a
+        subset of the full dataset.
+      wkg_folder (str) = Full path to the 'Data' folder that contains the FGDB's,
+        Excel files, Logs, and Pictures.
+      wkg_FGDB (str) = Name of the working FGDB in the wkgFolder.
+      orig_FC (str) = Name of the FC that will hold the original data downloaded
+        by this function.  This FC gets overwritten every time the script is run.
+
+    RETURNS:
+      None
+
+    FUNCTION:
+      To download data from AGOL.  This function, establishs a connection to the
+      data, creates a FGDB (if needed), creates a FC (or overwrites the existing
+      one to store the data, and then copies the data from AGOL to the FC.
+
+    NOTE:
+      Need to have obtained a token from the Get_Token() function.
+    """
+
+    print '--------------------------------------------------------------------'
+    print 'Starting Get_AGOL_Data()'
+
+    # Encode the where_clause so it is readable by URL protocol (ie %27 = ' in URL).
+    # visit http://meyerweb.com/eric/tools/dencoder to test URL encoding.
+    # If you suspect the where clause is causing the problems, uncomment the
+    #   below 'where = "1=1"' clause.
+    ##where_clause = "1=1"  # For testing purposes
+    print '  Getting data where: {}'.format(where_clause)
+    where_encoded = urllib.quote(where_clause)
+    query = "?where={}&outFields={}&returnGeometry=true&f=json&token={}".format(where_encoded, AGOL_fields, token)
+    fsURL = query_url + query
+
+    # Create empty Feature Set object
+    fs = arcpy.FeatureSet()
+
+    #---------------------------------------------------------------------------
+    #                 Try to load data into Feature Set object
+    # This try/except is because the fs.load(fsURL) will fail whenever no data
+    # is returned by the query.
+    try:
+        ##print 'fsURL %s' % fsURL  # For testing purposes
+        fs.load(fsURL)
+    except:
+        print '  "fs.load(fsURL)" yielded no data at fsURL.'
+        print '  Query may not have yielded any records.'
+        print '  Could simply mean there was no data satisfied by the query.'
+        print '  Or could be another problem with the Get_AGOL_Data() function.'
+        print '  Feature Service: %s' % str(fsURL)
+
+        # If no data downloaded, stop the function here
+        print '\n  * WARNING, no data downloaded *'
+        print 'Finished Get_AGOL_Data()\n'
+        return
+
+    #---------------------------------------------------------------------------
+    #             Data was loaded, CONTINUE the downloading process
+
+    #Create working FGDB if it does not already exist. Leave alone if it does...
+    FGDB_path = wkg_folder + '\\' + wkg_FGDB
+    if not os.path.exists(FGDB_path):
+        print '  Creating FGDB: %s at: %s' % (wkg_FGDB, wkg_folder)
+
+        # Process
+        arcpy.CreateFileGDB_management(wkg_folder,wkg_FGDB)
+
+    #---------------------------------------------------------------------------
+    #Copy the features to the FGDB.
+    orig_path = wkg_folder + "\\" + wkg_FGDB + '\\' + orig_FC
+    print '  Copying AGOL database features to: %s' % orig_path
+
+    # Process
+    arcpy.CopyFeatures_management(fs,orig_path)
+
+    #---------------------------------------------------------------------------
+    print "  Successfully retrieved data.\n"
+    print 'Finished Get_AGOL_Data()'
+
+    return
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -1910,6 +2032,10 @@ def Error_Handler(func_w_err, e):
     if (e_str == 'not all arguments converted during string formatting'):
         help_comment = 'There may be a problem with a print statement.  Is it formatted correctly?'
 
+    # Help comments for 'Get_Last_Data_Retrival' function
+    if(func_w_err == 'Get_Last_Data_Retrival'):
+        if (e_str.endswith("does not match format '%m/%d/%Y %I:%M:%S %p'")):
+            help_comment = 'Open Control File: LastDataRetrival.csv in a text editor and make sure the format is "MM/DD/YYYY HH:MM:SS AM"'
 
     # Help comments for 'Get_Token' function
     if (func_w_err == 'Get_Token'):
