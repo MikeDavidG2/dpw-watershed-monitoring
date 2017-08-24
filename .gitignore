@@ -1,6 +1,8 @@
 #My Files to Ignore
 accounts.txt
 LastDataRetrival.csv
+Publish_SITES_Edit_Service.ini
+tempDir/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
