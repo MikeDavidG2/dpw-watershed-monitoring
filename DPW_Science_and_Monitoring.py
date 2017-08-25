@@ -55,7 +55,7 @@ IDLE.
 # Modified:    02/24/2017
 #-------------------------------------------------------------------------------
 # TODO: if the A_FIELD_DATA_orig is locked the script fails, which is OK, but it doens't send a failed email.  Need to make it so it does send an email.
-
+# TODO: Add documentation above for the new SITES related steps and Functions.
 # Import modules
 
 import arcpy
@@ -971,7 +971,7 @@ def Get_AGOL_Data(AGOL_fields, token, query_url, where_clause, wkg_folder, wkg_F
     # This try/except is because the fs.load(fsURL) will fail whenever no data
     # is returned by the query.
     try:
-        ##print 'fsURL %s' % fsURL  # For testing purposes
+        print 'fsURL %s' % fsURL  # For testing purposes
         fs.load(fsURL)
     except:
         print '  "fs.load(fsURL)" yielded no data at fsURL.'
