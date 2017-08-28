@@ -21,10 +21,17 @@ def main():
     wkg_FGDB        = r'DPW_Science_and_Monitoring_wkg.gdb'
     orig_FC         = 'D_SITES_all_orig'
 
+    sites_data      = wkg_folder + '\\' + wkg_FGDB + '\\' + orig_FC
+    prod_sites_data = r'P:\DPW_ScienceAndMonitoring\Scripts\DEV\Data\DPW_Science_and_Monitoring_prod.gdb\DPW_WP_SITES'
+    required_fields = ['WMA', 'Location_Description']
 
-    token = Get_Token(cfgFile)
+    email_list = ['michael.grue@sdcounty.ca.gov']
 
-    Get_AGOL_Data_All(AGOL_fields, token, FS_url, index_of_layer, wkg_folder, wkg_FGDB, orig_FC)
+##    token = Get_Token(cfgFile)
+
+##    Get_AGOL_Data_All(AGOL_fields, token, FS_url, index_of_layer, wkg_folder, wkg_FGDB, orig_FC)
+
+    errors_in_Sites_data = Check_Sites_Data(sites_data, required_fields, prod_sites_data, email_list)
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                       FUNCTION:    Get AGOL token
@@ -243,6 +250,187 @@ def Get_AGOL_Data_All(AGOL_fields, token, FS_url, index_of_layer, wkg_folder, wk
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
+def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_list):
+    """
+    """
+    # TODO: Have this function send emails if there are errors
 
+    print '--------------------------------------------------------------------'
+    print 'Starting Check_Sites_Data()'
+    print '  Checking: {}'.format(wkg_sites_data)
+
+    data_errors = False
+
+    #---------------------------------------------------------------------------
+    #               Check for duplicates in the working Sites data
+    # Make a list of all the site ID's in the working data
+    unique_ids = []
+    duplicate_ids = []
+
+    with arcpy.da.SearchCursor(wkg_sites_data, ['Station_ID']) as cursor:
+        for row in cursor:
+            if row[0] not in unique_ids:
+                unique_ids.append(row[0])
+            else:
+                duplicate_ids.append(row[0])
+
+    del cursor, row
+    unique_ids.sort()
+    duplicate_ids.sort()
+
+    if len(duplicate_ids) > 0:
+        data_errors = True
+        print '*** ERROR! The below Station IDs are in the AGOL database more than once:'
+
+        # Set the email subject
+        subj = 'Error.  There are duplicate Station IDs in the SITES database on AGOL'
+
+        # Format the Body in html
+        list_to_string = ', '.join(duplicate_ids)
+        ##print '  {}'.format(list_to_string)  # For testing purposes
+        body = ("""\
+        <html>
+          <body>
+            <p>
+            DPW staff, please log on to the AGOL SITES database and correct the below duplicates:<br>
+            {}
+            </p>
+          <body>
+        </html>
+        """.format(list_to_string))
+
+        # Send the email
+        Email_W_Body(subj, body, email_list)
+
+    #---------------------------------------------------------------------------
+    #             Check for any NULL values in required fields
+    print '\n  Checking for any NULL values in required fields:'
+    num_blank_req_flds = 0
+
+    for field in required_fields:
+        where_clause = "{fld} IS NULL OR {fld} = ''".format(fld = field)
+        print '    Checking field: "{}" where: {}'.format(field, where_clause)
+
+        with arcpy.da.SearchCursor(wkg_sites_data, ['Station_ID', field], where_clause) as cursor:
+            for row in cursor:
+                data_errors = True
+                print '*** ERROR! Station: "{}" has a null value for field: "{}" ***'.format(row[0], field)
+                num_blank_req_flds += 1
+
+        if num_blank_req_flds == 0:
+            print '      No null values for this field'
+
+    #---------------------------------------------------------------------------
+    #             Check for any NULL values in Station_ID
+    print '\n  Checking for any NULL values in Station_ID'
+    num_blank_station_ids = 0
+
+    where_clause = "Station_ID IS NULL OR Station_ID = ''"
+    print '    Where: {}'.format(where_clause)
+    with arcpy.da.SearchCursor(wkg_sites_data, ['Station_ID'], where_clause) as cursor:
+        for row in cursor:
+            data_errors = True
+            num_blank_station_ids += 1
+
+    if num_blank_station_ids == 0:
+        print '    There are no NULL values for Station_ID'
+    else:
+        print '*** ERROR! There are {} Sites with a NULL value in Station_ID'.format(num_blank_station_ids)
+
+    #---------------------------------------------------------------------------
+    #            Check for any Station_ID's in the production database
+    #                   that are not in the working data
+
+    print '\n  Checking that all Station_IDs in prod are also in the wkg data'
+
+    # Get list of Station ID's that are in the prod data
+    prod_station_IDs = []
+
+    with arcpy.da.SearchCursor(prod_sites_data, ['Station_ID']) as cursor:
+        for row in cursor:
+            prod_station_IDs.append(row[0])
+    del cursor
+
+    # Get list of Station ID's that are in the working data
+    wkg_station_IDs = []
+
+    with arcpy.da.SearchCursor(wkg_sites_data, ['Station_ID']) as cursor:
+        for row in cursor:
+            wkg_station_IDs.append(row[0])
+    del cursor
+
+
+    # See if each prod Station ID is in the wkg data
+    num_in_prod_not_in_wkg = 0
+    for prod_id in prod_station_IDs:
+        if prod_id not in wkg_station_IDs:
+            data_errors = True
+            print '*** ERROR! Station ID: {} is in the prod database, but is missing from the working database ***'.format(prod_id)
+            num_in_prod_not_in_wkg += 1
+
+    if num_in_prod_not_in_wkg == 0:
+        print '    All Station_IDs in prod also in wkg data'
+    print ''
+
+    #---------------------------------------------------------------------------
+    #        Report any Station_ID's that are in wkg data but not prod
+    #         (These are probably newly added sites, and not errors)
+    print '  Getting a list of all Station IDs that are in wkg data, but not in prod.'
+    print '  These are probably not errors, but are newly added sites:'
+    wkg_station_ids_not_in_prod = []
+    for wkg_id in wkg_station_IDs:
+        if wkg_id not in prod_station_IDs:
+            wkg_station_ids_not_in_prod.append(wkg_id)
+
+    # Report findings
+    if len(wkg_station_ids_not_in_prod) > 0:
+        for new_wkg_id in wkg_station_ids_not_in_prod:
+            print '    {}'.format(new_wkg_id)
+    else:
+        print '    All Station IDs in wkg data already in prod\n'
+
+    #---------------------------------------------------------------------------
+
+    print ' Errors = {}'.format(data_errors)
+
+    print '\nFinished Check_Sites_Data()'
+    return data_errors
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+def Email_W_Body(subj, body, email_list, cfgFile=r"P:\DPW_ScienceAndMonitoring\Scripts\DEV\DEV_branch\Control_Files\accounts.txt"):
+    """
+    """
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    import ConfigParser, smtplib
+
+    print 'Starting Email_W_Body()'
+
+    # Set the subj, From, To, and body
+    msg = MIMEMultipart()
+    msg['Subject']   = subj
+    msg['From']      = "Python Script"
+    msg['To']        = ', '.join(email_list)  # Join each item in list with a ', '
+    msg.attach(MIMEText(body, 'html'))
+
+    # Get username and password from cfgFile
+    config = ConfigParser.ConfigParser()
+    config.read(cfgFile)
+    email_usr = config.get('email', 'usr')
+    email_pwd = config.get('email', 'pwd')
+
+    # Send the email
+    print '  Sending the email to:  {}'.format(', '.join(email_list))
+    SMTP_obj = smtplib.SMTP('smtp.gmail.com',587)
+    SMTP_obj.starttls()
+    SMTP_obj.login(email_usr, email_pwd)
+    SMTP_obj.sendmail(email_usr, email_list, msg.as_string())
+    SMTP_obj.quit()
+
+    print 'Successfully emailed results.\n'
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 if __name__ == '__main__':
     main()
