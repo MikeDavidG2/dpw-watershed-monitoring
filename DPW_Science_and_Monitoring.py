@@ -1125,12 +1125,12 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
              --Send an email if error
         2. Check for any NULL values in required fields
              --Send an email if error
-        3. Check for any NULL values in Station_ID
+        3. Check for any NULL values in StationID
              --Send an email if error
-        4. Check for any Station_ID's in the production database that are not
+        4. Check for any StationID's in the production database that are not
            in the working data
              --Send an email if error
-        5. Report any Station_ID's that are in wkg data but not prod
+        5. Report any StationID's that are in wkg data but not prod
            (These are probably newly added sites, and not errors)
              --Send an email if any new site in AGOL (not an error email)
 
@@ -1151,8 +1151,8 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
     unique_ids = []
     duplicate_ids = []
 
-    where_clause = "Station_ID <> ''"  # No need to search for blank duplicates
-    with arcpy.da.SearchCursor(wkg_sites_data, ['Station_ID'], where_clause) as cursor:
+    where_clause = "StationID <> ''"  # No need to search for blank duplicates
+    with arcpy.da.SearchCursor(wkg_sites_data, ['StationID'], where_clause) as cursor:
         for row in cursor:
             if row[0] not in unique_ids:
                 unique_ids.append(row[0])
@@ -1194,8 +1194,8 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         where_clause = "{fld} IS NULL OR {fld} = ''".format(fld = field)
         print '    Checking field: "{}" where: {}'.format(field, where_clause)
 
-        # Get list of Station_IDs with NULL values
-        with arcpy.da.SearchCursor(wkg_sites_data, ['Station_ID', field], where_clause) as cursor:
+        # Get list of StationIDs with NULL values
+        with arcpy.da.SearchCursor(wkg_sites_data, ['StationID', field], where_clause) as cursor:
             for row in cursor:
                 ids_w_null_values.append(row[0])
         del cursor
@@ -1229,24 +1229,24 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         Email_W_Body(subj, body, email_list)
 
     #---------------------------------------------------------------------------
-    #             Check for any NULL values in Station_ID
-    print '\n  Checking for any NULL values in Station_ID'
+    #             Check for any NULL values in StationID
+    print '\n  Checking for any NULL values in StationID'
     num_blank_station_ids = 0
 
-    where_clause = "Station_ID IS NULL OR Station_ID = ''"
+    where_clause = "StationID IS NULL OR StationID = ''"
     print '    Where: {}'.format(where_clause)
-    with arcpy.da.SearchCursor(wkg_sites_data, ['Station_ID'], where_clause) as cursor:
+    with arcpy.da.SearchCursor(wkg_sites_data, ['StationID'], where_clause) as cursor:
         for row in cursor:
             num_blank_station_ids += 1
     del cursor
 
     if num_blank_station_ids == 0:  # Then there were no errors
-        print '    There are no NULL values for Station_ID'
+        print '    There are no NULL values for StationID'
 
     else:  # Then there were errors, send an email
         valid_data = False
 
-        print '*** ERROR! There are {} Sites with a NULL value in Station_ID'.format(num_blank_station_ids)
+        print '*** ERROR! There are {} Sites with a NULL value in StationID'.format(num_blank_station_ids)
         print '  Sending an email to: {}'.format(', '.join(email_list))
 
         # Set the email subject
@@ -1260,21 +1260,21 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         # Send the email
         Email_W_Body(subj, body, email_list)
     #---------------------------------------------------------------------------
-    #            Check for any Station_ID's in the production database
+    #            Check for any StationID's in the production database
     #                   that are not in the working data
 
-    print '\n  Checking that all Station_IDs in prod are also in the wkg data'
+    print '\n  Checking that all StationIDs in prod are also in the wkg data'
 
     # Get list of Station ID's that are in the prod data
     prod_station_IDs = []
-    with arcpy.da.SearchCursor(prod_sites_data, ['Station_ID']) as cursor:
+    with arcpy.da.SearchCursor(prod_sites_data, ['StationID']) as cursor:
         for row in cursor:
             prod_station_IDs.append(row[0])
     del cursor
 
     # Get list of Station ID's that are in the working data
     wkg_station_IDs = []
-    with arcpy.da.SearchCursor(wkg_sites_data, ['Station_ID']) as cursor:
+    with arcpy.da.SearchCursor(wkg_sites_data, ['StationID']) as cursor:
         for row in cursor:
             wkg_station_IDs.append(row[0])
     del cursor
@@ -1312,7 +1312,7 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
     print ''
 
     #---------------------------------------------------------------------------
-    #        Report any Station_ID's that are in wkg data but not prod
+    #        Report any StationID's that are in wkg data but not prod
     #         (These are probably newly added sites, and not errors)
     print '  Getting a list of all Station IDs that are in wkg data, but not in prod.'
 
