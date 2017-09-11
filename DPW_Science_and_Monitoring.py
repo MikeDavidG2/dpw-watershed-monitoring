@@ -1302,8 +1302,9 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
 
         body = ("""DPW staff, please log on to the AGOL SITES database and
         find out what happened to the below sites.<br>
-        The below sites exist in the production database, but have been either
-        renamed to a new Station ID, or they have been deleted on AGOL:<br><br>
+        The below sites exist in the production database, but cannot be found on
+        AGOL.  They have been either renamed to a new Station ID, or they have
+        been deleted on AGOL:<br><br>
         {}""".format(list_to_string))
 
         # Send the email
@@ -1339,13 +1340,16 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
 
         body = ("""DPW staff, the below list are new Station IDs that have been
         added to AGOL database that have not been recorded before.<br>
-        Most likely these are new stations, no action is needed on your part.<br>
+        If they are all <b>new</b> stations, no action is needed on your part.
+        <br><br>
         <i>However, it is possible that one of the below stations is not a new
         station, but that it was renamed from an existing station.
         This would be an error as existing sites should not be renamed.<br>
-        If you received today an email with stations we could not find in the
-        AGOL database, please check the below stations to confirm that they are
-        valid new sites and were not renamed from existing sites. <i><br><br>
+        If you received (today) an email with the subject <u>"There are
+        stations we cannot find in the AGOL database"</u>,
+        <br>
+        please check the below stations to confirm that they are
+        valid new sites and were not renamed from existing sites. </i><br><br>
         {}""".format(list_to_string))
 
         # Send the email
