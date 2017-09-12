@@ -136,13 +136,15 @@ def main():
     # Service URL that ends with .../FeatureServer
     if stage == 'DEV':
         FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_8e527e6153ed488fad0414f309ed90ed/FeatureServer'
-        SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV/FeatureServer'
+        SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_2/FeatureServer'
 
     elif stage == 'BETA':
-        serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_65a9e7bda7104cc18dbf6f76463db67d/FeatureServer'
+        FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_65a9e7bda7104cc18dbf6f76463db67d/FeatureServer'
+        SITES_serviceURL      = ''
 
     elif stage == 'PROD':
-        serviceURL = ''
+        FIELD_DATA_serviceURL = ''
+        SITES_serviceURL      = ''
 
     # Token and AGOL variables
     gtURL       = "https://www.arcgis.com/sharing/rest/generateToken"
