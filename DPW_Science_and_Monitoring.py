@@ -163,9 +163,21 @@ def main():
     origFC      = "A_FIELD_DATA_orig"  # Name of downloaded FIELD_DATA
     wkgFC       = 'B_FIELD_DATA_wkg'   # Name of working FIELD_DATA
 
-    # SITES variables
+    #---------------------------------------------------------------------------
+    #                          SITES variables
+
     SITES_FC_orig = 'D_SITES_orig' # FC name to give downloaded SITES data
-    SITES_required_fields = ['WMA', 'Location_Description']
+
+    # Fields that must have a value in it in order for the SITES data to be
+    #   considered 'valid'.  NOTE: Do not include StationID in this list,
+    #   as that field is hardcoded to be checked in the Check_Sites_Data()
+    SITES_required_fields = ['Copermittee', 'WMA', 'Site_Type', 'Loc_Desc',
+                             'Site_Status']
+
+    x_field = 'Long_X_NAD83'  # Name of the X field
+    y_field = 'Lat_Y_NAD83'   # Name of the Y field
+
+    #---------------------------------------------------------------------------
 
     # Production locations and names
     prodGDB                = wkgFolder + "\\DPW_Science_and_Monitoring_prod.gdb"
@@ -286,35 +298,75 @@ def main():
     #---------------------------------------------------------------------------
     #                      Start DPW_WP_SITES processing
     #---------------------------------------------------------------------------
-    # Get the Data from the DPW_WP_SITES on AGOL
-    if (errorSTATUS == 0 and run_Get_SITES_data):
-        try:
-            Get_AGOL_Data_All(AGOfields, token, SITES_serviceURL, 0, wkgFolder, wkgGDB, SITES_FC_orig)
-        except Exception as e:
-            errorSTATUS = Error_Handler('Get_AGOL_Data_All', e)
 
-    # Check the downloaded SITES data for any errors, email if errors
-    if (errorSTATUS == 0 and run_Get_SITES_data):
-        try:
-            SITES_wkg_data = wkgFolder + '\\' + wkgGDB + '\\' + SITES_FC_orig
-            SITES_valid_data = Check_Sites_Data(SITES_wkg_data, SITES_required_fields,
-                                           prodPath_SitesData, dpw_email_list)
-        except Exception as e:
-            errorSTATUS = Error_Handler('Check_Sites_Data', e)
-
-    # Overwrite prod SITES with wkg SITES if the wkg data is valid
-    if (errorSTATUS == 0 and run_Get_SITES_data):
-        if SITES_valid_data:
+    if run_Get_SITES_data:
+        # Get the Data from the DPW_WP_SITES on AGOL
+        if (errorSTATUS == 0):
             try:
-                Copy_Features(SITES_wkg_data, prodPath_SitesData)
+                Get_AGOL_Data_All(AGOfields, token, SITES_serviceURL, 0, wkgFolder, wkgGDB, SITES_FC_orig)
             except Exception as e:
-                errorSTATUS = Error_Handler('Copy_Features', e)
-        else:
-            print '*** ERROR! SITES data is NOT valid.  Data not copied to prod database, please fix errors above. ***'
+                errorSTATUS = Error_Handler('Get_AGOL_Data_All', e)
+
+        # Check the downloaded SITES data for any errors, email if errors
+        if (errorSTATUS == 0):
+
+            # Set the path to the downloaded SITES data
+            SITES_wkg_data = wkgFolder + '\\' + wkgGDB + '\\' + SITES_FC_orig
+
+            try:
+                SITES_valid_data = Check_Sites_Data(SITES_wkg_data, SITES_required_fields,
+                                               prodPath_SitesData, dpw_email_list, stage)
+            except Exception as e:
+                errorSTATUS = Error_Handler('Check_Sites_Data', e)
+
+        # Calculate the X and Y fields
+        if (errorSTATUS == 0):
+            if SITES_valid_data:
+                try:
+                    x_calc  = '!SHAPE.CENTROID.X!'
+                    y_calc  = '!SHAPE.CENTROID.Y!'
+                    p_version  = 'PYTHON_9.3'
+
+                    print 'Calculating X and Y fields for:\n  {}'.format(SITES_wkg_data)
+
+                    # Calculate the X field
+                    print '    Calculating field: "{}" as "{}"'.format(x_field, x_calc)
+                    arcpy.CalculateField_management(SITES_wkg_data, x_field,
+                                                              x_calc, p_version)
+
+                    # Calculate the Y field
+                    print '    Calculating field: "{}" as "{}"'.format(y_field, y_calc)
+                    arcpy.CalculateField_management(SITES_wkg_data, y_field,
+                                                              y_calc, p_version)
+
+                except Exception as e:
+                    errorSTATUS = Error_Handler()
+
+            else:
+                print '*** ERROR! SITES data is NOT valid.  X and Y fields not calculated, please fix errors above. ***'
+
+        # Delete prod SITES features and append wkg SITES features
+        if (errorSTATUS == 0):
+            if SITES_valid_data:
+                try:
+                    # Delete the prod SITES features
+                    print '  Deleting Features at: {}'.format(prodPath_SitesData)
+                    arcpy.DeleteFeatures_management(prodPath_SitesData)
+
+                    # Append SITES features from wkg SITES to prod SITES
+                    print '  Appending Data'
+                    print '    From: {}'.format(SITES_wkg_data)
+                    print '      To: {}'.format(prodPath_SitesData)
+                    arcpy.Append_management(SITES_wkg_data, prodPath_SitesData, 'TEST')
+
+                except Exception as e:
+                    errorSTATUS = Error_Handler('main', e)
+            else:
+                print '*** ERROR! SITES data is NOT valid.  Data not copied to prod database, please fix errors above. ***'
 
 
     #---------------------------------------------------------------------------
-    #                      Finished DPW_WP_SITES processing
+    #                      Finished with DPW_WP_SITES processing
     #---------------------------------------------------------------------------
     # SET THE LAST TIME the data was retrieved from AGOL to the start_time
     # so that it can be used in the where clauses the next time the script is run
@@ -1098,7 +1150,7 @@ def Get_AGOL_Data_All(AGOL_fields, token, FS_url, index_of_layer, wkg_folder, wk
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_list):
+def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_list, stage):
     """
     PARAMETERS:
       wkg_sites_data (str): Full path to the downloaded SITES data in a wkg FGDB.
@@ -1109,6 +1161,8 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         FGDB.
       email_list (str): List of strings that contains the email addresses of
         anyone who should receive emails if there are 'error' or 'info' emails.
+      stage (str): The stage (DEV, BETA, PROD) that this script is running in.
+        Used in the email subject line.
 
     RETURNS:
       valid_data (Boolean): Returned as 'True' unless there is any one of the
@@ -1174,7 +1228,7 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         print '  Sending an email to: {}'.format(', '.join(email_list))
 
         # Set the email subject
-        subj = 'Sci and Mon Error.  There are duplicate Station IDs in the SITES database on AGOL'
+        subj = '{} -- Sci and Mon Error.  There are duplicate Station IDs in the SITES database on AGOL'.format(stage)
 
         # Format the Body in html
         list_to_string = '<br> '.join(duplicate_ids)
@@ -1197,10 +1251,11 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         where_clause = "{fld} IS NULL OR {fld} = ''".format(fld = field)
         print '    Checking field: "{}" where: {}'.format(field, where_clause)
 
-        # Get list of StationIDs with NULL values
+        # Get list of StationIDs with NULL values in required fields
         with arcpy.da.SearchCursor(wkg_sites_data, ['StationID', field], where_clause) as cursor:
             for row in cursor:
-                ids_w_null_values.append(row[0])
+                if row[0] != None:  # Dont append if there is no StationID
+                    ids_w_null_values.append(row[0])
         del cursor
 
     if len(ids_w_null_values) == 0:  # Then there were no errors
@@ -1214,9 +1269,10 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         print '  Sending an email to: {}'.format(', '.join(email_list))
 
         # Set the email subject
-        subj = 'Sci and Mon Error.  There are null values in required fields'
+        subj = '{} -- Sci and Mon Error.  There are null values in required fields'.format(stage)
 
         # Format the Body in html
+
         list_to_string = '<br> '.join(ids_w_null_values)
         req_fields_str = ', '.join(required_fields)
 
@@ -1249,16 +1305,16 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
     else:  # Then there were errors, send an email
         valid_data = False
 
-        print '*** ERROR! There are {} Sites with a NULL value in StationID'.format(num_blank_station_ids)
+        print '*** ERROR! There is/are {} Site(s) with a NULL value in StationID'.format(num_blank_station_ids)
         print '  Sending an email to: {}'.format(', '.join(email_list))
 
         # Set the email subject
-        subj = 'Sci and Mon Error.  There are stations with no Station IDs'
+        subj = '{} -- Sci and Mon Error.  There are stations with no Station IDs'.format(stage)
 
         # Format the Body in html
         body = ("""DPW staff, please log on to the AGOL SITES database and
-        enter a value in the Station ID field for the <b>{} Station(s)</b> that
-        is/are missing a value in that field.""".format(num_blank_station_ids))
+        enter a value in the "Station ID" field for the <b>{} Station(s)</b> that
+        have blanks in that field.""".format(num_blank_station_ids))
 
         # Send the email
         Email_W_Body(subj, body, email_list)
@@ -1298,7 +1354,7 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         print '  Sending an email to: {}'.format(', '.join(email_list))
 
         # Set the email subject
-        subj = 'Sci and Mon Error.  There are stations we cannot find in the AGOL database'
+        subj = '{} -- Sci and Mon Error.  There are stations we cannot find in the AGOL database'.format(stage)
 
         # Format the Body in html
         list_to_string = '<br> '.join(prod_ids_not_in_wkg)
@@ -1335,7 +1391,7 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         print '    This is not necessarily an error, but emailing list to: {}'.format(', '.join(email_list))
 
         # Set the email subject
-        subj = 'Sci and Mon Info.  There were new Station IDs added to AGOL'
+        subj = '{} -- Sci and Mon Info.  There were new Station IDs added to AGOL'.format(stage)
 
         # Format the Body in html
 
@@ -1363,7 +1419,7 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
 
     print '\n  valid_data = {}'.format(valid_data)
 
-    print '\nFinished Check_Sites_Data()'
+    print '\nFinished Check_Sites_Data()\n'
     return valid_data
 
 #-------------------------------------------------------------------------------
