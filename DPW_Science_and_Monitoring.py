@@ -56,6 +56,7 @@ IDLE.
 #-------------------------------------------------------------------------------
 # TODO: if the A_FIELD_DATA_orig is locked the script fails, which is OK, but it doens't send a failed email.  Need to make it so it does send an email.
 # TODO: Add documentation above for the new SITES related steps and Functions.
+# TODO: NEED to change the SITES overwrite to delete features and append features instead of overwriting the FC in order to keep the domains in the prod FGDB linked to the fields.
 # Import modules
 
 import arcpy
@@ -2210,7 +2211,6 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
             <h3>Info:</h3>
             <p>
                There was/were <b>{num}</b> feature(s) downloaded this run.<br>
-               Please find excel report attached to this email.<br>
                -----------------------------------------------------------------
             <br><br>
             </p>
@@ -2317,7 +2317,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
 
             <h3>File Locations:</h3>
                The Log file is located at:        <i>{lf}</i><br>
-               The script is located at:          <i>{cwd}</i><br>
+               The data is located at:          <i>{cwd}</i><br>
             </p>
           <body>
         </html>
