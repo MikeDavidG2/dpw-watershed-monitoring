@@ -1237,7 +1237,10 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         correct the below duplicates:<br>
         (<i>NOTE: If a Station ID is listed more than once, that ID has more than
         one duplicate</i>)<br><br>
-        {}""".format(list_to_string))
+        {}
+        <br><br>
+        The AGOL SITES database will not be loaded into the production database
+        until this error is resolved.""".format(list_to_string))
 
         # Send the email
         Email_W_Body(subj, body, email_list)
@@ -1281,8 +1284,12 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         enter a value.<br>
         (<i>NOTE: If a Station ID is listed more than once, it has NULL values
         for multiple required fields<br>
-        The required fields are: <b>{}</b></i>)<br><br>
-        {}""".format(req_fields_str, list_to_string))
+        The required fields are: <b>{}</b></i>)
+        <br><br>
+        {}
+        <br><br>
+        The AGOL SITES database will not be loaded into the production database
+        until this error is resolved.""".format(req_fields_str, list_to_string))
 
         # Send the email
         Email_W_Body(subj, body, email_list)
@@ -1314,7 +1321,10 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         # Format the Body in html
         body = ("""DPW staff, please log on to the AGOL SITES database and
         enter a value in the "Station ID" field for the <b>{} Station(s)</b> that
-        have blanks in that field.""".format(num_blank_station_ids))
+        are blank in that field.
+        <br><br>
+        The AGOL SITES database will not be loaded into the production database
+        until this error is resolved.""".format(num_blank_station_ids))
 
         # Send the email
         Email_W_Body(subj, body, email_list)
@@ -1363,8 +1373,12 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         find out what happened to the below sites.<br>
         The below sites exist in the production database, but cannot be found on
         AGOL.  They have been either renamed to a new Station ID, or they have
-        been deleted on AGOL:<br><br>
-        {}""".format(list_to_string))
+        been deleted on AGOL:
+        <br><br>
+        {}
+        <br><br>
+        The AGOL SITES database will not be loaded into the production database
+        until this error is resolved.""".format(list_to_string))
 
         # Send the email
         Email_W_Body(subj, body, email_list)
