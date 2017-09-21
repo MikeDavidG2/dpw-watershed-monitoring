@@ -134,18 +134,21 @@ def main():
 
 
 
-    # Service URL that ends with .../FeatureServer
+    # serviceURL ends with .../FeatureServer
     if stage == 'DEV':
         FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_8e527e6153ed488fad0414f309ed90ed/FeatureServer'
         SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_2/FeatureServer'
+        SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=756b762cc8fe4a6b82e99d82753016a4'
 
     elif stage == 'BETA':
         FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_65a9e7bda7104cc18dbf6f76463db67d/FeatureServer'
         SITES_serviceURL      = ''
+        SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=cf87c1d763004981a7290609f11d8819'
 
     elif stage == 'PROD':
         FIELD_DATA_serviceURL = ''
         SITES_serviceURL      = ''
+        SITES_Edit_WebMap     = ''
 
     # Token and AGOL variables
     gtURL       = "https://www.arcgis.com/sharing/rest/generateToken"
@@ -315,7 +318,8 @@ def main():
 
             try:
                 SITES_valid_data = Check_Sites_Data(SITES_wkg_data, SITES_required_fields,
-                                               prodPath_SitesData, dpw_email_list, stage)
+                                               prodPath_SitesData, dpw_email_list, stage,
+                                               SITES_Edit_WebMap)
             except Exception as e:
                 errorSTATUS = Error_Handler('Check_Sites_Data', e)
 
@@ -1150,7 +1154,8 @@ def Get_AGOL_Data_All(AGOL_fields, token, FS_url, index_of_layer, wkg_folder, wk
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_list, stage):
+def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_list
+                     stage, SITES_Edit_WebMap):
     """
     PARAMETERS:
       wkg_sites_data (str): Full path to the downloaded SITES data in a wkg FGDB.
@@ -1163,6 +1168,9 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         anyone who should receive emails if there are 'error' or 'info' emails.
       stage (str): The stage (DEV, BETA, PROD) that this script is running in.
         Used in the email subject line.
+      SITES_Edit_WebMap (str): The URL to the Edit map for that stage. This is
+        used in the error/info emails so that the DPW users can go directly to
+        the web map.
 
     RETURNS:
       valid_data (Boolean): Returned as 'True' unless there is any one of the
@@ -1199,6 +1207,16 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
     print '  Checking: {}'.format(wkg_sites_data)
 
     valid_data = True
+
+    how_to_login =
+    """
+    To log into the AGOL database, please:<br>
+    1. Visit {}<br>
+    2. Sign In using your username and password you use to sign into Collector
+       and Survey123.<br>
+    3. You should be automatically directed to the EDIT Web Map where you can
+       make your edits.<br>
+    """.format(SITES_Edit_WebMap)
 
     #---------------------------------------------------------------------------
     #          Check for duplicate Station IDs in the working Sites data
@@ -1240,7 +1258,9 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         {}
         <br><br>
         The AGOL SITES database will not be loaded into the production database
-        until this error is resolved.""".format(list_to_string))
+        until this error is resolved.
+        <br><br>
+        {}""".format(list_to_string, how_to_login))
 
         # Send the email
         Email_W_Body(subj, body, email_list)
@@ -1279,17 +1299,20 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         list_to_string = '<br> '.join(ids_w_null_values)
         req_fields_str = ', '.join(required_fields)
 
-        body = ("""DPW staff, please log on to the AGOL SITES database.  The
-        following Station IDs have a NULL value for a required field, please
-        enter a value.<br>
+        body = ("""DPW staff, the following Station IDs have a NULL value for a
+        required field, please logon to the AGOL SITES database and enter values
+        for required fields.
+        <br>
         (<i>NOTE: If a Station ID is listed more than once, it has NULL values
         for multiple required fields<br>
-        The required fields are: <b>{}</b></i>)
+        The required fields are:</i> <b>{}</b>)
         <br><br>
         {}
         <br><br>
         The AGOL SITES database will not be loaded into the production database
-        until this error is resolved.""".format(req_fields_str, list_to_string))
+        until this error is resolved.
+        <br><br>
+        {}""".format(req_fields_str, list_to_string, how_to_login))
 
         # Send the email
         Email_W_Body(subj, body, email_list)
@@ -1324,7 +1347,9 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         are blank in that field.
         <br><br>
         The AGOL SITES database will not be loaded into the production database
-        until this error is resolved.""".format(num_blank_station_ids))
+        until this error is resolved.
+        <br><br>
+        {}""".format(num_blank_station_ids, how_to_login))
 
         # Send the email
         Email_W_Body(subj, body, email_list)
@@ -1378,7 +1403,9 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         {}
         <br><br>
         The AGOL SITES database will not be loaded into the production database
-        until this error is resolved.""".format(list_to_string))
+        until this error is resolved.
+        <br><br>
+        {}""".format(list_to_string, how_to_login))
 
         # Send the email
         Email_W_Body(subj, body, email_list)
@@ -1413,17 +1440,24 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
 
         body = ("""DPW staff, the below list are new Station IDs that have been
         added to AGOL database that have not been recorded before.<br>
-        If they are all <b>new</b> stations, no action is needed on your part.
+        If they are all <b>new</b> stations, no action is needed on your part,
+        The sites have been added to the production database.
         <br><br>
-        <i>However, it is possible that one of the below stations is not a new
-        station, but that it was renamed from an existing station.
-        This would be an error as existing sites should not be renamed.<br>
+        <i>However, it is possible that one of the below stations is not a <b>new</b>
+        station, but that it was renamed from an <b>existing</b> station.<br>
+        This would be a human error because existing sites should not be renamed.<br>
         If you received (today) an email with the subject <u>"There are
-        stations we cannot find in the AGOL database"</u>,
-        <br>
+        stations we cannot find in the AGOL database"</u>,<br>
         please check the below stations to confirm that they are
-        valid new sites and were not renamed from existing sites. </i><br><br>
-        {}""".format(list_to_string))
+        valid new sites and were not renamed from existing sites.</i>
+        <br><br>
+        <b>Station ID:</b>
+        <br>
+        {}
+        <br><br>
+        You may not need to log into AGOL to edit the data, but if you do:
+        <br><br>
+        {}""".format(list_to_string, how_to_login))
 
         # Send the email
         Email_W_Body(subj, body, email_list)
