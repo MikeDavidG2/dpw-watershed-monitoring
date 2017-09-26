@@ -69,7 +69,6 @@ IDLE.
 #-------------------------------------------------------------------------------
 # TODO: if the A_FIELD_DATA_orig is locked the script fails, which is OK, but it doens't send a failed email.  Need to make it so it does send an email.
 # TODO: Add documentation above for the new SITES related steps and Functions.
-# TODO: NEED to change the SITES overwrite to delete features and append features instead of overwriting the FC in order to keep the domains in the prod FGDB linked to the fields.
 # Import modules
 
 import arcpy
@@ -1172,7 +1171,7 @@ def Get_AGOL_Data_All(AGOL_fields, token, FS_url, index_of_layer, wkg_folder, wk
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_list
+def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_list,
                      stage, SITES_Edit_WebMap):
     """
     PARAMETERS:
@@ -1226,8 +1225,7 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
 
     valid_data = True
 
-    how_to_login =
-    """
+    how_to_login = """
     To log into the AGOL database, please:<br>
     1. Visit {}<br>
     2. Sign In using your username and password you use to sign into Collector
