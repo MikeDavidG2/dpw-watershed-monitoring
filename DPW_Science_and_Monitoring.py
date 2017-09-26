@@ -24,20 +24,33 @@ PROCESS:
     2.2.2  Create a log file and turn the print statement to a logging object.
     2.2.3  Get the last time the data was retrieved from AGOL
     2.2.4  Get the token to gain access to the AGOL database.
-    2.2.5  Get data from AGOL and store in a working FGDB.
-    2.2.6  Get the attachments from AGOL and store it in a local folder.
-    2.2.7  Set the last time the data was retrieved from AGOL to the start_time
-             of this script so the next time it is run it will only grab
-             new data.
-    2.2.8  Copy the original data to a working FC.
-    2.2.9  Add fields to the working FC.
-    2.2.10 Calculate fields in the working FC.
-    2.2.11 Delete fields from the working FC.
-    2.2.12 Export working FC to TABLE.
-    2.2.13 Get non-default field mappings so we can append fields from the TABLE
+    2.2.5  Get the most recent DPW_WP_FIELD_DATA from AGOL and store in a
+             working FGDB.  This data is from Survey123.
+    2.2.6  Get the attachments from DPW_WP_FIELD_DATA on AGOL and store it in a
+             local folder.
+    Pause DPW_WP_FIELD_DATA processing
+    Begin DPW_WP_SITES processing
+    2.2.7  Get all of the the DPW_WP_SITES from AGOL and store in the same
+             working folder as above.  This data is from Collector.
+    2.2.8  QA/QC the DPW_WP_SITES data.
+    2.2.9  If no QA/QC errors in DPW_WP_SITES, calculate X and Y fields.
+    2.2.10 If no QA/QC errors in DPW_WP_SITES, Delete the features in
+             DPW_WP_SITES in the prod FGDB and append the features just downloaded
+             and QA/QC'd.
+    Finish DPW_WP_SITES processing.
+    Resume DPW_WP_FIELD_DATA processing.
+    2.2.11 Copy the original DPW_WP_FIELD_DATA to a working FC.
+    2.2.12 Add fields to the working FC.
+    2.2.13 Calculate fields in the working FC.
+    2.2.14 Delete fields from the working FC.
+    2.2.15 Export working FC to TABLE.
+    2.2.16 Get non-default field mappings so we can append fields from the TABLE
              to the production database if the field names are not the same
              between the working database and the production database.
-    2.2.14 Append the working data to the production database.
+    2.2.17 Set the last time the data was retrieved from AGOL to the start_time
+             of this script so the next time it is run it will only grab
+             new data.
+    2.2.14 Append the working DPW_WP_FIELD_DATA to the production database.
     2.2.15 Search for and handle any Duplicates.
     2.2.16 Email results.
   2.3 Print out information about the script
@@ -299,6 +312,8 @@ def main():
             errorSTATUS = Error_Handler('Get_Attachments', e)
 
     #---------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
+    #                      Pause DPW_WP_FIELD_DATA processing
     #                      Start DPW_WP_SITES processing
     #---------------------------------------------------------------------------
 
@@ -344,10 +359,10 @@ def main():
                                                               y_calc, p_version)
 
                 except Exception as e:
-                    errorSTATUS = Error_Handler()
+                    errorSTATUS = Error_Handler('main', e)
 
             else:
-                print '*** ERROR! SITES data is NOT valid.  X and Y fields not calculated, please fix errors above. ***'
+                print '*** ERROR! SITES data is NOT valid.  X and Y fields not calculated, please fix QA/QC errors above. ***'
 
         # Delete prod SITES features and append wkg SITES features
         if (errorSTATUS == 0):
@@ -370,16 +385,9 @@ def main():
 
 
     #---------------------------------------------------------------------------
-    #                      Finished with DPW_WP_SITES processing
+    #                      Finished DPW_WP_SITES processing
+    #                      Resume   DPW_WP_FIELD_DATA processing
     #---------------------------------------------------------------------------
-    # SET THE LAST TIME the data was retrieved from AGOL to the start_time
-    # so that it can be used in the where clauses the next time the script is run
-    if (errorSTATUS == 0 and data_was_downloaded and run_Set_Last_Data_Ret):
-        try:
-            Set_Last_Data_Ret(last_data_retrival_csv, start_time)
-
-        except Exception as e:
-            errorSTATUS = Error_Handler('Set_Last_Data_Ret', e)
     #---------------------------------------------------------------------------
     # COPY the original data to a working FC
     if (errorSTATUS == 0 and data_was_downloaded and run_Copy_Orig_Data):
@@ -433,6 +441,16 @@ def main():
 
         except Exception as e:
             errorSTATUS = Error_Handler('Get_Field_Mappings', e)
+
+    #---------------------------------------------------------------------------
+    # SET THE LAST TIME the data was retrieved from AGOL to the start_time
+    # so that it can be used in the where clauses the next time the script is run
+    if (errorSTATUS == 0 and data_was_downloaded and run_Set_Last_Data_Ret):
+        try:
+            Set_Last_Data_Ret(last_data_retrival_csv, start_time)
+
+        except Exception as e:
+            errorSTATUS = Error_Handler('Set_Last_Data_Ret', e)
 
     #---------------------------------------------------------------------------
     # APPEND the data
@@ -1472,66 +1490,6 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#                    FUNCTION: Set Last Data Retrival time
-def Set_Last_Data_Ret(last_ret_csv, start_time):
-    """
-    PARAMETERS:
-      last_ret_csv (str): The path to the CSV that stores the date and time
-        the script was last run.
-      start_time (dt object): A datetime object created in the Get_DateAndTime()
-        function with the time the script started.
-
-    RETURNS:
-      None
-
-    FUNCTION:
-      Now that the Data and Attachments have been downloaded, this function sets
-      this script's start_time into the CSV file that will be used as the next
-      runs last data retrival (dt_last_ret_data) in the
-      Get_Last_Data_Retrival() function.
-    """
-    print '--------------------------------------------------------------------'
-    print 'Setting LastDataRetrival.csv time so it equals this runs start_time...'
-
-    #---------------------------------------------------------------------------
-    # Get original data from the CSV and make a list out of it
-    with open (last_ret_csv) as csv_file:
-        readCSV = csv.reader(csv_file, delimiter = ',')
-        orig_rows = []
-
-        row_num = 0
-        for row in readCSV:
-            orig_row = row[0]
-
-            orig_rows.append(orig_row)
-            row_num += 1
-
-    #---------------------------------------------------------------------------
-    # overwrite the original file, BUT write the original information to it
-    # except for the date and time which is obtained from the start_time var
-
-    # Format dt so that is in the expected format AND in a list so it is written
-    #  w/o extra commas when using 'writerow' command below
-    formated_dt = [start_time.strftime('%m/%d/%Y %I:%M:%S %p')]
-
-    with open (last_ret_csv, 'wb') as csv_file:
-        writeCSV = csv.writer(csv_file)
-        row_num = 0
-        for row in orig_rows:
-            # This copies the first two rows from the orig script to the new one
-            if row_num < 2:
-                ##print 'Writing: ' + row
-                writeCSV.writerow([row])
-            # This writes the new start time to the third row
-            else:
-                print '  New time: %s' % formated_dt[0]
-                writeCSV.writerow(formated_dt)
-            row_num += 1
-
-    print 'Successfully set last data retrival time\n'
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
 #                           FUNCTION:  Copy_Orig_Data
 
 def Copy_Orig_Data(wkgFolder, wkgGDB, wkgFC, origPath):
@@ -1977,6 +1935,66 @@ def Get_Field_Mappings(orig_table, prod_table, map_fields_csv):
 
     print 'Successfully Got Field Mappings\n'
     return fms
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                    FUNCTION: Set Last Data Retrival time
+def Set_Last_Data_Ret(last_ret_csv, start_time):
+    """
+    PARAMETERS:
+      last_ret_csv (str): The path to the CSV that stores the date and time
+        the script was last run.
+      start_time (dt object): A datetime object created in the Get_DateAndTime()
+        function with the time the script started.
+
+    RETURNS:
+      None
+
+    FUNCTION:
+      Now that the Data and Attachments have been downloaded, this function sets
+      this script's start_time into the CSV file that will be used as the next
+      runs last data retrival (dt_last_ret_data) in the
+      Get_Last_Data_Retrival() function.
+    """
+    print '--------------------------------------------------------------------'
+    print 'Setting LastDataRetrival.csv time so it equals this runs start_time...'
+
+    #---------------------------------------------------------------------------
+    # Get original data from the CSV and make a list out of it
+    with open (last_ret_csv) as csv_file:
+        readCSV = csv.reader(csv_file, delimiter = ',')
+        orig_rows = []
+
+        row_num = 0
+        for row in readCSV:
+            orig_row = row[0]
+
+            orig_rows.append(orig_row)
+            row_num += 1
+
+    #---------------------------------------------------------------------------
+    # overwrite the original file, BUT write the original information to it
+    # except for the date and time which is obtained from the start_time var
+
+    # Format dt so that is in the expected format AND in a list so it is written
+    #  w/o extra commas when using 'writerow' command below
+    formated_dt = [start_time.strftime('%m/%d/%Y %I:%M:%S %p')]
+
+    with open (last_ret_csv, 'wb') as csv_file:
+        writeCSV = csv.writer(csv_file)
+        row_num = 0
+        for row in orig_rows:
+            # This copies the first two rows from the orig script to the new one
+            if row_num < 2:
+                ##print 'Writing: ' + row
+                writeCSV.writerow([row])
+            # This writes the new start time to the third row
+            else:
+                print '  New time: %s' % formated_dt[0]
+                writeCSV.writerow(formated_dt)
+            row_num += 1
+
+    print 'Successfully set last data retrival time\n'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
