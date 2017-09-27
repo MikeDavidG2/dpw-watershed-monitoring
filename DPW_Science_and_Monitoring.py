@@ -181,7 +181,7 @@ def main():
     #---------------------------------------------------------------------------
     #                          SITES variables
 
-    SITES_FC_orig = 'D_SITES_orig' # FC name to give downloaded SITES data
+    SITES_FC_from_AGOL = 'D_SITES_from_AGOL' # FC name to give downloaded SITES data
 
     # Fields that must have a value in it in order for the SITES data to be
     #   considered 'valid'.  NOTE: Do not include StationID in this list,
@@ -320,7 +320,7 @@ def main():
         # Get the Data from the DPW_WP_SITES on AGOL
         if (errorSTATUS == 0):
             try:
-                Get_AGOL_Data_All(AGOfields, token, SITES_serviceURL, 0, wkgFolder, wkgGDB, SITES_FC_orig)
+                Get_AGOL_Data_All(AGOfields, token, SITES_serviceURL, 0, wkgFolder, wkgGDB, SITES_FC_from_AGOL)
             except Exception as e:
                 errorSTATUS = Error_Handler('Get_AGOL_Data_All', e)
 
@@ -328,7 +328,7 @@ def main():
         if (errorSTATUS == 0):
 
             # Set the path to the downloaded SITES data
-            SITES_wkg_data = wkgFolder + '\\' + wkgGDB + '\\' + SITES_FC_orig
+            SITES_wkg_data = wkgFolder + '\\' + wkgGDB + '\\' + SITES_FC_from_AGOL
 
             try:
                 SITES_valid_data = Check_Sites_Data(SITES_wkg_data, SITES_required_fields,
@@ -2311,7 +2311,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
 
     # If there are no errors and at least one feature was downloaded
     if (errorSTATUS == 0 and num_dl_features > 0):
-        print '  Writing the "Success--Data Downloaded" email...'
+        print '  Writing the "Success--Field Data Downloaded" email...'
 
         # Send this email to...
         email_list = lueg_admin_email
@@ -2365,7 +2365,7 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
 
     # If there were no errors but no data was downloaded
     elif(errorSTATUS == 0 and num_dl_features == 0):
-        print '  Writing the "Success--No Data Downloaded" email'
+        print '  Writing the "Success--No Field Data Downloaded" email'
 
         # Send this email to the lueg_admin_emails
         email_list = lueg_admin_email
