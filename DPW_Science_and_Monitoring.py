@@ -29,7 +29,7 @@ PROCESS:
     2.2.6  Get the attachments from DPW_WP_FIELD_DATA on AGOL and store it in a
              local folder.
     Pause DPW_WP_FIELD_DATA processing
-    Begin DPW_WP_SITES processing
+    Start DPW_WP_SITES processing
     2.2.7  Get all of the the DPW_WP_SITES from AGOL and store in the same
              working folder as above.  This data is from Collector.
     2.2.8  QA/QC the DPW_WP_SITES data.
@@ -149,12 +149,12 @@ def main():
     # serviceURL ends with .../FeatureServer
     if stage == 'DEV':
         FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_8e527e6153ed488fad0414f309ed90ed/FeatureServer'
-        SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_2/FeatureServer'
+        SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_20170927/FeatureServer'
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=756b762cc8fe4a6b82e99d82753016a4'
 
     elif stage == 'BETA':
         FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_65a9e7bda7104cc18dbf6f76463db67d/FeatureServer'
-        SITES_serviceURL      = ''
+        SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_BETA/FeatureServer'
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=cf87c1d763004981a7290609f11d8819'
 
     elif stage == 'PROD':
@@ -637,6 +637,8 @@ def Get_Token(cfgFile, gtURL):
     configRMA.read(cfgFile)
     usr = configRMA.get("AGOL","usr")
     pwd = configRMA.get("AGOL","pwd")
+
+    print '  For User: {}'.format(usr)
 
     # Create a dictionary of the user name, password, and 2 other keys
     gtValues = {'username' : usr, 'password' : pwd, 'referer' : 'http://www.arcgis.com', 'f' : 'json' }
