@@ -362,6 +362,35 @@ def main():
 
             else:
                 print '*** ERROR! SITES data is NOT valid.  X and Y fields not calculated, please fix QA/QC errors above. ***'
+        print ''
+
+        # See if any sites are marked for deletion if so, delete them in
+        #   downloaded SITES data and in AGOL database.
+        #   Send an email letting DPW know a site has been deleted.
+        if (errorSTATUS == 0):
+            if SITES_valid_data:
+                try:
+                    # Check for and delete any sites in downloaded SITES data
+                    ls_of_SITES_to_del = Check_For_Sites_To_Delete(SITES_wkg_data)
+
+                except Exception as e:
+                    errorSTATUS = Error_Handler('Check_For_Sites_To_Delete', e)
+
+                #  If there were sites that were deleted in the downloaded data
+                if len(ls_of_SITES_to_del) > 0:
+                    try:
+                        # TODO: Write function here to delete any sites on AGOL
+                        pass
+                    except Exception as e:
+                        errorSTATUS = Error_Handler(#Function name here, e)
+
+                    try:
+                        # Send email with list of sited deleted
+                        pass
+                    except Exception as e:
+                        errorSTATUS = Error_Handler(#Function name here, e)
+            else:
+                print '*** ERROR! SITES data is NOT valid.  Did not check for any sites marked for deletion. ***'
 
         # Delete prod SITES features and append wkg SITES features
         if (errorSTATUS == 0):
@@ -1167,7 +1196,7 @@ def Get_AGOL_Data_All(AGOL_fields, token, FS_url, index_of_layer, wkg_folder, wk
     else:
         print '  * WARNING, no data was downloaded. *'
 
-    print 'Finished Get_AGOL_Data_All()'
+    print 'Finished Get_AGOL_Data_All()\n'
 
     return
 
@@ -1488,6 +1517,35 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
     print '\nFinished Check_Sites_Data()\n'
     return valid_data
 
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                   FUNCTION: Check_For_Sites_To_Delete()
+def Check_For_Sites_To_Delete(SITES_wkg_data):
+    """
+    """
+
+    print '--------------------------------------------------------------------'
+    print 'Starting Check_For_Sites_To_Delete()'
+
+    where_clause = "Site_Status = 'To Be Deleted'"
+    print '  Checking to see if any SITES are marked for deletion:'
+    print '    ' + where_clause
+
+    # Get a list of sites to delete and delete them
+    with arcpy.da.UpdateCursor(SITES_wkg_data, ['StationID', 'Site_Status'], where_clause) as cursor:
+        sites_to_delete = []
+        for row in cursor:
+            print '  Station ID: "{}"  has Site_Status: "{}"'.format(row[0], row[1])
+            sites_to_delete.append(row[0])
+
+            print '  Deleting Station ID'
+            cursor.deleteRow()
+
+    if len(sites_to_delete) == 0:
+        print '  There were not sites marked for deletion'
+
+    print '\nFinished Check_For_Sites_To_Delete()\n'
+    return sites_to_delete
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Copy_Orig_Data
