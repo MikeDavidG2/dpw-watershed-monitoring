@@ -3,11 +3,13 @@
 # Purpose:
 """
 This script is intended to be used in conjunction with DPW's Science and
-Monitoring Survey123 Field Survey.  The Survey is used to gather data in the
+Monitoring Survey123 Field Survey and the SITES database on AGOL.
+The Survey is used to gather data in the
 field by monitors.  The Survey sends the data to an AGOL database where it waits
-to be grabbed by this script.
+to be grabbed by this script.  The SITES database is used by Collector so the
+monitors can see where their sites are located.
 
-EXECUTIVE SUMMARY:
+EXECUTIVE SUMMARY OF THE PROCESS:
 To download data stored on AGOL servers that were added via Survey123 by DPW's
   Science and Monitoring Project.
 To process the downloaded data and append the downloaded data to a FGDB that
@@ -15,7 +17,7 @@ To process the downloaded data and append the downloaded data to a FGDB that
 To download JPEG's taken in the field and name them based on the site ID and the
   Sample Event ID
 
-PROCESS:
+DETAILED PROCESS:
 1. Import Modules
 2. Define main() function.
   2.1 Set variables used in the script.
@@ -1520,7 +1522,7 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                   FUNCTION: Check_For_Sites_To_Delete()
-def Check_For_Sites_To_Delete(SITES_wkg_data):
+def Check_For_Sites_To_Delete(SITES_wkg_data, name_of_FS, index_of_layer_in_FS, token):
     """
     """
 
@@ -1531,21 +1533,148 @@ def Check_For_Sites_To_Delete(SITES_wkg_data):
     print '  Checking to see if any SITES are marked for deletion:'
     print '    ' + where_clause
 
-    # Get a list of sites to delete and delete them
+    # Get a list of sites to delete and delete them in the downloaded data
     with arcpy.da.UpdateCursor(SITES_wkg_data, ['StationID', 'Site_Status'], where_clause) as cursor:
-        sites_to_delete = []
+        sites_to_delete = False
         for row in cursor:
             print '  Station ID: "{}"  has Site_Status: "{}"'.format(row[0], row[1])
-            sites_to_delete.append(row[0])
+            sites_to_delete = True
 
             print '  Deleting Station ID'
-            cursor.deleteRow()
+            cursor.deleteRow()  # Delete the feature
 
-    if len(sites_to_delete) == 0:
-        print '  There were not sites marked for deletion'
+    # If there were sites to delete in the downloaded data, delete the sites in
+    #  the AGOL database.
+    if sites_to_delete == False:
+        print '  There were no sites marked for deletion'
 
+    else:
+        print '  Deleting sites on AGOL'
+        # Get a list of OBJECTID's from the AGOL database
+        AGOL_objIDs_sites_to_delete = Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, token)
+
+        # Delete the features in the AGOL database
+        Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, AGOL_objIDs_sites_to_delete, token)
+
+        # TODO: call email function to send an email of the sites that have been deleted
     print '\nFinished Check_For_Sites_To_Delete()\n'
-    return sites_to_delete
+
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                FUNCTION:    Get AGOL Object IDs Where
+
+def Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, token):
+    """
+    PARAMETERS:
+      name_of_FS (str): The name of the Feature Service (do not include things
+        like "services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services", just
+        the name is needed.  i.e. "DPW_WP_SITES_DEV_VIEW".
+      index_of_layer_in_FS (int): The index of the layer in the Feature Service.
+        This will frequently be 0, but it could be a higer number if the FS has
+        multiple layers in it.
+      where_clause (str): Where clause.
+      token (str): Obtained from the Get_Token()
+
+    RETURNS:
+      object_ids (list of str): List of OBJECTID's that satisfied the
+      where_clause.
+
+    FUNCTION:
+      To get a list of the OBJECTID's of the features that satisfied the
+      where clause.  This list will be the full list of all the records in the
+      FS regardless of the number of the returned OBJECTID's or the max record
+      count for the FS.
+
+    NOTE: This function assumes that you have already gotten a token from the
+    Get_Token() and are passing it to this function via the 'token' variable.
+    """
+
+    print '--------------------------------------------------------------------'
+    print "Starting Get_AGOL_Object_Ids_Where()"
+    import urllib2, urllib, json
+
+    # Create empty list to hold the OBJECTID's that satisfy the where clause
+    object_ids = []
+
+    # Encode the where_clause so it is readable by URL protocol (ie %27 = ' in URL).
+    # visit http://meyerweb.com/eric/tools/dencoder to test URL encoding.
+    where_encoded = urllib.quote(where_clause)
+
+    # Set URLs
+    query_url = r'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/{}/FeatureServer/{}/query'.format(name_of_FS, index_of_layer_in_FS)
+    query = '?where={}&returnIdsOnly=true&f=json&token={}'.format(where_encoded, token)
+    get_object_id_url = query_url + query
+
+    # Get the list of OBJECTID's that satisfied the where_clause
+
+    print '  Getting list of OBJECTID\'s that satisfied the where clause for layer:\n    {}'.format(query_url)
+    print '  Where clause: "{}"'.format(where_clause)
+    response = urllib2.urlopen(get_object_id_url)
+    response_json_obj = json.load(response)
+    object_ids = response_json_obj['objectIds']
+
+    if len(object_ids) > 0:
+        print '  There are "{}" features that satisfied the query.'.format(len(object_ids))
+        print '  OBJECTID\'s of those features:'
+        for obj in object_ids:
+            print '    {}'.format(obj)
+
+    else:
+        print '  No features satisfied the query.'
+
+    print "Finished Get_AGOL_Object_Ids_Where()\n"
+
+    return object_ids
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+def Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, object_ids, token):
+    """
+    PARAMETERS:
+      name_of_FS (str): The name of the Feature Service (do not include things
+        like "services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services", just
+        the name is needed.  i.e. "DPW_WP_SITES_DEV_VIEW".
+      index_of_layer_in_FS (int): The index of the layer in the Feature Service.
+        This will frequently be 0, but it could be a higer number if the FS has
+        multiple layers in it.
+      object_ids (list of str): List of OBJECTID's that should be deleted.
+      token (str): Obtained from the Get_Token().
+
+    RETURNS:
+      None
+
+    FUNCTION:
+      To Delete features on an AGOL Feature Service.
+    """
+
+    print '--------------------------------------------------------------------'
+    print "Starting Delete_AGOL_Features()"
+    import urllib2, urllib, json
+
+    # Turn the list of object_ids into one string with comma separated IDs
+    object_ids_str = ','.join(str(x) for x in object_ids)
+
+    # Set URLs
+    delete_url       = r'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/{}/FeatureServer/{}/deleteFeatures?token={}'.format(name_of_FS, index_of_layer_in_FS, token)
+    del_params       = urllib.urlencode({'objectIds': object_ids_str, 'f':'json'})
+
+
+    # Delete the features
+    print '  Deleting Features in FS: "{}" and index "{}"'.format(name_of_FS, index_of_layer_in_FS)
+    print '  OBJECTIDs to be deleted: {}'.format(object_ids_str)
+    ##print delete_url + del_params
+    response  = urllib2.urlopen(delete_url, del_params)
+    response_json_obj = json.load(response)
+    ##print response_json_obj
+
+    for result in response_json_obj['deleteResults']:
+        ##print result
+        print '    OBJECTID: {}'.format(result['objectId'])
+        print '      Deleted? {}'.format(result['success'])
+
+    print 'Finished Delete_AGOL_Features()\n'
+
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Copy_Orig_Data
