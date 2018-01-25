@@ -152,6 +152,7 @@ def main():
     if stage == 'DEV':
         FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_8e527e6153ed488fad0414f309ed90ed/FeatureServer'
         SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_20170927/FeatureServer'
+        SITES_adminURL        = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_admin_VIEW_20170927/FeatureServer'
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=756b762cc8fe4a6b82e99d82753016a4'
 
     elif stage == 'BETA':
@@ -317,7 +318,8 @@ def main():
     #                      Pause DPW_WP_FIELD_DATA processing
     #                      Start DPW_WP_SITES processing
     #---------------------------------------------------------------------------
-
+    print '\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+    print '                 Get and process the SITES data'
     if run_Get_SITES_data:
         # Get the Data from the DPW_WP_SITES on AGOL
         if (errorSTATUS == 0):
@@ -373,24 +375,27 @@ def main():
             if SITES_valid_data:
                 try:
                     # Check for and delete any sites in downloaded SITES data
-                    ls_of_SITES_to_del = Check_For_Sites_To_Delete(SITES_wkg_data)
+                    # Use admin URL so that we can perform the delete operation
+                    name_of_SITES_FS = SITES_adminURL.split('/')[7]  # The name of the FS is the 7th item when the string is split on '/'
+                    index_of_layer_in_FS = SITES_query_url.split('/')[9]
+                    ls_of_SITES_to_del = Check_For_Sites_To_Delete(SITES_wkg_data, name_of_SITES_FS, index_of_layer_in_FS, dpw_email_list, stage, token)
 
                 except Exception as e:
                     errorSTATUS = Error_Handler('Check_For_Sites_To_Delete', e)
 
-                #  If there were sites that were deleted in the downloaded data
-                if len(ls_of_SITES_to_del) > 0:
-                    try:
-                        # TODO: Write function here to delete any sites on AGOL
-                        pass
-                    except Exception as e:
-                        errorSTATUS = Error_Handler(#Function name here, e)
-
-                    try:
-                        # Send email with list of sited deleted
-                        pass
-                    except Exception as e:
-                        errorSTATUS = Error_Handler(#Function name here, e)
+##                #  If there were sites that were deleted in the downloaded data
+##                if len(ls_of_SITES_to_del) > 0:
+##                    try:
+##                        # TODO: Write function here to delete any sites on AGOL
+##                        pass
+##                    except Exception as e:
+##                        errorSTATUS = Error_Handler(#Function name here, e)
+##
+##                    try:
+##                        # Send email with list of sited deleted
+##                        pass
+##                    except Exception as e:
+##                        errorSTATUS = Error_Handler(#Function name here, e)
             else:
                 print '*** ERROR! SITES data is NOT valid.  Did not check for any sites marked for deletion. ***'
 
@@ -413,7 +418,8 @@ def main():
             else:
                 print '*** ERROR! SITES data is NOT valid.  Data not copied to prod database, please fix errors above. ***'
 
-
+    print '\n                 Finished processing SITES data'
+    print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
     #---------------------------------------------------------------------------
     #                      Finished DPW_WP_SITES processing
     #                      Resume   DPW_WP_FIELD_DATA processing
@@ -1522,7 +1528,7 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #                   FUNCTION: Check_For_Sites_To_Delete()
-def Check_For_Sites_To_Delete(SITES_wkg_data, name_of_FS, index_of_layer_in_FS, token):
+def Check_For_Sites_To_Delete(SITES_wkg_data, name_of_FS, index_of_layer_in_FS, email_list, stage, token):
     """
     """
 
@@ -1533,14 +1539,17 @@ def Check_For_Sites_To_Delete(SITES_wkg_data, name_of_FS, index_of_layer_in_FS, 
     print '  Checking to see if any SITES are marked for deletion:'
     print '    ' + where_clause
 
-    # Get a list of sites to delete and delete them in the downloaded data
+    # Check to see if there are sites to delete
+    #   Delete them if they exist in the downloaded data
+    sites_to_delete = False
+    deleted_sites = []
     with arcpy.da.UpdateCursor(SITES_wkg_data, ['StationID', 'Site_Status'], where_clause) as cursor:
-        sites_to_delete = False
         for row in cursor:
             print '  Station ID: "{}"  has Site_Status: "{}"'.format(row[0], row[1])
             sites_to_delete = True
+            deleted_sites.append(row[0])
 
-            print '  Deleting Station ID'
+            print '  Deleting Station ID in {}'.format(SITES_wkg_data)
             cursor.deleteRow()  # Delete the feature
 
     # If there were sites to delete in the downloaded data, delete the sites in
@@ -1549,15 +1558,34 @@ def Check_For_Sites_To_Delete(SITES_wkg_data, name_of_FS, index_of_layer_in_FS, 
         print '  There were no sites marked for deletion'
 
     else:
-        print '  Deleting sites on AGOL'
+        print '\nStart deleting sites on AGOL:'
         # Get a list of OBJECTID's from the AGOL database
         AGOL_objIDs_sites_to_delete = Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, token)
 
         # Delete the features in the AGOL database
         Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, AGOL_objIDs_sites_to_delete, token)
+        print '  Finished deleting sites on AGOL.\n'
+        #-----------------------------------------------------------------------
+        #               Email DPW if there were deleted sites
+        print 'Sending email to DPW with list of deleted sites'
+        # Set email subject
+        subj = '{} -- Sci and Mon Info.  There were Station IDs that were deleted'.format(stage)
 
-        # TODO: call email function to send an email of the sites that have been deleted
-    print '\nFinished Check_For_Sites_To_Delete()\n'
+        # Format the Body in html
+        list_to_string = '<br> '.join(deleted_sites)
+        body = ("""
+        DPW staff, the below list are the Station IDs that were marked for deletion
+        by DPW staff and were deleted by the script.<br>
+        There is no need to take any action <i>unless</i> one of the below sites
+        was accidentally deleted.  (If a site was accidentally deleted, please
+        let LUEG-GIS know which site should be restored).<br><br>
+
+        <b>Sites that were deleted:</b>
+        {}
+        """.format(list_to_string))
+        Email_W_Body(subj, body, email_list)
+
+    print 'Finished Check_For_Sites_To_Delete()\n'
 
 
 #-------------------------------------------------------------------------------
@@ -1610,6 +1638,7 @@ def Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, to
 
     print '  Getting list of OBJECTID\'s that satisfied the where clause for layer:\n    {}'.format(query_url)
     print '  Where clause: "{}"'.format(where_clause)
+    ##print get_object_id_url
     response = urllib2.urlopen(get_object_id_url)
     response_json_obj = json.load(response)
     object_ids = response_json_obj['objectIds']
@@ -1663,7 +1692,8 @@ def Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, object_ids, token):
     # Delete the features
     print '  Deleting Features in FS: "{}" and index "{}"'.format(name_of_FS, index_of_layer_in_FS)
     print '  OBJECTIDs to be deleted: {}'.format(object_ids_str)
-    ##print delete_url + del_params
+    print delete_url
+    print del_params
     response  = urllib2.urlopen(delete_url, del_params)
     response_json_obj = json.load(response)
     ##print response_json_obj
@@ -2741,8 +2771,7 @@ def Error_Handler(func_w_err, e):
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-def Email_W_Body(subj, body, email_list, cfgFile=
-    r"P:\DPW_ScienceAndMonitoring\Scripts\DEV\DEV_branch\Control_Files\accounts.txt"):
+def Email_W_Body(subj, body, email_list, cfgFile=r"P:\DPW_ScienceAndMonitoring\Scripts\DEV\DEV_branch\Control_Files\accounts.txt"):
 
     """
     PARAMETERS:
