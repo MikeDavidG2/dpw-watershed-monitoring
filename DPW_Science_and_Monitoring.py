@@ -114,8 +114,8 @@ def main():
 
     # Email lists
     ##dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
-    dpw_email_list   = ['michael.grue@sdcounty.ca.gov']  # The above commented out is for PROD
-    lueg_admin_email = ['michael.grue@sdcounty.ca.gov']#['Michael.Grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov', 'Randy.Yakos@sdcounty.ca.gov']
+    dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov']
+    lueg_admin_email = ['michael.grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov']
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
     stage = 'PROD'  # This variable is used to control the path to the various stages
