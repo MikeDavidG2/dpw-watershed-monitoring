@@ -28,7 +28,7 @@ PROCESS:
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 
-import arcpy, os
+import arcpy, os, time
 
 arcpy.env.overwriteOutput = True
 
@@ -37,10 +37,18 @@ def main():
     #---------------------------------------------------------------------------
     #                           USER SET VARIABLES
     #---------------------------------------------------------------------------
+
+    # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
+    stage = 'BETA'  # This variable is used to control the path to the various stages
+
     # Set paths
-    FGDB_to_backup = r"P:\DPW_ScienceAndMonitoring\Scripts\BETA\Data\DPW_Science_and_Monitoring_prod.gdb"
-    backup_folder  = r'P:\DPW_ScienceAndMonitoring\Scripts\BETA\Data\Backups'
-    log_file        = r'P:\DPW_ScienceAndMonitoring\Scripts\BETA\Data\Logs\Backup_FGDB'
+    FGDB_to_backup = r"P:\DPW_ScienceAndMonitoring\Scripts\{}\Data\DPW_Science_and_Monitoring_prod.gdb".format(stage)
+    backup_folder  = r'P:\DPW_ScienceAndMonitoring\Scripts\{}\Data\Backups'.format(stage)
+    log_file        = r'P:\DPW_ScienceAndMonitoring\Scripts\{}\Data\Logs\Backup_FGDB'.format(stage)
+
+    # Set name of one FC or Table that should exist in the backup FGDB
+    #   This is so we can test if the arcpy.Copy_management was successful
+    fc_or_table = 'DPW_WP_FIELD_DATA'
 
     # Set number of backups allowed to exist in 'backup_folder'
     max_num_backups = 12
@@ -62,17 +70,36 @@ def main():
     if run_Write_Print_To_Log:
         orig_stdout = Write_Print_To_Log(log_file)
 
-    # Copy FGDB to Backup folder
     try:
+        # Get date and set path for backup FGDB
         date_time = Get_DT_To_Append()  # Returns a string formatted like: 'YYYY_MM_DD__HH_MM_SS'
         date      = date_time.split('__')[0]  # Get only the 'YYYY_MM_DD' portion
         out_FGDB  = os.path.join(backup_folder, 'DPW_Sci_and_Mon_prod_BAK__{}.gdb'.format(date))
+
+        # Create backup FGDB
+        out_folder_path = os.path.dirname(out_FGDB)
+        out_name        = os.path.basename(out_FGDB)
+        arcpy.CreateFileGDB_management(out_folder_path, out_name, 'CURRENT')
+
+        # Copy current FGDB to the newly created backup FGDB
         print 'Copying FGDB: "{}"\n          To: "{}"\n'.format(FGDB_to_backup, out_FGDB)
         arcpy.Copy_management(FGDB_to_backup, out_FGDB)
+
+    # This except can be triggered by a temperamental Copy_management tool, need to test for actual error
     except Exception as e:
-        print '*** ERROR with Copy FGDB to Backup fooder ***'
-        print str(e)
-        success = False
+        time.sleep(2)
+        print '* WARNING. Possible error with Copy FGDB to Backup folder *'
+        print '  Checking to see if actual error...'
+        test_exist = out_FGDB + '\\' + fc_or_table
+        print test_exist
+        if arcpy.Exists(test_exist):  # If exists, then there is no error
+            print '  Copy appears successful, ignore above warning message'
+        else:
+            print '*** ERROR with Copy ***'
+            print str(e)
+            success = False
+
+    time.sleep(2)
 
     # Test to determine how many backups need to be deleted
     arcpy.env.workspace = backup_folder

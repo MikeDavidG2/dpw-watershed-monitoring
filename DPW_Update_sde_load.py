@@ -25,7 +25,10 @@ def main():
     #                              Set variables
     #---------------------------------------------------------------------------
 
-    fgdb_to_export = r"P:\DPW_ScienceAndMonitoring\Scripts\BETA\Data\DPW_Science_and_Monitoring_prod.gdb"
+    # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
+    stage = 'BETA'  # This variable is used to control the path to the various stages
+
+    fgdb_to_export = r"P:\DPW_ScienceAndMonitoring\Scripts\{}\Data\DPW_Science_and_Monitoring_prod.gdb".format(stage)
     items_to_export = ['DPW_WP_FIELD_DATA', 'DPW_WP_SITES']
 
     fgdb_to_be_updated = r'V:\sde_load.gdb'
@@ -33,7 +36,7 @@ def main():
     # Set to "True" to have 'print' statements be written to the log_file
     # Set to "False" to have 'print' statements print to screen
     run_Write_Print_To_Log = True
-    log_file = r'P:\DPW_ScienceAndMonitoring\Scripts\BETA\Data\Logs\DPW_Update_sde_load'
+    log_file = r'P:\DPW_ScienceAndMonitoring\Scripts\{}\Data\Logs\DPW_Update_sde_load'.format(stage)
 
     # Set email recipients
     email_recipients = ['michael.grue@sdcounty.ca.gov']
@@ -91,10 +94,10 @@ def main():
     #                         End of script reporting
     #---------------------------------------------------------------------------
     if success == True:
-        email_subject = 'SUCCESS running DPW_Update_sde_load.py'
+        email_subject = '{} -- SUCCESS running DPW_Update_sde_load.py'.format(stage)
         print email_subject
     else:
-        email_subject = 'ERROR running DPW_Update_sde_load.py'
+        email_subject = '{} -- ERROR running DPW_Update_sde_load.py'.format(stage)
         print email_subject
 
     # Return sys.stdout back to its original setting
