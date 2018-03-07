@@ -31,30 +31,35 @@ DETAILED PROCESS:
     2.2.6  Get the attachments from DPW_WP_FIELD_DATA on AGOL and store it in a
              local folder.
     Pause DPW_WP_FIELD_DATA processing
+    ----------------------------------------------------------------------------
     Start DPW_WP_SITES processing
     2.2.7  Get all of the the DPW_WP_SITES from AGOL and store in the same
              working folder as above.  This data is from Collector.
     2.2.8  QA/QC the DPW_WP_SITES data.
     2.2.9  If no QA/QC errors in DPW_WP_SITES, calculate X and Y fields.
-    2.2.10 If no QA/QC errors in DPW_WP_SITES, Delete the features in
+    2.2.10 See if any sites are marked for deletion if so, delete them in
+             downloaded SITES data and then in AGOL database.
+             Send an email letting DPW know a site has been deleted.
+    2.2.11 If no QA/QC errors in DPW_WP_SITES, Delete the features in
              DPW_WP_SITES in the prod FGDB and append the features just downloaded
              and QA/QC'd.
-    Finish DPW_WP_SITES processing.
-    Resume DPW_WP_FIELD_DATA processing.
-    2.2.11 Copy the original DPW_WP_FIELD_DATA to a working FC.
-    2.2.12 Add fields to the working FC.
-    2.2.13 Calculate fields in the working FC.
-    2.2.14 Delete fields from the working FC.
-    2.2.15 Export working FC to TABLE.
-    2.2.16 Get non-default field mappings so we can append fields from the TABLE
+    Finish DPW_WP_SITES processing
+    ----------------------------------------------------------------------------
+    Resume DPW_WP_FIELD_DATA processing
+    2.2.12 Copy the original DPW_WP_FIELD_DATA to a working FC.
+    2.2.13 Add fields to the working FC.
+    2.2.14 Calculate fields in the working FC.
+    2.2.15 Delete fields from the working FC.
+    2.2.16 Export working FC to TABLE.
+    2.2.17 Get non-default field mappings so we can append fields from the TABLE
              to the production database if the field names are not the same
              between the working database and the production database.
-    2.2.17 Set the last time the data was retrieved from AGOL to the start_time
+    2.2.18 Set the last time the data was retrieved from AGOL to the start_time
              of this script so the next time it is run it will only grab
              new data.
-    2.2.14 Append the working DPW_WP_FIELD_DATA to the production database.
-    2.2.15 Search for and handle any Duplicates.
-    2.2.16 Email results.
+    2.2.19 Append the working DPW_WP_FIELD_DATA to the production database.
+    2.2.20 Search for and handle any Duplicates.
+    2.2.21 Email results.
   2.3 Print out information about the script
 
 NOTE:  This is a long and complex script.  Navigation between the main function
@@ -69,8 +74,6 @@ IDLE.
 # Licence:     <your licence>
 # Modified:    02/24/2017
 #-------------------------------------------------------------------------------
-# TODO: if the A_FIELD_DATA_orig is locked the script fails, which is OK, but it doens't send a failed email.  Need to make it so it does send an email.
-# TODO: Add documentation above for the new SITES related steps and Functions.
 # Import modules
 
 import arcpy
@@ -108,26 +111,6 @@ def main():
     #                               Set Variables
     #---------------------------------------------------------------------------
 
-    # Variables to control which Functions are run
-    run_Get_DateAndTime         = True
-    run_Write_Print_To_Log      = True
-    run_Get_Last_Data_Ret       = True
-    run_Get_Token               = True
-    run_Get_Data                = True
-    run_Get_Attachments         = True # Requires 'run_Get_Data = True'
-    run_Get_SITES_data          = True
-    run_Set_Last_Data_Ret       = True # Should be 'False' if testing
-    run_Copy_Orig_Data          = True  # Requires 'run_Get_Data = True'
-    run_Add_Fields              = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Calculate_Fields        = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Delete_Fields           = False # Requires 'run_Copy_Orig_Data = True'
-    run_New_Loc_LocDesc         = True
-    run_FC_To_Table             = True
-    run_Get_Field_Mappings      = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Append_Data             = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Duplicate_Handler       = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Email_Results           = True
-
     # Email lists
     ##dpw_email_list   = ['michael.grue@sdcounty.ca.gov', 'mikedavidg2@gmail.com', 'Joanna.Wisniewska@sdcounty.ca.gov', 'Ryan.Jensen@sdcounty.ca.gov', 'Steven.DiDonna@sdcounty.ca.gov', 'Kenneth.Liddell@sdcounty.ca.gov']
     dpw_email_list   = ['michael.grue@sdcounty.ca.gov']  # The above commented out is for PROD
@@ -135,18 +118,6 @@ def main():
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
     stage = 'DEV'  # This variable is used to control the path to the varioius stages
-
-    # Control files
-    control_files          = r'P:\DPW_ScienceAndMonitoring\Scripts\{v}\{v}_branch\Control_Files'.format(v = stage)
-    last_data_retrival_csv = control_files + '\\LastDataRetrival.csv'
-    add_fields_csv         = control_files + '\\FieldsToAdd.csv'
-    calc_fields_csv        = control_files + '\\FieldsToCalculate.csv'
-    delete_fields_csv      = control_files + '\\FieldsToDelete.csv'
-    map_fields_csv         = control_files + '\\MapFields.csv'
-    report_TMDL_csv        = control_files + '\\Report_TMDL.csv'
-    cfgFile                = control_files + '\\accounts.txt'
-
-
 
     # serviceURL ends with .../FeatureServer
     if stage == 'DEV':
@@ -172,6 +143,15 @@ def main():
     FIELD_DATA_gaURL    =  FIELD_DATA_serviceURL + '/CreateReplica'  # Get Attachments URL
     SITES_query_url     =  SITES_serviceURL      + '/0/query'        # Get SITES URL
 
+    # Control files
+    control_files          = r'P:\DPW_ScienceAndMonitoring\Scripts\{v}\{v}_branch\Control_Files'.format(v = stage)
+    last_data_retrival_csv = control_files + '\\LastDataRetrival.csv'
+    add_fields_csv         = control_files + '\\FieldsToAdd.csv'
+    calc_fields_csv        = control_files + '\\FieldsToCalculate.csv'
+    delete_fields_csv      = control_files + '\\FieldsToDelete.csv'
+    map_fields_csv         = control_files + '\\MapFields.csv'
+    report_TMDL_csv        = control_files + '\\Report_TMDL.csv'
+    cfgFile                = control_files + '\\accounts.txt'
 
     # Working database locations and names
     wkgFolder   = r'P:\DPW_ScienceAndMonitoring\Scripts\{v}\Data'.format(v = stage)
@@ -196,7 +176,6 @@ def main():
     y_field = 'Lat_Y_NAD83'   # Name of the Y field
 
     #---------------------------------------------------------------------------
-
     # Production locations and names
     prodGDB                = wkgFolder + "\\DPW_Science_and_Monitoring_prod.gdb"
     prodPath_FldData       = prodGDB + '\\DPW_WP_FIELD_DATA'
@@ -204,23 +183,36 @@ def main():
     prod_attachments       = wkgFolder + '\\Sci_Monitoring_pics'
     prodPath_Excel         = wkgFolder + '\\Excel'
 
-##    # Survey123 CSV file related variables
-##    # site_info = the CSV Survey123 uses to locate the sites in the app. It gets
-##    # its data refreshed from the DPW_WP_SITES Feature Class in the
-##    # DPW_WP_SITES_To_Survey123_csv() function
-##    site_info = r"C:\Users\mgrue\ArcGIS\My Survey Designs\DPW Sci and Mon {}\media\Site_Info.csv".format(stage)
-##    Sites_Export_To_CSV_tbl = wkgFolder + '\\' + wkgGDB + '\\E_SITES_export_to_csv'
-
     # Misc
     log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring'
     errorSTATUS = 0
     os.chdir(wkgFolder) # Makes sure we are in the correct directory (if called from Task Scheduler)
-    excel_report = ''   # Sets variable to '' if the Export_To_Excel() is not run to create it.
 
     # Lists
     # These lists are needed in the Email_Results(), but may not be created
     # if no data is downloaded.  Created here to not cause a fail
     ls_type_3_dups = []
+    SmpEvntIDs_dl=[]
+
+    # Variables to control which Functions are run
+    run_Get_DateAndTime         = True
+    run_Write_Print_To_Log      = True
+    run_Get_Last_Data_Ret       = True
+    run_Get_Token               = True
+    run_Get_Data                = True
+    run_Get_Attachments         = True # Requires 'run_Get_Data = True'
+    run_Get_SITES_data          = True
+    run_Set_Last_Data_Ret       = True # Should be 'False' if testing
+    run_Copy_Orig_Data          = True  # Requires 'run_Get_Data = True'
+    run_Add_Fields              = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Calculate_Fields        = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Delete_Fields           = False # Requires 'run_Copy_Orig_Data = True'
+    run_New_Loc_LocDesc         = True
+    run_FC_To_Table             = True
+    run_Get_Field_Mappings      = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Append_Data             = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Duplicate_Handler       = True  # Requires 'run_Copy_Orig_Data = True'
+    run_Email_Results           = True
 
     #---------------------------------------------------------------------------
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -284,27 +276,31 @@ def main():
         except Exception as e:
             errorSTATUS = Error_Handler('Get_Token', e)
     #---------------------------------------------------------------------------
-    # GET DATA from AGOL and store in: wkgFolder\wkgGDB\origFC_dt_to_append
+    # GET DATA from AGOL and store in: wkgFolder\wkgGDB\origFC
     if (errorSTATUS == 0 and run_Get_Data):
         try:
+            # Get Data
             origPath, SmpEvntIDs_dl = Get_Data(AGOfields, token, FIELD_DATA_queryURL,
                                                 wkgFolder, wkgGDB, origFC,
                                                 dt_last_ret_data)
 
+            # Set flag data_was_downloaded based on the number of records in
+            # SmpEvntIDs_dl.  This will be used to determine if other functions are
+            # called in the main() function.
+            if ((len(SmpEvntIDs_dl) == 0) or (SmpEvntIDs_dl == None)):
+                data_was_downloaded = False
+
+            else:
+                data_was_downloaded = True
+
         except Exception as e:
             errorSTATUS = Error_Handler('Get_Data', e)
 
-        # Set flag data_was_downloaded based on the number of records in
-        # SmpEvntIDs_dl.  This will be used to determine if other functions are
-        # called in the main() function.
-        if ((len(SmpEvntIDs_dl) == 0) or (SmpEvntIDs_dl == None)):
-            data_was_downloaded = False
-
-        else:
-            data_was_downloaded = True
-
     #---------------------------------------------------------------------------
     # Get the ATTACHMENTS from the online database and store it locally
+    # MG 03/07/2018: This function may no longer be needed since the County
+    #   network has a script that downloads the attachments and puts them into
+    #   a folder DPW has access to.
     if (errorSTATUS == 0 and data_was_downloaded and run_Get_Attachments):
         try:
             attach_fldr = Get_Attachments(token, FIELD_DATA_gaURL, prod_attachments,
@@ -383,19 +379,6 @@ def main():
                 except Exception as e:
                     errorSTATUS = Error_Handler('Check_For_Sites_To_Delete', e)
 
-##                #  If there were sites that were deleted in the downloaded data
-##                if len(ls_of_SITES_to_del) > 0:
-##                    try:
-##                        # TODO: Write function here to delete any sites on AGOL
-##                        pass
-##                    except Exception as e:
-##                        errorSTATUS = Error_Handler(#Function name here, e)
-##
-##                    try:
-##                        # Send email with list of sited deleted
-##                        pass
-##                    except Exception as e:
-##                        errorSTATUS = Error_Handler(#Function name here, e)
             else:
                 print '*** ERROR! SITES data is NOT valid.  Did not check for any sites marked for deletion. ***'
 
@@ -451,14 +434,15 @@ def main():
         except Exception as e:
             errorSTATUS = Error_Handler('Calculate_Fields', e)
 
-    #---------------------------------------------------------------------------
-    # DELETE FIELDS from the working FC
-    if (errorSTATUS == 0 and data_was_downloaded and run_Delete_Fields):
-        try:
-            Delete_Fields(wkgPath, delete_fields_csv)
-
-        except Exception as e:
-            errorSTATUS = Error_Handler('Delete_Fields', e)
+#Should be able to delete the below commented out section (plus all the variables that are created entirely for this function
+##    #---------------------------------------------------------------------------
+##    # DELETE FIELDS from the working FC
+##    if (errorSTATUS == 0 and data_was_downloaded and run_Delete_Fields):
+##        try:
+##            Delete_Fields(wkgPath, delete_fields_csv)
+##
+##        except Exception as e:
+##            errorSTATUS = Error_Handler('Delete_Fields', e)
 
     #---------------------------------------------------------------------------
     # EXPORT FC to TABLE
