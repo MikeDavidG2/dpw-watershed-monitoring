@@ -150,7 +150,7 @@ def main():
 
     # serviceURL ends with .../FeatureServer
     if stage == 'DEV':
-        FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_5c8a52340caf4fdc83dea81549783d73/FeatureServer'
+        FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_7dd9a07ddaff400ba3a1b838125403c8/FeatureServer'
         SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_20170927/FeatureServer'
         SITES_adminURL        = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_admin_VIEW_20170927/FeatureServer'
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=756b762cc8fe4a6b82e99d82753016a4'
@@ -543,6 +543,10 @@ def main():
         # Return sys.stdout back to its original setting
         sys.stdout = orig_stdout
         print 'Done with script.  Please find log file location above for more info.'
+        if errorSTATUS == 0:
+            print 'SUCCESS'
+        else:
+            print '*** ERROR ***'
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
