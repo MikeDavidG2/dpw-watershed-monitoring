@@ -150,7 +150,7 @@ def main():
 
     # serviceURL ends with .../FeatureServer
     if stage == 'DEV':
-        FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_8e527e6153ed488fad0414f309ed90ed/FeatureServer'
+        FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_5c8a52340caf4fdc83dea81549783d73/FeatureServer'
         SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_20170927/FeatureServer'
         SITES_adminURL        = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_admin_VIEW_20170927/FeatureServer'
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=756b762cc8fe4a6b82e99d82753016a4'
@@ -538,7 +538,6 @@ def main():
     print '                    {}'.format(finish_time_str)
     print '              Finished DPW_Science_and_Monitoring.py'
     print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-
     if (run_Write_Print_To_Log):
 
         # Return sys.stdout back to its original setting
@@ -561,12 +560,12 @@ def Get_DateAndTime():
 
     VARS:
       start_time (dt object)
-      date (str): in the format YYYY_MM_DD - No '0' padding
-      time (str): in the format HH_MM_SS   - No '0' padding
+      date (str): in the format YYYY_MM_DD
+      time (str): in the format HH_MM_SS
       dt_to_append (str) : date and time merged into one string
 
     RETURNS:
-      dt_to_append (str): In the format 'YYYY_M_D__H_M_S'
+      dt_to_append (str): In the format 'YYYY_MM_DD__HH_MM_SS'
       start_time (dt object): A datetime object created in this function with
         the time of 'now'.
 
@@ -583,8 +582,8 @@ def Get_DateAndTime():
 
     start_time = datetime.datetime.now()
 
-    date = '%s_%s_%s' % (start_time.year, start_time.month, start_time.day)
-    time = '%s_%s_%s' % (start_time.hour, start_time.minute, start_time.second)
+    date = start_time.strftime('%Y_%m_%d')
+    time = start_time.strftime('%H_%M_%S')
 
     dt_to_append = '%s__%s' % (date, time)
 
@@ -804,7 +803,8 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_last_r
         print '  Query dates may not have yielded any records.'
         print '  Could simply mean there was no data added for these dates.'
         print '  Or could be another problem with the Get_Data() function.'
-        print '  Feature Service: %s' % str(fsURL)
+        print '  Copy and paste the below Feature Service URL into a web browser'
+        print '    %s' % str(fsURL)
 
         # Set the values of the expected return variables
         origPath_ = 'No original path, data not downloaded.'
@@ -936,12 +936,19 @@ def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
     }
 
     # Get the Replica URL
+    print '  Getting Replica URL'
     gaData = urllib.urlencode(gaValues)
     gaRequest = urllib2.Request(gaURL, gaData)
     gaResponse = urllib2.urlopen(gaRequest)
     gaJson = json.load(gaResponse)
-    replicaUrl = gaJson['URL']
-    ##print '  Replica URL: %s' % str(replicaUrl)  # For testing purposes
+    try:
+        replicaUrl = gaJson['URL'] # Try to load the 'URL' key of the replica
+
+    # If the 'URL' key doesn't exist, print out the error message and details
+    except KeyError:
+        print '*** Key Error! ***'
+        print '  {}\n  {}'.format(gaJson['error']['message'], gaJson['error']['details'])
+        print '  Replica URL: %s' % str(replicaUrl)  # For testing purposes
 
     # Set the token into the URL so it can be accessed
     replicaUrl_token = replicaUrl + '?&token=' + token + '&f=json'
@@ -2767,6 +2774,7 @@ def Error_Handler(func_w_err, e):
     # Change errorSTATUS to 1 so that the script doesn't try to perform any
     # other functions besides emailing
     errorSTATUS = 1
+    sys.stdout.flush()
     return errorSTATUS
 
 #-------------------------------------------------------------------------------
