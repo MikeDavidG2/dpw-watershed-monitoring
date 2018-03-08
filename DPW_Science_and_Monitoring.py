@@ -121,7 +121,7 @@ def main():
 
     # serviceURL ends with .../FeatureServer
     if stage == 'DEV':
-        FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_7dd9a07ddaff400ba3a1b838125403c8/FeatureServer'
+        FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_c03d8a0ce26a4087b49e4dbfc78b929a/FeatureServer'
         SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_20170927/FeatureServer'
         SITES_adminURL        = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_admin_VIEW_20170927/FeatureServer'
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=756b762cc8fe4a6b82e99d82753016a4'
@@ -1959,7 +1959,7 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
 
         f_counter += 1
 
-    print 'Successfully calculated fields.\n'
+    print 'Finished Calculate_Fields().\n'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
