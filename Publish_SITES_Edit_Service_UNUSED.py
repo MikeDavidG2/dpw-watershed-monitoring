@@ -27,7 +27,7 @@ import shutil
 #                             Set Variables
 #-------------------------------------------------------------------------------
 # Name of ini file located in the same location as this script.
-name_of_ini_file = 'Publish_SITES_Edit_Service.ini'
+name_of_ini_file = r"P:\DPW_ScienceAndMonitoring\DEV\Scripts\Config_Files\Publish_SITES_Edit_Service_UNUSED.ini"
 
 permissions_to_set = "Query,Create,Update,Uploads,Editing"  # <Full permissions = "Query,Create,Update,Delete,Uploads,Editing,Sync">
 #-------------------------------------------------------------------------------

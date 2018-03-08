@@ -129,11 +129,13 @@ def main():
     elif stage == 'BETA':
         FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_65a9e7bda7104cc18dbf6f76463db67d/FeatureServer'
         SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_BETA/FeatureServer'
+        SITES_adminURL        = ''
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=cf87c1d763004981a7290609f11d8819'
 
     elif stage == 'PROD':
         FIELD_DATA_serviceURL = ''
         SITES_serviceURL      = ''
+        SITES_adminURL        = ''
         SITES_Edit_WebMap     = ''
 
     # Token and AGOL variables
@@ -143,18 +145,34 @@ def main():
     FIELD_DATA_gaURL    =  FIELD_DATA_serviceURL + '/CreateReplica'  # Get Attachments URL
     SITES_query_url     =  SITES_serviceURL      + '/0/query'        # Get SITES URL
 
+    #---------------------------------------------------------------------------
+    # Set the path prefix depending on if this script is called manually by a
+    #  user, or called by a scheduled task on ATLANTIC server.
+    called_by = arcpy.GetParameterAsText(0)
+
+    if called_by == 'MANUAL':
+        path_prefix = 'P:'  # i.e. 'P:' or 'U:'
+
+    elif called_by == 'SCHEDULED':
+        path_prefix = 'D:\projects'  # i.e. 'D:\projects' or 'D:\users'
+
+    else:  # If script run directly and no called_by parameter specified
+        path_prefix = 'P:'  # i.e. 'P:' or 'U:'
+
+    #---------------------------------------------------------------------------
+    # Config File
+    cfgFile                = r"{prefix}\DPW_ScienceAndMonitoring\{v}\Scripts\Config_Files\accounts.txt".format(prefix = path_prefix, v = stage)
+
     # Control files
-    control_files          = r'P:\DPW_ScienceAndMonitoring\Scripts\{v}\{v}_branch\Control_Files'.format(v = stage)
+    control_files          = r'{prefix}\DPW_ScienceAndMonitoring\{v}\Scripts\Source_Code\Control_Files'.format(prefix = path_prefix, v = stage)
     last_data_retrival_csv = control_files + '\\LastDataRetrival.csv'
     add_fields_csv         = control_files + '\\FieldsToAdd.csv'
     calc_fields_csv        = control_files + '\\FieldsToCalculate.csv'
     delete_fields_csv      = control_files + '\\FieldsToDelete.csv'
     map_fields_csv         = control_files + '\\MapFields.csv'
-    report_TMDL_csv        = control_files + '\\Report_TMDL.csv'
-    cfgFile                = control_files + '\\accounts.txt'
 
     # Working database locations and names
-    wkgFolder   = r'P:\DPW_ScienceAndMonitoring\Scripts\{v}\Data'.format(v = stage)
+    wkgFolder   = r'{prefix}\DPW_ScienceAndMonitoring\{v}\Data'.format(prefix = path_prefix, v = stage)
     wkgGDB      = "DPW_Science_and_Monitoring_wkg.gdb"
 
     # FIELD_DATA variables
@@ -184,7 +202,7 @@ def main():
     prodPath_Excel         = wkgFolder + '\\Excel'
 
     # Misc
-    log_file = wkgFolder + r'\Logs\DPW_Science_and_Monitoring'
+    log_file = r'{prefix}\DPW_ScienceAndMonitoring\{v}\Scripts\Logs\DPW_Science_and_Monitoring'.format(prefix = path_prefix, v = stage)
     errorSTATUS = 0
     os.chdir(wkgFolder) # Makes sure we are in the correct directory (if called from Task Scheduler)
 
@@ -233,8 +251,7 @@ def main():
     #            Turn the 'print' statement into a logging object
     if (run_Write_Print_To_Log):
         try:
-            # os.path.split below is used to return just the path to the folder where the log_file lives
-            print 'Setting "print" command to write to a log file found at: {}'.format(os.path.split(log_file)[0])
+            print 'Setting "print" command to write to a log file found at: {}'.format((log_file))
 
             # Get the original sys.stdout so it can be returned to normal at the
             #    end of the script.
