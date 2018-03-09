@@ -378,7 +378,9 @@ def main():
                     # Use admin URL so that we can perform the delete operation
                     name_of_SITES_FS = SITES_adminURL.split('/')[7]  # The name of the FS is the 7th item when the string is split on '/'
                     index_of_layer_in_FS = SITES_query_url.split('/')[9]
-                    ls_of_SITES_to_del = Check_For_Sites_To_Delete(SITES_wkg_data, name_of_SITES_FS, index_of_layer_in_FS, dpw_email_list, stage, token)
+
+                    #TODO: <3/9/18 MG> Uncomment out below once confirmed that DPW is off the BETA SITES Collector Web Map
+                    ##Check_For_Sites_To_Delete(SITES_wkg_data, name_of_SITES_FS, index_of_layer_in_FS, dpw_email_list, stage, token)
 
                 except Exception as e:
                     errorSTATUS = Error_Handler('Check_For_Sites_To_Delete', e)
