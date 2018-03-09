@@ -40,11 +40,15 @@ def main():
     #---------------------------------------------------------------------------
 
     # Prefix to dataset names in SDE
-    master_prefix = 'SDEP.SANGIS.'
+##    master_prefix = 'SDEP2.SANGIS.'
 
-    # Items to be updated that exist in both 'Master' and 'Target' databases
-    # Items in 'Master' and 'Target' need the same name and respective schema
-    items_to_update = ['DPW_WP_FIELD_DATA', 'DPW_WP_SITES']
+    # Items in SDE used to update 'to_update_db'. Include everything after
+    # the '<connection file>.sde'
+    # Include the prefixes
+    #   i.e. 'SDEP2.SANGIS.xxxxxx' and the Feature Dataset (if applicable)
+    SDE_items = ['SDEP2.SANGIS.DPW_WP_FIELD_DATA',
+                 'SDEP2.SANGIS.WATERSHED_PROTECTION\SDEP2.SANGIS.DPW_WP_SITES'
+                ]
 
     # Set to "True" to have 'print' statements be written to the log_file
     # Set to "False" to have 'print' statements print to screen
@@ -56,14 +60,14 @@ def main():
     #                   'RUN_AS_DPW_USER' parameter
     #---------------------------------------------------------------------------
     user = arcpy.GetParameterAsText(0)
-
+        
     if user == 'RUN_AS_DPW_USER':
 
         # Path to root folder
         root = r'S:\Watershed Project\Database\ArcGIS'
-
+        
         # Path to connection file of master SDE used to update
-        master_SDE = os.path.join(root, "Script\\Connection_Files\\AD @ SDEP.sde")
+        master_SDE = os.path.join(root, "Script\\Connection_Files\\AD @ SDEP2.sde")
 
         # Path to target database to be updated
         to_update_db = os.path.join(root, "Sci_and_Mon_Database.mdb")
@@ -71,13 +75,13 @@ def main():
         # Path to log file with log file name
         log_file = os.path.join(root, 'Script\\Logs\\Update_DPW_w_MasterData')
 
-
+        
     if (user == 'RUN_AS_GIS_USER') or (user == ''):  # Then run with GIS paths
 
         user = 'RUN_AS_GIS_USER' # Set in case (user == '')
-
+        
         # Path to connection file of master SDE used to update
-        master_SDE = r"W:\Script\Connection_Files\AD @ SDEP.sde"
+        master_SDE = r"W:\Script\Connection_Files\AD @ SDEP2.sde"
 
         # Path to target database to be updated
         to_update_db = r"W:\Sci_and_Mon_Database.mdb"
@@ -99,18 +103,21 @@ def main():
     # Turn the 'print' statement into a logging object
     if (run_Write_Print_To_Log):
         orig_stdout = Write_Print_To_Log(log_file)
-
+        
     print 'User = "{}"'.format(user)
-
+    
     print '----------------------------------------------------------'
 
-    for item in items_to_update:
+    for item in SDE_items:
 
         print 'Processing item: {}\n'.format(item)
 
         # Set paths to 'Master' and 'Target' item
-        master_item    = os.path.join(master_SDE, master_prefix + item)
-        item_to_update = os.path.join(to_update_db, item)
+        master_item    = os.path.join(master_SDE, item)
+
+        item_split = item.split('.')
+        item_name = item_split[len(item_split)-1] # Last string = items name
+        item_to_update = os.path.join(to_update_db, item_name)
         print '  SDE path:    "{}"'.format(master_item)
         print '  Access path: "{}"\n'.format(item_to_update)
 
@@ -261,8 +268,8 @@ def Get_DT_To_Append():
 
     start_time = datetime.datetime.now()
 
-    date = start_time.strftime('%Y_%m_%d')
-    time = start_time.strftime('%H_%M_%S')
+    date = '%s_%s_%s' % (start_time.year, start_time.month, start_time.day)
+    time = '%s_%s_%s' % (start_time.hour, start_time.minute, start_time.second)
 
     dt_to_append = '%s__%s' % (date, time)
 
