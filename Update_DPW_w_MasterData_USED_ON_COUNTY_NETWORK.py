@@ -60,12 +60,12 @@ def main():
     #                   'RUN_AS_DPW_USER' parameter
     #---------------------------------------------------------------------------
     user = arcpy.GetParameterAsText(0)
-        
+
     if user == 'RUN_AS_DPW_USER':
 
         # Path to root folder
         root = r'S:\Watershed Project\Database\ArcGIS'
-        
+
         # Path to connection file of master SDE used to update
         master_SDE = os.path.join(root, "Script\\Connection_Files\\AD @ SDEP2.sde")
 
@@ -75,11 +75,11 @@ def main():
         # Path to log file with log file name
         log_file = os.path.join(root, 'Script\\Logs\\Update_DPW_w_MasterData')
 
-        
+
     if (user == 'RUN_AS_GIS_USER') or (user == ''):  # Then run with GIS paths
 
         user = 'RUN_AS_GIS_USER' # Set in case (user == '')
-        
+
         # Path to connection file of master SDE used to update
         master_SDE = r"W:\Script\Connection_Files\AD @ SDEP2.sde"
 
@@ -103,9 +103,9 @@ def main():
     # Turn the 'print' statement into a logging object
     if (run_Write_Print_To_Log):
         orig_stdout = Write_Print_To_Log(log_file)
-        
+
     print 'User = "{}"'.format(user)
-    
+
     print '----------------------------------------------------------'
 
     for item in SDE_items:
@@ -268,8 +268,8 @@ def Get_DT_To_Append():
 
     start_time = datetime.datetime.now()
 
-    date = '%s_%s_%s' % (start_time.year, start_time.month, start_time.day)
-    time = '%s_%s_%s' % (start_time.hour, start_time.minute, start_time.second)
+    date = start_time.strftime('%Y_%m_%d')
+    time = start_time.strftime('%H_%M_%S')
 
     dt_to_append = '%s__%s' % (date, time)
 
