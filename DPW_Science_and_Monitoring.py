@@ -28,9 +28,12 @@ DETAILED PROCESS:
     2.2.4  Get the token to gain access to the AGOL database.
     2.2.5  Get the most recent DPW_WP_FIELD_DATA from AGOL and store in a
              working FGDB.  This data is from Survey123.
-    2.2.6  Get the attachments from DPW_WP_FIELD_DATA on AGOL and store it in a
-             local folder.
+    2.2.6  Removed function (used to be to get the Attachments on the BLUE net
+             but now there is a seperate script that does this named:
+             Download_Sci_and_Mon_Attachments.py that is on the County Network at:
+             \\cosd.co.san-diego.ca.us\sandfsroot\lueg\DPW\Watershed Project\Database\Script\Download_Sci_and_Mon_Attachments.py
     Pause DPW_WP_FIELD_DATA processing
+
     ----------------------------------------------------------------------------
     Start DPW_WP_SITES processing
     2.2.7  Get all of the the DPW_WP_SITES from AGOL and store in the same
@@ -44,6 +47,7 @@ DETAILED PROCESS:
              DPW_WP_SITES in the prod FGDB and append the features just downloaded
              and QA/QC'd.
     Finish DPW_WP_SITES processing
+
     ----------------------------------------------------------------------------
     Resume DPW_WP_FIELD_DATA processing
     2.2.12 Copy the original DPW_WP_FIELD_DATA to a working FC.
@@ -108,7 +112,7 @@ arcpy.env.overwriteOutput = True
 #                                    DEFINE MAIN
 def main():
     #---------------------------------------------------------------------------
-    #                               Set Variables
+    #                  Set Variables that may change frequently
     #---------------------------------------------------------------------------
 
     # Email lists
@@ -127,9 +131,9 @@ def main():
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=756b762cc8fe4a6b82e99d82753016a4'
 
     elif stage == 'BETA':
-        FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_65a9e7bda7104cc18dbf6f76463db67d/FeatureServer'
+        FIELD_DATA_serviceURL = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_9cbcd7048d4943658bb4f1339ec48e3e/FeatureServer'
         SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_BETA/FeatureServer'
-        SITES_adminURL        = ''
+        SITES_adminURL        = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_BETA_VIEW_admin/FeatureServer'
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=cf87c1d763004981a7290609f11d8819'
 
     elif stage == 'PROD':
@@ -138,11 +142,13 @@ def main():
         SITES_adminURL        = ''
         SITES_Edit_WebMap     = ''
 
+    #---------------------------------------------------------------------------
+    #                  Set Variables that won't change often
+    #---------------------------------------------------------------------------
     # Token and AGOL variables
     gtURL       = "https://www.arcgis.com/sharing/rest/generateToken"
     AGOfields   = '*'
     FIELD_DATA_queryURL =  FIELD_DATA_serviceURL + '/0/query'        # Get FIELD DATA URL
-    FIELD_DATA_gaURL    =  FIELD_DATA_serviceURL + '/CreateReplica'  # Get Attachments URL
     SITES_query_url     =  SITES_serviceURL      + '/0/query'        # Get SITES URL
 
     #---------------------------------------------------------------------------
@@ -168,8 +174,6 @@ def main():
     last_data_retrival_csv = control_files + '\\LastDataRetrival.csv'
     add_fields_csv         = control_files + '\\FieldsToAdd.csv'
     calc_fields_csv        = control_files + '\\FieldsToCalculate.csv'
-    delete_fields_csv      = control_files + '\\FieldsToDelete.csv'
-    map_fields_csv         = control_files + '\\MapFields.csv'
 
     # Working database locations and names
     wkgFolder   = r'{prefix}\DPW_ScienceAndMonitoring\{v}\Data'.format(prefix = path_prefix, v = stage)
@@ -198,8 +202,6 @@ def main():
     prodGDB                = wkgFolder + "\\DPW_Science_and_Monitoring_prod.gdb"
     prodPath_FldData       = prodGDB + '\\DPW_WP_FIELD_DATA'
     prodPath_SitesData     = prodGDB + '\\DPW_WP_SITES'
-    prod_attachments       = wkgFolder + '\\Sci_Monitoring_pics'
-    prodPath_Excel         = wkgFolder + '\\Excel'
 
     # Misc
     log_file = r'{prefix}\DPW_ScienceAndMonitoring\{v}\Scripts\Logs\DPW_Science_and_Monitoring'.format(prefix = path_prefix, v = stage)
@@ -224,10 +226,8 @@ def main():
     run_Copy_Orig_Data          = True  # Requires 'run_Get_Data = True'
     run_Add_Fields              = True  # Requires 'run_Copy_Orig_Data = True'
     run_Calculate_Fields        = True  # Requires 'run_Copy_Orig_Data = True'
-    run_Delete_Fields           = False # Requires 'run_Copy_Orig_Data = True'
     run_New_Loc_LocDesc         = True
     run_FC_To_Table             = True
-    run_Get_Field_Mappings      = True  # Requires 'run_Copy_Orig_Data = True'
     run_Append_Data             = True  # Requires 'run_Copy_Orig_Data = True'
     run_Duplicate_Handler       = True  # Requires 'run_Copy_Orig_Data = True'
     run_Email_Results           = True
@@ -314,19 +314,6 @@ def main():
             errorSTATUS = Error_Handler('Get_Data', e)
 
     #---------------------------------------------------------------------------
-    # Get the ATTACHMENTS from the online database and store it locally
-    # MG 03/07/2018: This function may no longer be needed since the County
-    #   network has a script that downloads the attachments and puts them into
-    #   a folder DPW has access to.
-    if (errorSTATUS == 0 and data_was_downloaded and run_Get_Attachments):
-        try:
-            attach_fldr = Get_Attachments(token, FIELD_DATA_gaURL, prod_attachments,
-                                          SmpEvntIDs_dl, dt_to_append)
-
-        except Exception as e:
-            errorSTATUS = Error_Handler('Get_Attachments', e)
-
-    #---------------------------------------------------------------------------
     #---------------------------------------------------------------------------
     #                      Pause DPW_WP_FIELD_DATA processing
     #                      Start DPW_WP_SITES processing
@@ -399,7 +386,7 @@ def main():
             else:
                 print '*** ERROR! SITES data is NOT valid.  Did not check for any sites marked for deletion. ***'
 
-        # Delete prod SITES features and append wkg SITES features
+        # Delete prod SITES features and append wkg SITES features in prod FGDB
         if (errorSTATUS == 0):
             if SITES_valid_data:
                 try:
@@ -451,16 +438,6 @@ def main():
         except Exception as e:
             errorSTATUS = Error_Handler('Calculate_Fields', e)
 
-#Should be able to delete the below commented out section (plus all the variables that are created entirely for this function
-##    #---------------------------------------------------------------------------
-##    # DELETE FIELDS from the working FC
-##    if (errorSTATUS == 0 and data_was_downloaded and run_Delete_Fields):
-##        try:
-##            Delete_Fields(wkgPath, delete_fields_csv)
-##
-##        except Exception as e:
-##            errorSTATUS = Error_Handler('Delete_Fields', e)
-
     #---------------------------------------------------------------------------
     # EXPORT FC to TABLE
     if (errorSTATUS == 0 and data_was_downloaded and run_FC_To_Table):
@@ -469,15 +446,6 @@ def main():
 
         except Exception as e:
             errorSTATUS = Error_Handler('FC_To_Table', e)
-
-    #---------------------------------------------------------------------------
-    # GET FIELD MAPPINGS
-    if (errorSTATUS == 0 and data_was_downloaded and run_Get_Field_Mappings):
-        try:
-            field_mappings = Get_Field_Mappings(exported_table, prodPath_FldData, map_fields_csv)
-
-        except Exception as e:
-            errorSTATUS = Error_Handler('Get_Field_Mappings', e)
 
     #---------------------------------------------------------------------------
     # SET THE LAST TIME the data was retrieved from AGOL to the start_time
@@ -493,7 +461,7 @@ def main():
     # APPEND the data
     if (errorSTATUS == 0 and data_was_downloaded and run_Append_Data):
         try:
-            Append_Data(exported_table, prodPath_FldData, field_mappings)
+            Append_Data(exported_table, prodPath_FldData)
 
         except Exception as e:
             errorSTATUS = Error_Handler('Append_Data', e)
@@ -513,7 +481,7 @@ def main():
             try:
                 Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email,
                               log_file_date, start_time, dt_last_ret_data, prodGDB,
-                              prod_attachments, SmpEvntIDs_dl,
+                              SmpEvntIDs_dl,
                               stage, ls_type_3_dups)
 
             except Exception as e:
@@ -857,208 +825,6 @@ def Get_Data(AGOfields_, token, queryURL_, wkgFolder, wkgGDB_, origFC, dt_last_r
     print "Successfully retrieved data.\n"
 
     return origPath_, SmpEvntIDs_dl
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#                         FUNCTION:   Get Attachments
-# Attachments (images) are obtained by hitting the REST endpoint of the feature
-# service (gaURL) and returning a URL that downloads a JSON file (which is a
-# replica of the database).  The script then uses that downloaded JSON file to
-# get the URL of the actual images.  The JSON file is then used to get the
-# StationID and SampleEventID of the related feature so they can be used to name
-# the downloaded attachment.
-
-#TODO: find a way to rotate the images clockwise 90-degrees
-def Get_Attachments(token, gaURL, gaFolder, SmpEvntIDs_dl, dt_to_append):
-    """
-    PARAMETERS:
-        token (str):
-            The string token obtained in FUNCTION Get_Token().
-        gaURL (str):
-            The variable set in FUNCTION main() where we can request to create a
-            replica FGDB in json format.
-        wkgFolder (str):
-            The variable set in FUNCTION main() which is a path to our working
-            folder.
-        dt_to_append (str):
-            The date and time string returned by FUNCTION Get_DateAndTime().
-
-    VARS:
-        replicaUrl (str):
-            URL of the replica FGDB in json format.
-        JsonFileName (str):
-            Name of the temporary json file.
-        gaFolder (str):
-            A folder in the wkgFolder that holds the attachments.
-        gaRelId (str):
-            The parentGlobalId of the attachment.  This = the origId for the
-            related feature.
-        origId (str):
-            The GlobalId of the feature.  This = the parentGlobalId of the
-            related attachment.
-        origName1 (str):
-            The StationID of the related feature to the attachment.
-        origName2 (str):
-            The SampleEventID of the related feature to the attachment.
-        attachName (str):
-            The string concatenation of origName1 and origName2 to be used to
-            name the attachment.
-        dupList (list of str):
-            List of letters ('A', 'B', etc.) used to append to the end of an
-            image to prevent multiple images with the same StationID and
-            SampleEventID overwriting each other.
-        attachmentUrl:
-            The URL of each specific attachment.  Need a token to actually
-            access and download the image at this URL.
-
-    RETURNS:
-        gaFolder (str):
-            So that the email can send that information.
-
-    FUNCTION:
-      Gets the attachments (images) that are related to the database features and
-      stores them as .jpg in a local file inside the wkgFolder.
-    """
-
-    print '--------------------------------------------------------------------'
-    print 'Getting Attachments...'
-
-    # Flag to set if Attachments were downloaded.  Set to 'True' if downloaded
-    attachment_dl = False
-
-    #---------------------------------------------------------------------------
-    #                       Get the attachments url (ga)
-    # Set the values in a dictionary
-    gaValues = {
-    'f' : 'json',
-    'replicaName' : 'Bacteria_TMDL_Replica',
-    'layers' : '0',
-    'geometryType' : 'esriGeometryPoint',
-    'transportType' : 'esriTransportTypeUrl',
-    'returnAttachments' : 'true',
-    'returnAttachmentDatabyURL' : 'false',
-    'token' : token
-    }
-
-    # Get the Replica URL
-    print '  Getting Replica URL'
-    gaData = urllib.urlencode(gaValues)
-    gaRequest = urllib2.Request(gaURL, gaData)
-    gaResponse = urllib2.urlopen(gaRequest)
-    gaJson = json.load(gaResponse)
-    try:
-        replicaUrl = gaJson['URL'] # Try to load the 'URL' key of the replica
-
-    # If the 'URL' key doesn't exist, print out the error message and details
-    except KeyError:
-        print '*** Key Error! ***'
-        print '  {}\n  {}'.format(gaJson['error']['message'], gaJson['error']['details'])
-        print '  Replica URL: %s' % str(replicaUrl)  # For testing purposes
-
-    # Set the token into the URL so it can be accessed
-    replicaUrl_token = replicaUrl + '?&token=' + token + '&f=json'
-    ##print '  Replica URL Token: %s' % str(replicaUrl_token)  # For testing purposes
-
-    #---------------------------------------------------------------------------
-    #                         Save the JSON file
-    # Access the URL and save the file to the current working directory named
-    # 'myLayer.json'.  This will be a temporary file and will be deleted
-
-    JsonFileName = 'Temp_JSON_%s.json' % dt_to_append
-
-    # Save the file
-    # NOTE: the file is saved to the 'current working directory' + 'JsonFileName'
-    urllib.urlretrieve(replicaUrl_token, JsonFileName)
-
-    # Allow the script to access the saved JSON file
-    cwd = os.getcwd()  # Get the current working directory
-    jsonFilePath = cwd + '\\' + JsonFileName # Path to the downloaded json file
-    print '  Temp JSON file saved to: ' + jsonFilePath
-
-    #---------------------------------------------------------------------------
-    #                       Save the attachments
-
-    # Make the gaFolder (to hold attachments) if it doesn't exist.
-    if not os.path.exists(gaFolder):
-        os.makedirs(gaFolder)
-
-    # Open the JSON file
-    with open (jsonFilePath) as data_file:
-        data = json.load(data_file)
-
-    # Save the attachments
-    # Loop through each 'attachment' and get its parentGlobalId so we can name
-    #  it based on its corresponding feature
-    print '  Attempting to save attachments:'
-
-    for attachment in data['layers'][0]['attachments']:
-        gaRelId = attachment['parentGlobalId']
-
-        # Now loop through all of the 'features' and break once the corresponding
-        #  GlobalId's match so we can save based on the 'StationID'
-        #  and 'SampleEventID'
-        for feature in data['layers'][0]['features']:
-            origId = feature['attributes']['globalid']
-            StationID = feature['attributes']['StationID']
-            SampleEventID = str(feature['attributes']['SampleEventID'])
-            if origId == gaRelId:
-                break
-
-        # Test to see if the StationID is one of the features downloaded in
-        # FUNCTION Get_Data. Download if so, ignore if not
-        if SampleEventID in SmpEvntIDs_dl:
-            attachName = '%s__%s' % (StationID, SampleEventID)
-            # 'i' and 'dupList' are used in the event that there are
-            #  multiple photos with the same StationID and SampleEventID.  If they
-            #  do have the same attributes as an already saved attachment, the letter
-            #  suffix at the end of the attachment name will increment to the next
-            #  letter.  Ex: if there are two SDR-100__9876, the first will always be
-            #  named 'SDR-1007__9876_A.jpg', the second will be 'SDR-1007__9876_B'
-            i = 0
-            dupList = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-            attachPath = gaFolder + '\\' + attachName + '_' + dupList[i] + '.jpg'
-
-            # Test to see if the attachPath currently exists
-            while os.path.exists(attachPath):
-                # The path does exist, so go through the dupList until a 'new' path is found
-                i += 1
-                attachPath = gaFolder + '\\' + attachName + '_' + dupList[i] + '.jpg'
-
-                # Test the new path to see if it exists.  If it doesn't exist, break out
-                # of the while loop to save the image to that new path
-                if not os.path.exists(attachPath):
-                    break
-
-            # Only download the attachment if the picture is from A - G
-            # 'H' is a catch if there are more than 7 photos with the same Station ID
-            # and Sample Event ID, shouldn't be more than 7 so an 'H' pic is passed.
-            if (dupList[i] != 'H'):
-                # Get the token to download the attachment
-                gaValues = {'token' : token }
-                gaData = urllib.urlencode(gaValues)
-
-                # Get the attachment and save as attachPath
-                print '    Saving %s' % attachName
-                attachment_dl = True
-
-                attachmentUrl = attachment['url']
-                urllib.urlretrieve(url=attachmentUrl, filename=attachPath,data=gaData)
-
-            else:
-                print '  WARNING.  There were more than 7 pictures with the same Station ID and Sample Event ID. Picture not saved.'
-
-    if (attachment_dl == False):
-        print '    No attachments saved this run.  OK if no attachments submitted since last run.'
-
-    print '  All attachments can be found at: %s' % gaFolder
-
-    # Delete the JSON file since it is no longer needed.
-    print '  Deleting JSON file'
-    os.remove(jsonFilePath)
-
-    print 'Successfully got attachments.\n'
-
-    return gaFolder
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -1542,19 +1308,51 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
 #                   FUNCTION: Check_For_Sites_To_Delete()
 def Check_For_Sites_To_Delete(SITES_wkg_data, name_of_FS, index_of_layer_in_FS, email_list, stage, token):
     """
+    PARAMETERS:
+      wkg_sites_data (str): Full path to the downloaded SITES data in a wkg FGDB.
+
+      name_of_FS (str): The name of the Feature Service (do not include things
+        like "services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services", just
+        the name is needed.  i.e. "DPW_WP_SITES_DEV_VIEW".
+
+      index_of_layer_in_FS (int or str): The index of the layer in the Feature Service.
+        This will frequently be 0, but it could be a higer number if the FS has
+        multiple layers in it.
+
+      email_list (list of str): List of emails that should be notified if any
+        sites are deleted.
+
+      stage (str): The stage (DEV, BETA, PROD) that this script is running in.
+        Used in the email subject line.
+
+      token (str) = The token obtained by the Get_Token() which gives access to
+        AGOL databases that we have permission to access.
+
+    RETURNS:
+      None
+
+    FUNCTION:
+      1) To first check for any sites that have a [Site_status] = 'To Be Deleted'
+         in the downloaded working SITES data in the FGDB.
+      2) Any sites that were marked for deletion will be deleted, and their SiteID
+         will be added to a list (which will be used below).
+      3) Any sites that were deleted in the working FGDB, will then be deleted
+         on the AGOL Feature Service.
+      4) If any sites were deleted, send an email to the email_list letting them
+         know that sites were deleted.
     """
 
     print '--------------------------------------------------------------------'
     print 'Starting Check_For_Sites_To_Delete()'
 
+    deleted_sites = []  # List to hold the StationID of the sites marked for deletion
+
     where_clause = "Site_Status = 'To Be Deleted'"
     print '  Checking to see if any SITES are marked for deletion:'
     print '    ' + where_clause
 
-    # Check to see if there are sites to delete
+    # Check in FGDB Sites Data to see if there are sites to delete
     #   Delete them if they exist in the downloaded data
-    sites_to_delete = False
-    deleted_sites = []
     with arcpy.da.UpdateCursor(SITES_wkg_data, ['StationID', 'Site_Status'], where_clause) as cursor:
         for row in cursor:
             print '  Station ID: "{}"  has Site_Status: "{}"'.format(row[0], row[1])
@@ -1562,21 +1360,24 @@ def Check_For_Sites_To_Delete(SITES_wkg_data, name_of_FS, index_of_layer_in_FS, 
             deleted_sites.append(row[0])
 
             print '  Deleting Station ID in {}'.format(SITES_wkg_data)
-            cursor.deleteRow()  # Delete the feature
+            cursor.deleteRow()  # Delete the downloaded feature in the FGDB
 
     # If there were sites to delete in the downloaded data, delete the sites in
     #  the AGOL database.
-    if sites_to_delete == False:
+    if (len(deleted_sites) == 0):
         print '  There were no sites marked for deletion'
 
     else:
+        # Now delete the sites on AGOL
         print '\nStart deleting sites on AGOL:'
+
         # Get a list of OBJECTID's from the AGOL database
         AGOL_objIDs_sites_to_delete = Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, token)
 
-        # Delete the features in the AGOL database
+        # Delete the features in the AGOL database using the OBJECTID list
         Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, AGOL_objIDs_sites_to_delete, token)
         print '  Finished deleting sites on AGOL.\n'
+
         #-----------------------------------------------------------------------
         #               Email DPW if there were deleted sites
         print 'Sending email to DPW with list of deleted sites'
@@ -1597,8 +1398,9 @@ def Check_For_Sites_To_Delete(SITES_wkg_data, name_of_FS, index_of_layer_in_FS, 
         """.format(list_to_string))
         Email_W_Body(subj, body, email_list)
 
+    #---------------------------------------------------------------------------
     print 'Finished Check_For_Sites_To_Delete()\n'
-
+    return
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -1610,7 +1412,7 @@ def Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, to
       name_of_FS (str): The name of the Feature Service (do not include things
         like "services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services", just
         the name is needed.  i.e. "DPW_WP_SITES_DEV_VIEW".
-      index_of_layer_in_FS (int): The index of the layer in the Feature Service.
+      index_of_layer_in_FS (int or str): The index of the layer in the Feature Service.
         This will frequently be 0, but it could be a higer number if the FS has
         multiple layers in it.
       where_clause (str): Where clause.
@@ -1980,66 +1782,6 @@ def Calculate_Fields(wkg_data, calc_fields_csv):
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#                          FUNCTION DELETE FIELDS
-
-def Delete_Fields(wkg_data, delete_fields_csv):
-    """
-    PARAMETERS:
-      wkg_data (str) = Name of the working FC in the wkgGDB. This is the FC
-        that is processed.  It is overwritten each time the script is run.
-      delete_fields_csv (str) = Full path to the CSV file that lists which
-        fields should be deleted.
-
-    RETURNS:
-      None
-
-    FUNCTION:
-      To delete fields from the wkg_data using a CSV file located at
-      delete_fields_csv.
-    """
-
-    print '--------------------------------------------------------------------'
-    print 'Deleting fields in:\n    %s' % wkg_data
-    print '  Using Control CSV at:\n    {}\n'.format(delete_fields_csv)
-
-    #---------------------------------------------------------------------------
-    #                     Get values from the CSV file
-    with open (delete_fields_csv) as csv_file:
-        readCSV  = csv.reader(csv_file, delimiter = ',')
-
-        delete_fields = []
-
-        row_num = 0
-        for row in readCSV:
-            if row_num > 1:
-                delete_field = row[0]
-                delete_fields.append(delete_field)
-            row_num += 1
-
-    num_calcs = len(delete_fields)
-    print '    There is/are %s deletion(s) to perform.\n' % str(num_calcs)
-
-    #---------------------------------------------------------------------------
-    #                          Delete fields
-
-    # If there is at least one field to delete, delete it
-    if num_calcs > 0:
-        f_counter = 0
-        while f_counter < num_calcs:
-            drop_field = delete_fields[f_counter]
-            print '    Deleting field: %s...' % drop_field
-
-            arcpy.DeleteField_management(wkg_data, drop_field)
-
-            f_counter += 1
-
-        print 'Successfully deleted fields.\n'
-
-    else:
-        print 'WARNING.  NO fields were deleted.'
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
 #                           FUNCTION: FC to Table
 def FC_To_Table(wkgFolder, wkgGDB, wkgPath):
     """
@@ -2071,99 +1813,6 @@ def FC_To_Table(wkgFolder, wkgGDB, wkgPath):
     print 'Successfully exported FC to table\n'
 
     return out_table
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#                           FUNCTION: GET FIELD MAPPINGS
-def Get_Field_Mappings(orig_table, prod_table, map_fields_csv):
-    """
-    PARAMETERS:
-      orig_table (str): Full path to the converted TABLE (from the working FC).
-      prod_table (str): Full path to the production TABLE that contains the
-        most up-to-date data.
-      map_fields_csv (str): Full path to the CSV file that lists which fields
-        in the converted TABLE match the fields in the production TABLE.
-
-    RETURNS:
-      fms (arcpy.FieldMappings object): This object contains the field mappings
-        that can be used when we append the working data to the production data.
-
-    FUNCTION:
-      By using a CSV file that lists fields in the working data and their
-      matching field in the production data, this functino gets any non-default
-      field mappings between the working data and the production data. The
-      field mapping object is returned by the function so it can be used in an
-      append function.
-
-    NOTE:
-      This function is only useful if there are any field names that are
-      different between the working database and the production database.
-      This is because the default for an append function is to match the field
-      names between the target dataset and the appending dataset.
-    """
-
-    print '--------------------------------------------------------------------'
-    print 'Getting Field Mappings...'
-
-    #---------------------------------------------------------------------------
-    #                      Get values from the CSV file
-    with open (map_fields_csv) as csv_file:
-        readCSV = csv.reader(csv_file, delimiter = ',')
-
-        # Create blank lists
-        orig_fields = []
-        prod_fields = []
-
-        row_num = 0
-        for row in readCSV:
-            if row_num > 1:
-                # Get values for that row
-                orig_field = row[0]
-                prod_field = row[1]
-
-                orig_fields.append(orig_field)
-                prod_fields.append(prod_field)
-
-            row_num += 1
-
-    num_fm = len(orig_fields)
-    print '  There are %s non-default fields to map.' % str(num_fm)
-
-    #---------------------------------------------------------------------------
-    #           Set the Field Maps into the Field Mapping object
-    # Create FieldMappings obj
-    fms = arcpy.FieldMappings()
-
-    # Add the schema of the production table so that all fields that are exactly
-    # the same name between the orig table and the prod table will be mapped
-    # to each other by default
-    fms.addTable(prod_table)
-
-    # Loop through each pair of listed fields (orig and prod) and add the
-    # FieldMap object to the FieldMappings obj
-    counter = 0
-    while counter < num_fm:
-        print ('  Mapping Orig Field: "%s" to Prod Field: "%s"'
-                                 % (orig_fields[counter], prod_fields[counter]))
-        # Create FieldMap
-        fm = arcpy.FieldMap()
-
-        # Add the input field
-        fm.addInputField(orig_table, orig_fields[counter])
-
-        # Add the output field
-        out_field_obj = fm.outputField
-        out_field_obj.name = prod_fields[counter]
-        fm.outputField = out_field_obj
-
-        # Add the FieldMap to the FieldMappings
-        fms.addFieldMap(fm)
-
-        del fm
-        counter += 1
-
-    print 'Successfully Got Field Mappings\n'
-    return fms
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -2500,7 +2149,7 @@ def Duplicate_Handler(target_table):
 #-------------------------------------------------------------------------------
 #                           FUNCTION:  Email Results
 def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_file_date,
-                  start_time_obj, dt_last_ret_data, prod_FGDB, attach_folder,
+                  start_time_obj, dt_last_ret_data, prod_FGDB,
                   dl_features_ls, stage, ls_type_3_dups):
     """
     PARAMETERS:
@@ -2581,15 +2230,13 @@ def Email_Results(errorSTATUS, cfgFile, dpw_email_list, lueg_admin_email, log_fi
                The below files are on the GIS Blue Network, will not be available
                for DPW staff during Beta testing.                     <br>
                The <b>FGDB</b> is located at:            <i>{fgdb}</i><br>
-               The <b>Images</b> are located at:         <i>{af}  </i><br>
                The <b>Log File</b> is located at:        <i>{lf}  </i><br>
             </p>
           </body>
         </html>
         """.format(st = start_time[0],
                    ft = finish_time[0], dlr = data_last_retrieved[0],
-                   num = num_dl_features, fgdb = prod_FGDB, af = attach_folder,
-                   lf = log_file_date))
+                   num = num_dl_features, fgdb = prod_FGDB, lf = log_file_date))
 
     #---------------------------------------------------------------------------
     #             Write the "Success--No Data Downloaded' email
