@@ -1,2 +1,0 @@
-"The script DPW_Science_and_Monitoring.py uses this script to control which fields to delete.  It will ignore the first two rows, and will ignore everything after Column A.  This CSV passes the field_name of the field to delete."
-Field To Delete

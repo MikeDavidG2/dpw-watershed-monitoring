@@ -26,17 +26,34 @@ def main():
     #---------------------------------------------------------------------------
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
-    stage = 'BETA'  # This variable is used to control the path to the various stages
+    stage = 'DEV'  # This variable is used to control the path to the various stages
 
-    fgdb_to_export = r"P:\DPW_ScienceAndMonitoring\Scripts\{}\Data\DPW_Science_and_Monitoring_prod.gdb".format(stage)
+    #---------------------------------------------------------------------------
+    # Set the path prefix depending on if this script is called manually by a
+    #  user, or called by a scheduled task on ATLANTIC server.
+    called_by = arcpy.GetParameterAsText(0)
+
+    if called_by == 'MANUAL':
+        path_prefix = 'P:'  # i.e. 'P:' or 'U:'
+        fgdb_to_be_updated = r'V:\sde_load.gdb'
+
+    elif called_by == 'SCHEDULED':
+        path_prefix = 'D:\projects'  # i.e. 'D:\projects' or 'D:\users'
+        fgdb_to_be_updated = r'D:\sde\sde_load.gdb'
+
+    else:  # If script run directly and no called_by parameter specified
+        path_prefix = 'P:'  # i.e. 'P:' or 'U:'
+        fgdb_to_be_updated = r'V:\sde_load.gdb'
+
+    #---------------------------------------------------------------------------
+
+    fgdb_to_export = r"{prefix}\DPW_ScienceAndMonitoring\{v}\Data\DPW_Science_and_Monitoring_prod.gdb".format(prefix = path_prefix, v = stage)
     items_to_export = ['DPW_WP_FIELD_DATA', 'DPW_WP_SITES']
-
-    fgdb_to_be_updated = r'V:\sde_load.gdb'
 
     # Set to "True" to have 'print' statements be written to the log_file
     # Set to "False" to have 'print' statements print to screen
     run_Write_Print_To_Log = True
-    log_file = r'P:\DPW_ScienceAndMonitoring\Scripts\{}\Data\Logs\DPW_Update_sde_load'.format(stage)
+    log_file = r'{prefix}\DPW_ScienceAndMonitoring\{v}\Scripts\Logs\DPW_Update_sde_load'.format(prefix = path_prefix, v = stage)
 
     # Set email recipients
     email_recipients = ['michael.grue@sdcounty.ca.gov']
