@@ -38,14 +38,15 @@ DETAILED PROCESS:
     Start DPW_WP_SITES processing
     2.2.7  Get all of the the DPW_WP_SITES from AGOL and store in the same
              working folder as above.  This data is from Collector.
-    2.2.8  QA/QC the DPW_WP_SITES data.
-    2.2.9  If no QA/QC errors in DPW_WP_SITES, calculate X and Y fields.
-    2.2.10 See if any sites are marked for deletion if so, delete them in
-             downloaded SITES data and then in AGOL database.
-             Send an email letting DPW know a site has been deleted.
+    2.2.8  See if any sites are marked for deletion if so, delete them in
+             downloaded SITES data, the production SITES data, and then in
+             the AGOL database. Send an email letting DPW know a site
+             has been deleted.
+    2.2.9  QA/QC the DPW_WP_SITES data.
+    2.2.10 Calculate X and Y fields.
     2.2.11 If no QA/QC errors in DPW_WP_SITES, Delete the features in
-             DPW_WP_SITES in the prod FGDB and append the features just downloaded
-             and QA/QC'd.
+             DPW_WP_SITES in the prod FGDB and append the features just
+             downloaded and QA/QC'd.
     Finish DPW_WP_SITES processing
 
     ----------------------------------------------------------------------------
@@ -328,11 +329,27 @@ def main():
             except Exception as e:
                 errorSTATUS = Error_Handler('Get_AGOL_Data_All', e)
 
+        # See if any sites are marked for deletion if so, delete them in
+        #   downloaded SITES data, production SITES data, and in AGOL database.
+        #   Send an email letting DPW know a site has been deleted.
+        if (errorSTATUS == 0):
+            try:
+                # Check for and delete any sites in downloaded SITES data
+                # Use admin URL so that we can perform the delete operation
+                name_of_SITES_FS = SITES_adminURL.split('/')[7]  # The name of the FS is the 7th item when the string is split on '/'
+                index_of_layer_in_FS = SITES_query_url.split('/')[9]
+
+                # Set the path to the downloaded SITES data
+                SITES_wkg_data = wkgFolder + '\\' + wkgGDB + '\\' + SITES_FC_from_AGOL
+
+                Check_For_Sites_To_Delete(SITES_wkg_data, prodPath_SitesData, name_of_SITES_FS, index_of_layer_in_FS, dpw_email_list, stage, token)
+
+            except Exception as e:
+                errorSTATUS = Error_Handler('Check_For_Sites_To_Delete', e)
+        print ''
+
         # Check the downloaded SITES data for any errors, email if errors
         if (errorSTATUS == 0):
-
-            # Set the path to the downloaded SITES data
-            SITES_wkg_data = wkgFolder + '\\' + wkgGDB + '\\' + SITES_FC_from_AGOL
 
             try:
                 SITES_valid_data = Check_Sites_Data(SITES_wkg_data, SITES_required_fields,
@@ -340,59 +357,36 @@ def main():
                                                SITES_Edit_WebMap)
             except Exception as e:
                 errorSTATUS = Error_Handler('Check_Sites_Data', e)
+        print ''
 
         # Calculate the X and Y fields
         if (errorSTATUS == 0):
-            if SITES_valid_data:
-                try:
-                    x_calc  = '!SHAPE.CENTROID.X!'
-                    y_calc  = '!SHAPE.CENTROID.Y!'
-                    p_version  = 'PYTHON_9.3'
+            try:
+                x_calc  = '!SHAPE.CENTROID.X!'
+                y_calc  = '!SHAPE.CENTROID.Y!'
+                p_version  = 'PYTHON_9.3'
 
-                    print 'Calculating X and Y fields for:\n  {}'.format(SITES_wkg_data)
+                print 'Calculating X and Y fields for:\n  {}'.format(SITES_wkg_data)
 
-                    # Calculate the X field
-                    print '    Calculating field: "{}" as "{}"'.format(x_field, x_calc)
-                    arcpy.CalculateField_management(SITES_wkg_data, x_field,
-                                                              x_calc, p_version)
+                # Calculate the X field
+                print '    Calculating field: "{}" as "{}"'.format(x_field, x_calc)
+                arcpy.CalculateField_management(SITES_wkg_data, x_field,
+                                                          x_calc, p_version)
 
-                    # Calculate the Y field
-                    print '    Calculating field: "{}" as "{}"'.format(y_field, y_calc)
-                    arcpy.CalculateField_management(SITES_wkg_data, y_field,
-                                                              y_calc, p_version)
+                # Calculate the Y field
+                print '    Calculating field: "{}" as "{}"'.format(y_field, y_calc)
+                arcpy.CalculateField_management(SITES_wkg_data, y_field,
+                                                          y_calc, p_version)
 
-                except Exception as e:
-                    errorSTATUS = Error_Handler('main', e)
-
-            else:
-                print '*** ERROR! SITES data is NOT valid.  X and Y fields not calculated, please fix QA/QC errors above. ***'
+            except Exception as e:
+                errorSTATUS = Error_Handler('main', e)
         print ''
-
-        # See if any sites are marked for deletion if so, delete them in
-        #   downloaded SITES data and in AGOL database.
-        #   Send an email letting DPW know a site has been deleted.
-        if (errorSTATUS == 0):
-            if SITES_valid_data:
-                try:
-                    # Check for and delete any sites in downloaded SITES data
-                    # Use admin URL so that we can perform the delete operation
-                    name_of_SITES_FS = SITES_adminURL.split('/')[7]  # The name of the FS is the 7th item when the string is split on '/'
-                    index_of_layer_in_FS = SITES_query_url.split('/')[9]
-
-                    #TODO: <3/9/18 MG> Uncomment out below once confirmed that DPW is off the BETA SITES Collector Web Map
-                    ##Check_For_Sites_To_Delete(SITES_wkg_data, name_of_SITES_FS, index_of_layer_in_FS, dpw_email_list, stage, token)
-
-                except Exception as e:
-                    errorSTATUS = Error_Handler('Check_For_Sites_To_Delete', e)
-
-            else:
-                print '*** ERROR! SITES data is NOT valid.  Did not check for any sites marked for deletion. ***'
 
         # Delete prod SITES features and append wkg SITES features in prod FGDB
         if (errorSTATUS == 0):
             if SITES_valid_data:
                 try:
-                    # Delete the prod SITES features
+                    # Delete the SITES features in the prod FGDB
                     print '  Deleting Features at: {}'.format(prodPath_SitesData)
                     arcpy.DeleteFeatures_management(prodPath_SitesData)
 
@@ -405,6 +399,7 @@ def main():
                 except Exception as e:
                     errorSTATUS = Error_Handler('main', e)
             else:
+                errorSTATUS = 1
                 print '*** ERROR! SITES data is NOT valid.  Data not copied to prod database, please fix errors above. ***'
 
     print '\n                 Finished processing SITES data'
@@ -990,6 +985,124 @@ def Get_AGOL_Data_All(AGOL_fields, token, FS_url, index_of_layer, wkg_folder, wk
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
+#                   FUNCTION: Check_For_Sites_To_Delete()
+def Check_For_Sites_To_Delete(SITES_wkg_data, prodPath_SitesData, name_of_FS, index_of_layer_in_FS, email_list, stage, token):
+    """
+    PARAMETERS:
+      wkg_sites_data (str): Full path to the downloaded SITES data in a wkg FGDB.
+
+      prodPath_SitesData (str): Full path to the production SITES data in the
+        production FGDB.
+
+      name_of_FS (str): The name of the Feature Service (do not include things
+        like "services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services", just
+        the name is needed.  i.e. "DPW_WP_SITES_DEV_VIEW".
+
+      index_of_layer_in_FS (int or str): The index of the layer in the Feature Service.
+        This will frequently be 0, but it could be a higer number if the FS has
+        multiple layers in it.
+
+      email_list (list of str): List of emails that should be notified if any
+        sites are deleted.
+
+      stage (str): The stage (DEV, BETA, PROD) that this script is running in.
+        Used in the email subject line.
+
+      token (str) = The token obtained by the Get_Token() which gives access to
+        AGOL databases that we have permission to access.
+
+    RETURNS:
+      None
+
+    FUNCTION:
+      1) To first check for any sites that have a [Site_status] = 'To Be Deleted'
+         in the downloaded working SITES data in the FGDB.
+      2) Any sites that were marked for deletion will be deleted, and their SiteID
+         will be added to a list (which will be used below).
+      3) Any sites that were deleted in the working FGDB, will be deleted in the
+         production database.  This is so when we do a QA/QC check in
+         Check_Sites_Data(), we will not get an error that there is a site in
+         production that is not in the working data (which would be counted as a
+         false error).
+      4) Any sites that were deleted in the working FGDB, will then be deleted
+         on the AGOL Feature Service.
+      5) If any sites were deleted, send an email to the email_list letting them
+         know that sites were deleted.
+    """
+
+    print '--------------------------------------------------------------------'
+    print 'Starting Check_For_Sites_To_Delete()'
+
+    deleted_sites = []  # List to hold the StationID of the sites marked for deletion
+
+    where_clause = "Site_Status = 'To Be Deleted'"
+    print '  Checking to see if any SITES are marked for deletion:'
+    print '    ' + where_clause
+
+    # Check in FGDB Sites Data to see if there are sites to delete
+    #   Delete them if they exist in the downloaded data
+    with arcpy.da.UpdateCursor(SITES_wkg_data, ['StationID', 'Site_Status'], where_clause) as cursor:
+        for row in cursor:
+            print '  Station ID: "{}"  has Site_Status: "{}"'.format(row[0], row[1])
+            deleted_sites.append(row[0])
+
+            print '  Deleting Station ID in: {}'.format(SITES_wkg_data)
+            cursor.deleteRow()  # Delete the downloaded feature in the FGDB
+
+    if (len(deleted_sites) == 0):
+        print '  There were no sites marked for deletion'
+
+    # If there were sites to delete in the downloaded data, delete the same sites in
+    #  the production AND AGOL databases.
+    else:
+        # Delete the sites in the production FGDB FC
+        print '\n  Start deleting sites on prod database'
+        for site in deleted_sites:
+            where_clause = "StationID = '{}'".format(site)
+            with arcpy.da.UpdateCursor(prodPath_SitesData, ['StationID'], where_clause) as cursor:
+                for row in cursor:
+                    print '  Deleting Station ID "{}" in: {}'.format(row[0], prodPath_SitesData)
+                    # TODO: uncomment out below
+                    cursor.deleteRow()  # Delete the prod feature in the FGDB
+
+        # Now delete the sites on AGOL
+        print '\n  Start deleting sites on AGOL:'
+
+        # Get a list of OBJECTID's from the AGOL database
+        where_clause = "Site_Status = 'To Be Deleted'"
+        AGOL_objIDs_sites_to_delete = Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, token)
+
+        # Delete the features in the AGOL database using the OBJECTID list
+        # TODO: uncomment out below
+        Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, AGOL_objIDs_sites_to_delete, token)
+        print '  Finished deleting sites on AGOL.\n'
+
+        #-----------------------------------------------------------------------
+        #               Email DPW if there were deleted sites
+        print '  Sending email to DPW with list of deleted sites'
+        # Set email subject
+        subj = '{} -- Sci and Mon Info.  There were Station IDs that were deleted'.format(stage)
+
+        # Format the Body in html
+        list_to_string = '<br> '.join(deleted_sites)
+        body = ("""
+        DPW staff, the below list are the Station IDs that were marked for deletion
+        by DPW staff and were deleted by the script.<br>
+        There is no need to take any action <i>unless</i> one of the below sites
+        was accidentally deleted.  (If a site was accidentally deleted, please
+        let LUEG-GIS know which site should be restored).<br><br>
+
+        <b>Sites that were deleted:</b>
+        {}
+        """.format(list_to_string))
+        Email_W_Body(subj, body, email_list)
+
+    #---------------------------------------------------------------------------
+    print 'Finished Check_For_Sites_To_Delete()\n'
+    return
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_list,
                      stage, SITES_Edit_WebMap):
     """
@@ -1078,7 +1191,11 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         duplicate_ids.sort()
 
         print '*** ERROR! There is/are {} Station IDs that are in the AGOL database more than once ***'.format(str(len(duplicate_ids)))
-        print '  Sending an email to: {}'.format(', '.join(email_list))
+        print '  Duplicates:'
+        for dup in duplicate_ids:
+            print '    {}'.format(dup)
+
+        print '\n  Sending an email to: {}'.format(', '.join(email_list))
 
         # Set the email subject
         subj = '{} -- Sci and Mon Error.  There are duplicate Station IDs in the SITES database on AGOL'.format(stage)
@@ -1124,7 +1241,11 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         ids_w_null_values.sort()
 
         print '*** ERROR!  There are Station IDs that have NULL values in required fields ***'
-        print '  Sending an email to: {}'.format(', '.join(email_list))
+        print '  Sites with NULL values:'
+        for null_id in ids_w_null_values:
+            print '    {}'.format(null_id)
+
+        print '\n  Sending an email to: {}'.format(', '.join(email_list))
 
         # Set the email subject
         subj = '{} -- Sci and Mon Error.  There are null values in required fields'.format(stage)
@@ -1171,7 +1292,7 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
         valid_data = False
 
         print '*** ERROR! There is/are {} Site(s) with a NULL value in StationID'.format(num_blank_station_ids)
-        print '  Sending an email to: {}'.format(', '.join(email_list))
+        print '\n  Sending an email to: {}'.format(', '.join(email_list))
 
         # Set the email subject
         subj = '{} -- Sci and Mon Error.  There are stations with no Station IDs'.format(stage)
@@ -1221,7 +1342,11 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
     else:
         valid_data = False
         print '*** ERROR! There are {} Station IDs in the prod database, but is/are missing from the wkg database ***'.format(str(len(prod_ids_not_in_wkg)))
-        print '  Sending an email to: {}'.format(', '.join(email_list))
+        print '  Station IDs in prod, but not in wkg:'
+        for value in prod_ids_not_in_wkg:
+            print '    {}'.format(value)
+
+        print '\n  Sending an email to: {}'.format(', '.join(email_list))
 
         # Set the email subject
         subj = '{} -- Sci and Mon Error.  There are stations we cannot find in the AGOL database'.format(stage)
@@ -1264,7 +1389,12 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
 
     else:  # There are Station IDs that are in wkg data but not in prod yet
         print '    There are Station IDs in wkg data that are not in prod'
-        print '    This is not necessarily an error, but emailing list to: {}'.format(', '.join(email_list))
+
+        print'  Station IDs in wkg but not in prod:'
+        for value in wkg_station_ids_not_in_prod:
+            print '    {}'.format(value)
+
+        print '\n    This is not necessarily an error, but emailing list to: {}'.format(', '.join(email_list))
 
         # Set the email subject
         subj = '{} -- Sci and Mon Info.  There were new Station IDs added to AGOL'.format(stage)
@@ -1307,105 +1437,6 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-#                   FUNCTION: Check_For_Sites_To_Delete()
-def Check_For_Sites_To_Delete(SITES_wkg_data, name_of_FS, index_of_layer_in_FS, email_list, stage, token):
-    """
-    PARAMETERS:
-      wkg_sites_data (str): Full path to the downloaded SITES data in a wkg FGDB.
-
-      name_of_FS (str): The name of the Feature Service (do not include things
-        like "services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services", just
-        the name is needed.  i.e. "DPW_WP_SITES_DEV_VIEW".
-
-      index_of_layer_in_FS (int or str): The index of the layer in the Feature Service.
-        This will frequently be 0, but it could be a higer number if the FS has
-        multiple layers in it.
-
-      email_list (list of str): List of emails that should be notified if any
-        sites are deleted.
-
-      stage (str): The stage (DEV, BETA, PROD) that this script is running in.
-        Used in the email subject line.
-
-      token (str) = The token obtained by the Get_Token() which gives access to
-        AGOL databases that we have permission to access.
-
-    RETURNS:
-      None
-
-    FUNCTION:
-      1) To first check for any sites that have a [Site_status] = 'To Be Deleted'
-         in the downloaded working SITES data in the FGDB.
-      2) Any sites that were marked for deletion will be deleted, and their SiteID
-         will be added to a list (which will be used below).
-      3) Any sites that were deleted in the working FGDB, will then be deleted
-         on the AGOL Feature Service.
-      4) If any sites were deleted, send an email to the email_list letting them
-         know that sites were deleted.
-    """
-
-    print '--------------------------------------------------------------------'
-    print 'Starting Check_For_Sites_To_Delete()'
-
-    deleted_sites = []  # List to hold the StationID of the sites marked for deletion
-
-    where_clause = "Site_Status = 'To Be Deleted'"
-    print '  Checking to see if any SITES are marked for deletion:'
-    print '    ' + where_clause
-
-    # Check in FGDB Sites Data to see if there are sites to delete
-    #   Delete them if they exist in the downloaded data
-    with arcpy.da.UpdateCursor(SITES_wkg_data, ['StationID', 'Site_Status'], where_clause) as cursor:
-        for row in cursor:
-            print '  Station ID: "{}"  has Site_Status: "{}"'.format(row[0], row[1])
-            sites_to_delete = True
-            deleted_sites.append(row[0])
-
-            print '  Deleting Station ID in {}'.format(SITES_wkg_data)
-            cursor.deleteRow()  # Delete the downloaded feature in the FGDB
-
-    # If there were sites to delete in the downloaded data, delete the sites in
-    #  the AGOL database.
-    if (len(deleted_sites) == 0):
-        print '  There were no sites marked for deletion'
-
-    else:
-        # Now delete the sites on AGOL
-        print '\nStart deleting sites on AGOL:'
-
-        # Get a list of OBJECTID's from the AGOL database
-        AGOL_objIDs_sites_to_delete = Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, token)
-
-        # Delete the features in the AGOL database using the OBJECTID list
-        Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, AGOL_objIDs_sites_to_delete, token)
-        print '  Finished deleting sites on AGOL.\n'
-
-        #-----------------------------------------------------------------------
-        #               Email DPW if there were deleted sites
-        print 'Sending email to DPW with list of deleted sites'
-        # Set email subject
-        subj = '{} -- Sci and Mon Info.  There were Station IDs that were deleted'.format(stage)
-
-        # Format the Body in html
-        list_to_string = '<br> '.join(deleted_sites)
-        body = ("""
-        DPW staff, the below list are the Station IDs that were marked for deletion
-        by DPW staff and were deleted by the script.<br>
-        There is no need to take any action <i>unless</i> one of the below sites
-        was accidentally deleted.  (If a site was accidentally deleted, please
-        let LUEG-GIS know which site should be restored).<br><br>
-
-        <b>Sites that were deleted:</b>
-        {}
-        """.format(list_to_string))
-        Email_W_Body(subj, body, email_list)
-
-    #---------------------------------------------------------------------------
-    print 'Finished Check_For_Sites_To_Delete()\n'
-    return
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
 #                FUNCTION:    Get AGOL Object IDs Where
 
 def Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, token):
@@ -1434,8 +1465,8 @@ def Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, to
     Get_Token() and are passing it to this function via the 'token' variable.
     """
 
-    print '--------------------------------------------------------------------'
-    print "Starting Get_AGOL_Object_Ids_Where()"
+    print '  ------------------------------------------------------------------'
+    print "  Starting Get_AGOL_Object_Ids_Where()"
     import urllib2, urllib, json
 
     # Create empty list to hold the OBJECTID's that satisfy the where clause
@@ -1452,23 +1483,27 @@ def Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, to
 
     # Get the list of OBJECTID's that satisfied the where_clause
 
-    print '  Getting list of OBJECTID\'s that satisfied the where clause for layer:\n    {}'.format(query_url)
-    print '  Where clause: "{}"'.format(where_clause)
+    print '    Getting list of OBJECTID\'s that satisfied the where clause for layer:\n    {}'.format(query_url)
+    print '    Where clause: "{}"'.format(where_clause)
     ##print get_object_id_url
     response = urllib2.urlopen(get_object_id_url)
     response_json_obj = json.load(response)
-    object_ids = response_json_obj['objectIds']
+    try:
+        object_ids = response_json_obj['objectIds']
+    except KeyError:
+        print '*** Key Error! ***'
+        print response_json_obj
 
     if len(object_ids) > 0:
-        print '  There are "{}" features that satisfied the query.'.format(len(object_ids))
-        print '  OBJECTID\'s of those features:'
+        print '    There are "{}" features that satisfied the query.'.format(len(object_ids))
+        print '    OBJECTID\'s of those features:'
         for obj in object_ids:
-            print '    {}'.format(obj)
+            print '      {}'.format(obj)
 
     else:
-        print '  No features satisfied the query.'
+        print '    No features satisfied the query.'
 
-    print "Finished Get_AGOL_Object_Ids_Where()\n"
+    print "  Finished Get_AGOL_Object_Ids_Where()\n"
 
     return object_ids
 
@@ -1493,8 +1528,8 @@ def Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, object_ids, token):
       To Delete features on an AGOL Feature Service.
     """
 
-    print '--------------------------------------------------------------------'
-    print "Starting Delete_AGOL_Features()"
+    print '  ------------------------------------------------------------------'
+    print "  Starting Delete_AGOL_Features()"
     import urllib2, urllib, json
 
     # Turn the list of object_ids into one string with comma separated IDs
@@ -1506,10 +1541,10 @@ def Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, object_ids, token):
 
 
     # Delete the features
-    print '  Deleting Features in FS: "{}" and index "{}"'.format(name_of_FS, index_of_layer_in_FS)
-    print '  OBJECTIDs to be deleted: {}'.format(object_ids_str)
-    print delete_url
-    print del_params
+    print '    Deleting Features in FS: "{}" and index "{}"'.format(name_of_FS, index_of_layer_in_FS)
+    print '    OBJECTIDs to be deleted: {}'.format(object_ids_str)
+    ##print delete_url
+    ##print del_params
     response  = urllib2.urlopen(delete_url, del_params)
     response_json_obj = json.load(response)
     ##print response_json_obj
@@ -1519,7 +1554,7 @@ def Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, object_ids, token):
         print '    OBJECTID: {}'.format(result['objectId'])
         print '      Deleted? {}'.format(result['success'])
 
-    print 'Finished Delete_AGOL_Features()\n'
+    print '  Finished Delete_AGOL_Features()\n'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -2433,8 +2468,9 @@ def Error_Handler(func_w_err, e):
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-def Email_W_Body(subj, body, email_list, cfgFile=r"P:\DPW_ScienceAndMonitoring\Scripts\DEV\DEV_branch\Control_Files\accounts.txt"):
-
+def Email_W_Body(subj, body, email_list, cfgFile=r"P:\DPW_ScienceAndMonitoring\DEV\Scripts\Config_Files\accounts.txt"):
+    # TODO 3/12/18: Remove the default for cfgFile so that each call of this function
+    #  requires a valid cfgFile location.  Update metadata below.
     """
     PARAMETERS:
       subj (str): Subject of the email
@@ -2464,7 +2500,28 @@ def Email_W_Body(subj, body, email_list, cfgFile=r"P:\DPW_ScienceAndMonitoring\S
     from email.mime.multipart import MIMEMultipart
     import ConfigParser, smtplib
 
-    print '  Starting Email_W_Body()'
+    print '  Starting Email_W_Body()\n    Subject = {}'.format(subj)
+
+    # This is the alternate cfgFile path that can point to the cfgFile if the
+    # script is called by a server.  Server called paths may begin with different
+    # mapped drives.
+    alternate_cfgFile_path = r'D:\Projects\DPW_ScienceAndMonitoring\DEV\Scripts\Config_Files\accounts.txt'
+
+    # If the default cfgFile path doesn't exist, try changing the path to the
+    # alternative path.
+    if not os.path.exists(cfgFile):
+        print '    cfgFile does not exist at:\n      {}'.format(cfgFile)
+        print '    Trying the alternate path to the cfgFile...'
+        if os.path.exists(alternate_cfgFile_path):
+            cfgFile = alternate_cfgFile_path
+            print '    Successfully changed cfgFile path to:\n      {}'.format(cfgFile)
+        else:
+            print '\n*** ERROR! The Config File cannot be found at:\n      {}\n    OR\n      {}'.format(cfgFile, alternate_cfgFile_path)
+            print '  The email was not sent.  To fix try one of following:'
+            print '    1) Change the cfgFile path default in Email_W_Body()'
+            print '    2) Change the alternate_cfgFile_path in Email_W_Body()'
+            print '    3) Add the cfgFile to the correct location'
+            return
 
     # Set the subj, From, To, and body
     msg = MIMEMultipart()
