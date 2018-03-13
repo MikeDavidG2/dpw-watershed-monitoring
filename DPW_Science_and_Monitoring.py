@@ -1062,7 +1062,6 @@ def Check_For_Sites_To_Delete(SITES_wkg_data, prodPath_SitesData, name_of_FS, in
             with arcpy.da.UpdateCursor(prodPath_SitesData, ['StationID'], where_clause) as cursor:
                 for row in cursor:
                     print '  Deleting Station ID "{}" in: {}'.format(row[0], prodPath_SitesData)
-                    # TODO: uncomment out below
                     cursor.deleteRow()  # Delete the prod feature in the FGDB
 
         # Now delete the sites on AGOL
@@ -1073,7 +1072,6 @@ def Check_For_Sites_To_Delete(SITES_wkg_data, prodPath_SitesData, name_of_FS, in
         AGOL_objIDs_sites_to_delete = Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, token)
 
         # Delete the features in the AGOL database using the OBJECTID list
-        # TODO: uncomment out below
         Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, AGOL_objIDs_sites_to_delete, token)
         print '  Finished deleting sites on AGOL.\n'
 
@@ -1100,6 +1098,127 @@ def Check_For_Sites_To_Delete(SITES_wkg_data, prodPath_SitesData, name_of_FS, in
     #---------------------------------------------------------------------------
     print 'Finished Check_For_Sites_To_Delete()\n'
     return
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#                FUNCTION:    Get AGOL Object IDs Where
+
+def Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, token):
+    """
+    PARAMETERS:
+      name_of_FS (str): The name of the Feature Service (do not include things
+        like "services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services", just
+        the name is needed.  i.e. "DPW_WP_SITES_DEV_VIEW".
+      index_of_layer_in_FS (int or str): The index of the layer in the Feature Service.
+        This will frequently be 0, but it could be a higer number if the FS has
+        multiple layers in it.
+      where_clause (str): Where clause.
+      token (str): Obtained from the Get_Token()
+
+    RETURNS:
+      object_ids (list of str): List of OBJECTID's that satisfied the
+      where_clause.
+
+    FUNCTION:
+      To get a list of the OBJECTID's of the features that satisfied the
+      where clause.  This list will be the full list of all the records in the
+      FS regardless of the number of the returned OBJECTID's or the max record
+      count for the FS.
+
+    NOTE: This function assumes that you have already gotten a token from the
+    Get_Token() and are passing it to this function via the 'token' variable.
+    """
+
+    print '  ------------------------------------------------------------------'
+    print "  Starting Get_AGOL_Object_Ids_Where()"
+    import urllib2, urllib, json
+
+    # Create empty list to hold the OBJECTID's that satisfy the where clause
+    object_ids = []
+
+    # Encode the where_clause so it is readable by URL protocol (ie %27 = ' in URL).
+    # visit http://meyerweb.com/eric/tools/dencoder to test URL encoding.
+    where_encoded = urllib.quote(where_clause)
+
+    # Set URLs
+    query_url = r'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/{}/FeatureServer/{}/query'.format(name_of_FS, index_of_layer_in_FS)
+    query = '?where={}&returnIdsOnly=true&f=json&token={}'.format(where_encoded, token)
+    get_object_id_url = query_url + query
+
+    # Get the list of OBJECTID's that satisfied the where_clause
+
+    print '    Getting list of OBJECTID\'s that satisfied the where clause for layer:\n    {}'.format(query_url)
+    print '    Where clause: "{}"'.format(where_clause)
+    ##print get_object_id_url
+    response = urllib2.urlopen(get_object_id_url)
+    response_json_obj = json.load(response)
+    try:
+        object_ids = response_json_obj['objectIds']
+    except KeyError:
+        print '*** Key Error! ***'
+        print response_json_obj
+
+    if len(object_ids) > 0:
+        print '    There are "{}" features that satisfied the query.'.format(len(object_ids))
+        print '    OBJECTID\'s of those features:'
+        for obj in object_ids:
+            print '      {}'.format(obj)
+
+    else:
+        print '    No features satisfied the query.'
+
+    print "  Finished Get_AGOL_Object_Ids_Where()\n"
+
+    return object_ids
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+def Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, object_ids, token):
+    """
+    PARAMETERS:
+      name_of_FS (str): The name of the Feature Service (do not include things
+        like "services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services", just
+        the name is needed.  i.e. "DPW_WP_SITES_DEV_VIEW".
+      index_of_layer_in_FS (int): The index of the layer in the Feature Service.
+        This will frequently be 0, but it could be a higer number if the FS has
+        multiple layers in it.
+      object_ids (list of str): List of OBJECTID's that should be deleted.
+      token (str): Obtained from the Get_Token().
+
+    RETURNS:
+      None
+
+    FUNCTION:
+      To Delete features on an AGOL Feature Service.
+    """
+
+    print '  ------------------------------------------------------------------'
+    print "  Starting Delete_AGOL_Features()"
+    import urllib2, urllib, json
+
+    # Turn the list of object_ids into one string with comma separated IDs
+    object_ids_str = ','.join(str(x) for x in object_ids)
+
+    # Set URLs
+    delete_url       = r'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/{}/FeatureServer/{}/deleteFeatures?token={}'.format(name_of_FS, index_of_layer_in_FS, token)
+    del_params       = urllib.urlencode({'objectIds': object_ids_str, 'f':'json'})
+
+
+    # Delete the features
+    print '    Deleting Features in FS: "{}" and index "{}"'.format(name_of_FS, index_of_layer_in_FS)
+    print '    OBJECTIDs to be deleted: {}'.format(object_ids_str)
+    ##print delete_url
+    ##print del_params
+    response  = urllib2.urlopen(delete_url, del_params)
+    response_json_obj = json.load(response)
+    ##print response_json_obj
+
+    for result in response_json_obj['deleteResults']:
+        ##print result
+        print '    OBJECTID: {}'.format(result['objectId'])
+        print '      Deleted? {}'.format(result['success'])
+
+    print '  Finished Delete_AGOL_Features()\n'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -1434,127 +1553,6 @@ def Check_Sites_Data(wkg_sites_data, required_fields, prod_sites_data, email_lis
 
     print '\nFinished Check_Sites_Data()\n'
     return valid_data
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#                FUNCTION:    Get AGOL Object IDs Where
-
-def Get_AGOL_Object_Ids_Where(name_of_FS, index_of_layer_in_FS, where_clause, token):
-    """
-    PARAMETERS:
-      name_of_FS (str): The name of the Feature Service (do not include things
-        like "services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services", just
-        the name is needed.  i.e. "DPW_WP_SITES_DEV_VIEW".
-      index_of_layer_in_FS (int or str): The index of the layer in the Feature Service.
-        This will frequently be 0, but it could be a higer number if the FS has
-        multiple layers in it.
-      where_clause (str): Where clause.
-      token (str): Obtained from the Get_Token()
-
-    RETURNS:
-      object_ids (list of str): List of OBJECTID's that satisfied the
-      where_clause.
-
-    FUNCTION:
-      To get a list of the OBJECTID's of the features that satisfied the
-      where clause.  This list will be the full list of all the records in the
-      FS regardless of the number of the returned OBJECTID's or the max record
-      count for the FS.
-
-    NOTE: This function assumes that you have already gotten a token from the
-    Get_Token() and are passing it to this function via the 'token' variable.
-    """
-
-    print '  ------------------------------------------------------------------'
-    print "  Starting Get_AGOL_Object_Ids_Where()"
-    import urllib2, urllib, json
-
-    # Create empty list to hold the OBJECTID's that satisfy the where clause
-    object_ids = []
-
-    # Encode the where_clause so it is readable by URL protocol (ie %27 = ' in URL).
-    # visit http://meyerweb.com/eric/tools/dencoder to test URL encoding.
-    where_encoded = urllib.quote(where_clause)
-
-    # Set URLs
-    query_url = r'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/{}/FeatureServer/{}/query'.format(name_of_FS, index_of_layer_in_FS)
-    query = '?where={}&returnIdsOnly=true&f=json&token={}'.format(where_encoded, token)
-    get_object_id_url = query_url + query
-
-    # Get the list of OBJECTID's that satisfied the where_clause
-
-    print '    Getting list of OBJECTID\'s that satisfied the where clause for layer:\n    {}'.format(query_url)
-    print '    Where clause: "{}"'.format(where_clause)
-    ##print get_object_id_url
-    response = urllib2.urlopen(get_object_id_url)
-    response_json_obj = json.load(response)
-    try:
-        object_ids = response_json_obj['objectIds']
-    except KeyError:
-        print '*** Key Error! ***'
-        print response_json_obj
-
-    if len(object_ids) > 0:
-        print '    There are "{}" features that satisfied the query.'.format(len(object_ids))
-        print '    OBJECTID\'s of those features:'
-        for obj in object_ids:
-            print '      {}'.format(obj)
-
-    else:
-        print '    No features satisfied the query.'
-
-    print "  Finished Get_AGOL_Object_Ids_Where()\n"
-
-    return object_ids
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-def Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, object_ids, token):
-    """
-    PARAMETERS:
-      name_of_FS (str): The name of the Feature Service (do not include things
-        like "services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services", just
-        the name is needed.  i.e. "DPW_WP_SITES_DEV_VIEW".
-      index_of_layer_in_FS (int): The index of the layer in the Feature Service.
-        This will frequently be 0, but it could be a higer number if the FS has
-        multiple layers in it.
-      object_ids (list of str): List of OBJECTID's that should be deleted.
-      token (str): Obtained from the Get_Token().
-
-    RETURNS:
-      None
-
-    FUNCTION:
-      To Delete features on an AGOL Feature Service.
-    """
-
-    print '  ------------------------------------------------------------------'
-    print "  Starting Delete_AGOL_Features()"
-    import urllib2, urllib, json
-
-    # Turn the list of object_ids into one string with comma separated IDs
-    object_ids_str = ','.join(str(x) for x in object_ids)
-
-    # Set URLs
-    delete_url       = r'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/ArcGIS/rest/services/{}/FeatureServer/{}/deleteFeatures?token={}'.format(name_of_FS, index_of_layer_in_FS, token)
-    del_params       = urllib.urlencode({'objectIds': object_ids_str, 'f':'json'})
-
-
-    # Delete the features
-    print '    Deleting Features in FS: "{}" and index "{}"'.format(name_of_FS, index_of_layer_in_FS)
-    print '    OBJECTIDs to be deleted: {}'.format(object_ids_str)
-    ##print delete_url
-    ##print del_params
-    response  = urllib2.urlopen(delete_url, del_params)
-    response_json_obj = json.load(response)
-    ##print response_json_obj
-
-    for result in response_json_obj['deleteResults']:
-        ##print result
-        print '    OBJECTID: {}'.format(result['objectId'])
-        print '      Deleted? {}'.format(result['success'])
-
-    print '  Finished Delete_AGOL_Features()\n'
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -2415,7 +2413,6 @@ def Error_Handler(func_w_err, e):
 
     #---------------------------------------------------------------------------
     #                                Help comments
-    # TODO: have the help comments be a part of a list so that I can print out a list of help comments.
     help_comment = ''
 
     # Help comments for any function
@@ -2439,17 +2436,6 @@ def Error_Handler(func_w_err, e):
         if e_str == 'RecordSetObject: Cannot open table for Load':
             help_comment = '     Error may be the result of the Feature Service URL not being correctly set.  OR the \'Enable Sync\' option may not be enabled on the AGOL feature layer.  OR the Feature layer may not be shared.'
 
-    # Help comments for 'Get_Attachments' function
-    # TODO: figure out why these help comments aren't being assigned
-    if (func_w_err == 'Get_Attachments'):
-        if e_str == "*":
-            help_comment = '    This error may be the result that the field you are using to parse the data from is not correct.  Double check your fields.'
-        elif e_str == "URL":
-            help_comment = '    This error may be the result of the feature layer may not be shared.\n    Or user in the "cfgFile" may not have permission to access the URL.  Try logging onto AGOL with that user account to see if that user has access to the database.\n    Or the problem may be that the feature layer setting doesn\'t have Sync enabled.\n    Or the URL is incorrect somehow.'
-        elif e_str == "*Permission denied:*":
-            help_comment = '    This error may be due to the present working directory not being in the right folder.'
-
-
     # Help comments for 'Append_Data' function
     if(func_w_err == 'Append_Data'):
         pass
@@ -2469,8 +2455,6 @@ def Error_Handler(func_w_err, e):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 def Email_W_Body(subj, body, email_list, cfgFile=r"P:\DPW_ScienceAndMonitoring\DEV\Scripts\Config_Files\accounts.txt"):
-    # TODO 3/12/18: Remove the default for cfgFile so that each call of this function
-    #  requires a valid cfgFile location.  Update metadata below.
     """
     PARAMETERS:
       subj (str): Subject of the email
@@ -2492,7 +2476,13 @@ def Email_W_Body(subj, body, email_list, cfgFile=r"P:\DPW_ScienceAndMonitoring\D
     RETURNS:
       None
 
-    FUNCTION: To send an email to the listed recipients.
+    FUNCTION: To send an email to the listed recipients. with a defined
+      subject, body, email list, and a config file.
+
+    NOTE:
+      You can define the alternate_cfgFile_path below if you want to provide
+        a path to a config file with the username/password if the server is
+        calling the script (which would result in a different path than the default).
       If you want to provide a log file to include in the body of the email,
       please use function Email_w_LogFile()
     """
@@ -2504,7 +2494,7 @@ def Email_W_Body(subj, body, email_list, cfgFile=r"P:\DPW_ScienceAndMonitoring\D
 
     # This is the alternate cfgFile path that can point to the cfgFile if the
     # script is called by a server.  Server called paths may begin with different
-    # mapped drives.
+    # mapped drives (i.e. "D:\Projects\my\path\here" as opposed to "P:\my\path\here"
     alternate_cfgFile_path = r'D:\Projects\DPW_ScienceAndMonitoring\DEV\Scripts\Config_Files\accounts.txt'
 
     # If the default cfgFile path doesn't exist, try changing the path to the
