@@ -1090,7 +1090,7 @@ def Check_For_Sites_To_Delete(SITES_wkg_data, prodPath_SitesData, name_of_FS, in
         was accidentally deleted.  (If a site was accidentally deleted, please
         let LUEG-GIS know which site should be restored).<br><br>
 
-        <b>Sites that were deleted:</b>
+        <b>Sites that were deleted:</b><br>
         {}
         """.format(list_to_string))
         Email_W_Body(subj, body, email_list)
