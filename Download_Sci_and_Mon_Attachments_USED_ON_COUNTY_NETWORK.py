@@ -539,7 +539,7 @@ def Get_Attachments(token, gaURL, gaFolder, attachment_name_prefix, use_field_to
             # attachments 'parentGlobalId' and a features 'globalid' match
             for feature in data['layers'][0]['features']:
                 global_ID            = feature['attributes']['globalid']
-                attachment_name_main = feature['attributes'][use_field_to_name_attachment]
+                attachment_name_main = '{}__{}'.format(feature['attributes']['StationID'], feature['attributes'][use_field_to_name_attachment])
                 if global_ID == parent_ID:
                     break
 

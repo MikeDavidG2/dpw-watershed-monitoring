@@ -60,12 +60,12 @@ def main():
     #                   'RUN_AS_DPW_USER' parameter
     #---------------------------------------------------------------------------
     user = arcpy.GetParameterAsText(0)
-
+        
     if user == 'RUN_AS_DPW_USER':
 
         # Path to root folder
         root = r'S:\Watershed Project\Database\ArcGIS'
-
+        
         # Path to connection file of master SDE used to update
         master_SDE = os.path.join(root, "Script\\Connection_Files\\AD @ SDEP2.sde")
 
@@ -75,11 +75,11 @@ def main():
         # Path to log file with log file name
         log_file = os.path.join(root, 'Script\\Logs\\Update_DPW_w_MasterData')
 
-
+        
     if (user == 'RUN_AS_GIS_USER') or (user == ''):  # Then run with GIS paths
 
         user = 'RUN_AS_GIS_USER' # Set in case (user == '')
-
+        
         # Path to connection file of master SDE used to update
         master_SDE = r"W:\Script\Connection_Files\AD @ SDEP2.sde"
 
@@ -103,71 +103,87 @@ def main():
     # Turn the 'print' statement into a logging object
     if (run_Write_Print_To_Log):
         orig_stdout = Write_Print_To_Log(log_file)
-
+        
     print 'User = "{}"'.format(user)
-
+    
     print '----------------------------------------------------------'
 
     for item in SDE_items:
+        try:
+            print 'Processing item: {}\n'.format(item)
 
-        print 'Processing item: {}\n'.format(item)
+            # Set paths to 'Master' and 'Target' item
+            master_item    = os.path.join(master_SDE, item)
 
-        # Set paths to 'Master' and 'Target' item
-        master_item    = os.path.join(master_SDE, item)
+            item_split = item.split('.')
+            item_name = item_split[len(item_split)-1] # Last string = items name
+            item_to_update = os.path.join(to_update_db, item_name)
+            print '  SDE path:    "{}"'.format(master_item)
+            print '  Access path: "{}"\n'.format(item_to_update)
 
-        item_split = item.split('.')
-        item_name = item_split[len(item_split)-1] # Last string = items name
-        item_to_update = os.path.join(to_update_db, item_name)
-        print '  SDE path:    "{}"'.format(master_item)
-        print '  Access path: "{}"\n'.format(item_to_update)
+            #-------------------------------------------------------
+            #        04/27/2018 Mike Grue commented out the
+            # Text_Exists() and Test_Schema_Lock() functions
+            # and hardcoded in a 'True' for these variables
+            # This is because these functions were causing false
+            # results, preventing the script from working. A try/except
+            # will reveal any errors if the master_item does not exist
+            # or the item_to_update is locked.
+            # TODO: edit this script to actually remove the tests and the
+            # unneeded error handling below
+            #
+            # Test to see if the item is in master_SDE.
+            ##item_in_SDE = Test_Exists(master_item)
+            item_in_SDE = True
+            # Test to make sure that item exists in Access and no schema lock
+            ##no_schema_lock = Test_Schema_Lock(item_to_update)
+            no_schema_lock = True
+            # If the item is in master_SDE, and is in Access, and there is no schema
+            #   lock on the Access database, then delete the rows of the item in
+            #   Access, then copy new data to it.
+            #------------------------------------------------------
+            if no_schema_lock and item_in_SDE:
 
-        # Test to see if the item is in master_SDE.
-        item_in_SDE = Test_Exists(master_item)
+                # Delete rows for Access database item
+                Delete_Rows(item_to_update)
 
-        # Test to make sure that item exists in Access and no schema lock
-        no_schema_lock = Test_Schema_Lock(item_to_update)
+                # Get the dataset type (i.e. 'Table' or 'FeatureClass') to determine
+                # if script should copy ROWS or copy FEATURES.
+                dataset_type = Get_Dataset_Type(item_to_update)
 
-        # If the item is in master_SDE, and is in Access, and there is no schema
-        #   lock on the Access database, then delete the rows of the item in
-        #   Access, then copy new data to it.
-        if no_schema_lock and item_in_SDE:
+                if (dataset_type == 'Table'):
+                    Copy_Rows(master_item, item_to_update)
 
-            # Delete rows for Access database item
-            Delete_Rows(item_to_update)
+                if (dataset_type == 'FeatureClass'):
+                    Copy_Features(master_item, item_to_update)
 
-            # Get the dataset type (i.e. 'Table' or 'FeatureClass') to determine
-            # if script should copy ROWS or copy FEATURES.
-            dataset_type = Get_Dataset_Type(item_to_update)
-
-            if (dataset_type == 'Table'):
-                Copy_Rows(master_item, item_to_update)
-
-            if (dataset_type == 'FeatureClass'):
-                Copy_Features(master_item, item_to_update)
-
-            print 'Success updating "{}"'.format(item_to_update)
-            print '\n----------------------------------------------------------'
-
-        else:  # Then there was at least one error
-            if (no_schema_lock == False) and (item_in_SDE == False):
-                print '*** ERROR!  The item "{}" is not in either SDE or Access.\n  Please check [items_to_update] in script for accuracy'.format(item)
+                print 'Success updating "{}"'.format(item_to_update)
                 print '\n----------------------------------------------------------'
-                success = False
 
-            elif no_schema_lock == False:  # Item doesn't exist, or there is already a schema lock on item in Access
-                print '*** ERROR!  The item "{}" could not be found, OR There was a schema lock on it.***\n  Not able to update this item in Access.'.format(item_to_update)
-                print '  Please make sure that item exists in Access, and that everyone has disconnected from the database.'
-                print '  Then rerun this script.'
-                print '\n----------------------------------------------------------'
-                success = False
+            else:  # Then there was at least one error
+                if (no_schema_lock == False) and (item_in_SDE == False):
+                    print '*** ERROR!  The item "{}" is not in either SDE or Access.\n  Please check [items_to_update] in script for accuracy'.format(item)
+                    print '\n----------------------------------------------------------'
+                    success = False
 
-            elif item_in_SDE == False:  # Item is not in the master_SDE
-                print '*** ERROR!  The item "{}" is not in "{}" ***\n  Not able to update this item in Access.'.format(item, master_SDE)
-                print '  Please make sure that item exists in SDE.'
-                print '  Then rerun this script.'
-                print '\n----------------------------------------------------------'
-                success = False
+                elif no_schema_lock == False:  # Item doesn't exist, or there is already a schema lock on item in Access
+                    print '*** ERROR!  The item "{}" could not be found, OR There was a schema lock on it.***\n  Not able to update this item in Access.'.format(item_to_update)
+                    print '  Please make sure that item exists in Access, and that everyone has disconnected from the database.'
+                    print '  Then rerun this script.'
+                    print '\n----------------------------------------------------------'
+                    success = False
 
+                elif item_in_SDE == False:  # Item is not in the master_SDE
+                    print '*** ERROR!  The item "{}" is not in "{}" ***\n  Not able to update this item in Access.'.format(item, master_SDE)
+                    print '  Please make sure that item exists in SDE.'
+                    print '  Then rerun this script.'
+                    print '\n----------------------------------------------------------'
+                    success = False
+        except Exception as e:
+            success = False
+            print '\n*** ERROR! There was a problem processing item "{}"'.format(item)
+            print str(e)
+            
     #---------------------------------------------------------------------------
     #                         End of script reporting
     #---------------------------------------------------------------------------
@@ -186,6 +202,7 @@ def main():
         print '                    {}'.format(finish_time_str)
         print '              Finished Update_DPW_w_MasterData.py'
         print '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+        print 'Success = {}'.format(success)
 
         sys.stdout = orig_stdout
 
