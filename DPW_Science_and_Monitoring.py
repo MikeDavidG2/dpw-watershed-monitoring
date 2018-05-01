@@ -122,7 +122,7 @@ def main():
     lueg_admin_email = ['michael.grue@sdcounty.ca.gov', 'Gary.Ross@sdcounty.ca.gov']
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
-    stage = 'PROD'  # This variable is used to control the path to the various stages
+    stage = 'BETA'  # This variable is used to control the path to the various stages
 
     # serviceURL ends with .../FeatureServer
     if stage == 'DEV':

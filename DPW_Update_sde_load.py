@@ -26,7 +26,7 @@ def main():
     #---------------------------------------------------------------------------
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
-    stage = 'PROD'  # This variable is used to control the path to the various stages
+    stage = 'BETA'  # This variable is used to control the path to the various stages
 
     #---------------------------------------------------------------------------
     # Set the path prefix depending on if this script is called manually by a
