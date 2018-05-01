@@ -132,7 +132,7 @@ def main():
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=756b762cc8fe4a6b82e99d82753016a4'
 
     elif stage == 'BETA':
-        FIELD_DATA_serviceURL = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_9cbcd7048d4943658bb4f1339ec48e3e/FeatureServer'
+        FIELD_DATA_serviceURL = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_dfc0a5839d2a441380e0f6bf085b0407/FeatureServer'
         SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_BETA/FeatureServer'
         SITES_adminURL        = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_BETA_VIEW_admin/FeatureServer'
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=cf87c1d763004981a7290609f11d8819'
