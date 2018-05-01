@@ -28,6 +28,8 @@ PROCESS:
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 
+# TODO: Get an email function into this script
+
 import arcpy, os, time
 
 arcpy.env.overwriteOutput = True
@@ -39,12 +41,27 @@ def main():
     #---------------------------------------------------------------------------
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
-    stage = 'PROD'  # This variable is used to control the path to the various stages
+    stage = 'BETA'  # This variable is used to control the path to the various stages
 
+    #---------------------------------------------------------------------------
+    # Set the path prefix depending on if this script is called manually by a
+    #  user, or called by a scheduled task on ATLANTIC server.
+    called_by = arcpy.GetParameterAsText(0)
+
+    if called_by == 'MANUAL':
+        path_prefix = 'P:'  # i.e. 'P:' or 'U:'
+
+    elif called_by == 'SCHEDULED':
+        path_prefix = 'D:\projects'  # i.e. 'D:\projects' or 'D:\users'
+
+    else:  # If script run directly and no called_by parameter specified
+        path_prefix = 'P:'  # i.e. 'P:' or 'U:'
+
+    #---------------------------------------------------------------------------
     # Set paths
-    FGDB_to_backup = r"P:\DPW_ScienceAndMonitoring\Scripts\{}\Data\DPW_Science_and_Monitoring_prod.gdb".format(stage)
-    backup_folder  = r'P:\DPW_ScienceAndMonitoring\Scripts\{}\Data\Backups'.format(stage)
-    log_file        = r'P:\DPW_ScienceAndMonitoring\Scripts\{}\Data\Logs\Backup_FGDB'.format(stage)
+    FGDB_to_backup = r"{prefix}\DPW_ScienceAndMonitoring\{v}\Data\DPW_Science_and_Monitoring_prod.gdb".format(prefix = path_prefix, v = stage)
+    backup_folder  = r'{prefix}\DPW_ScienceAndMonitoring\{v}\Data\Backups'.format(prefix = path_prefix, v = stage)
+    log_file       = r'{prefix}\DPW_ScienceAndMonitoring\{v}\Scripts\Logs\Backup_FGDB'.format(prefix = path_prefix, v = stage)
 
     # Set name of one FC or Table that should exist in the backup FGDB
     #   This is so we can test if the arcpy.Copy_management was successful
