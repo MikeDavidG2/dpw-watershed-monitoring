@@ -26,7 +26,7 @@ def main():
     #---------------------------------------------------------------------------
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
-    stage = 'DEV'  # This variable is used to control the path to the various stages
+    stage = 'PROD'  # This variable is used to control the path to the various stages
 
     #---------------------------------------------------------------------------
     # Set the path prefix depending on if this script is called manually by a
@@ -56,7 +56,7 @@ def main():
     log_file = r'{prefix}\DPW_ScienceAndMonitoring\{v}\Scripts\Logs\DPW_Update_sde_load'.format(prefix = path_prefix, v = stage)
 
     # Set email recipients
-    email_recipients = ['michael.grue@sdcounty.ca.gov']
+    email_recipients = ['michael.grue@sdcounty.ca.gov', 'gary.ross@sdcounty.ca.gov']
 
 
     # Flag that is changed to "False" if there are errors

@@ -41,7 +41,7 @@ def main():
     #---------------------------------------------------------------------------
 
     # Which stage is this script pointing to? 'DEV', 'BETA', 'PROD'
-    stage = 'DEV'  # This variable is used to control the path to the various stages
+    stage = 'PROD'  # This variable is used to control the path to the various stages
 
     #---------------------------------------------------------------------------
     # Set the path prefix depending on if this script is called manually by a
@@ -68,7 +68,7 @@ def main():
     fc_or_table = 'DPW_WP_FIELD_DATA'
 
     # Set number of backups allowed to exist in 'backup_folder'
-    max_num_backups = 12
+    max_num_backups = 16
 
     # 'True' means the print statement will write to a log file
     run_Write_Print_To_Log = True
@@ -226,7 +226,7 @@ def Get_DT_To_Append():
       none
 
     RETURNS:
-      dt_to_append (str): Which is in the format 'YYYY_M_D__H_M_S'
+      dt_to_append (str): Which is in the format 'YYYY_MM_DD__HH_MM_SS'
 
     FUNCTION:
       To get a formatted datetime string that can be used to append to files
