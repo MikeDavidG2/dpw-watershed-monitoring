@@ -126,7 +126,7 @@ def main():
 
     # serviceURL ends with .../FeatureServer
     if stage == 'DEV':
-        FIELD_DATA_serviceURL = 'http://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_c03d8a0ce26a4087b49e4dbfc78b929a/FeatureServer'
+        FIELD_DATA_serviceURL = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_eac0fe8d42d9408084703f41b2344161/FeatureServer'
         SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_20170927/FeatureServer'
         SITES_adminURL        = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_DEV_admin_VIEW_20170927/FeatureServer'
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=756b762cc8fe4a6b82e99d82753016a4'
