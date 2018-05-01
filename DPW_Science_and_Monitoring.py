@@ -138,10 +138,10 @@ def main():
         SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/webmap/viewer.html?webmap=cf87c1d763004981a7290609f11d8819'
 
     elif stage == 'PROD':
-        FIELD_DATA_serviceURL = ''
-        SITES_serviceURL      = ''
-        SITES_adminURL        = ''
-        SITES_Edit_WebMap     = ''
+        FIELD_DATA_serviceURL = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/service_0d425cc412d44f60a2ca61d45f4aff2a/FeatureServer'
+        SITES_serviceURL      = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_PROD/FeatureServer'
+        SITES_adminURL        = 'https://services1.arcgis.com/1vIhDJwtG5eNmiqX/arcgis/rest/services/DPW_WP_SITES_PROD_VIEW_admin/FeatureServer'
+        SITES_Edit_WebMap     = 'http://sdcounty.maps.arcgis.com/home/item.html?id=140651fc6c754109ae0418206a0882ae'
 
     #---------------------------------------------------------------------------
     #                  Set Variables that won't change often
@@ -337,6 +337,7 @@ def main():
                 # Check for and delete any sites in downloaded SITES data
                 # Use admin URL so that we can perform the delete operation
                 name_of_SITES_FS = SITES_adminURL.split('/')[7]  # The name of the FS is the 7th item when the string is split on '/'
+                ##name_of_SITES_FS = SITES_serviceURL.split('/')[7]  # The name of the FS is the 7th item when the string is split on '/'
                 index_of_layer_in_FS = SITES_query_url.split('/')[9]
 
                 # Set the path to the downloaded SITES data
@@ -1211,7 +1212,7 @@ def Delete_AGOL_Features(name_of_FS, index_of_layer_in_FS, object_ids, token):
     ##print del_params
     response  = urllib2.urlopen(delete_url, del_params)
     response_json_obj = json.load(response)
-    ##print response_json_obj
+    print response_json_obj
 
     for result in response_json_obj['deleteResults']:
         ##print result
@@ -2096,6 +2097,8 @@ def Duplicate_Handler(target_table):
     # 'dup_type_1_2_flag' for all duplicates except for the youngest duplicate.
     # We want to keep the youngest Type 1 or 2 duplicate.
     print '\n  There are "{}" Type 1 / Type 2 duplicates:'.format(str(len(dup_typ_1_2)))
+    print '  These duplicates usually result in a "corrected" survey being sent from the same device'
+    print '  that created the original.  These kinds of duplicates can be handled programatically.'
 
     if len(dup_typ_1_2) == 0:
         print '    So nothing to change'
